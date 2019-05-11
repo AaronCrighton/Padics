@@ -12,24 +12,51 @@ fun mult :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightar
   "mult R b n = add_pow R n (b n)"
 
 definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) \<Rightarrow> (nat \<Rightarrow> 'a)" where
-  "deriv R b n = shift (mult R b) n"
+  "deriv R b = shift (mult R b)"
 
-lemma mult_in_up_ring:
-  "mult R b \<in> up R" 
+lemma(in domain) shift_in_up_ring:
+  assumes "b \<in> up R"
+  shows "shift  b \<in> up R" 
 proof
-  fix n
-  have "hensel.mult R b n \<in> carrier R" sledgehammer
+  show "\<And>n. shift b n \<in> carrier R" 
+    by (simp add: assms mem_upD)
+  show "\<exists>n. bound \<zero> n (shift b)" 
+  proof- 
+    obtain n where Bb: "bound \<zero> n b"
+      using assms(1) by auto
+    have "bound \<zero> n (shift b)"
+    proof
+      fix m
+      assume A: "n < m"
+      have P0: "shift b m = b (m + 1)" 
+        by auto
+      have P1: "n < m + 1" using A by auto 
+      then show "shift b m = \<zero>"
+        using Bb A P0 P1 by fastforce 
+    qed
+    then show ?thesis by blast 
+  qed
+qed
+
+lemma(in domain) mult_in_up_ring:
+  assumes "b \<in> up R"
+  shows "mult R b \<in> up R" 
+proof
+  show "\<And>n. mult R b n \<in> carrier R"
+  proof-
+    fix n
+    show "mult R b n \<in> carrier R" 
+      by (simp add: assms mem_upD)
+  qed
+  show "\<exists>n. bound \<zero> n (hensel.mult R b)"
+    using assms by fastforce
+qed
 
 (* deriv also returns a polynomial *)
-lemma deriv_in_up_ring:
-  "(deriv R p) \<in> up R"
-proof-
-  assume "p \<in> up R"
-  then have "p n \<in> carrier R" 
-    by (simp add: mem_upD)
-  then have "shift p n \<in> carrier R"
-    by (simp add: \<open>p \<in> up R\<close> mem_upD)
-  have "mult R b n \<in> carrier R" using add_pow_def mult_def sledgehammer
+lemma(in domain) deriv_in_up_ring:
+  assumes "p \<in> up R"
+  shows "(deriv R p) \<in> up R" 
+  by (simp add: assms deriv_def mult_in_up_ring shift_in_up_ring)
 
 
 (*

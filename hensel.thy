@@ -34,7 +34,7 @@ proof
       then show "shift b m = \<zero>"
         using Bb A P0 P1 by fastforce 
     qed
-    then show ?thesis by blast 
+    thus ?thesis by blast 
   qed
 qed
 
@@ -75,12 +75,36 @@ proof-
     by (smt UP_def cring_def domain_axioms domain_def restrict_apply ring.bound_upD wellorder_Least_lemma(1))
 qed
 
-
-
-
+lemma(in domain) deg_neq_0:
+  assumes "p \<in> up R"
+  assumes "deg R p = n"
+  assumes "n > 0"
+  shows "p n \<noteq> \<zero>"
+proof(rule ccontr)
+  assume "\<not> (p n \<noteq> \<zero>)"
+  have cont1: "n = (LEAST n. bound (zero R) n (coeff (UP R) p))" using assms(1) assms(2) deg_def degr
+    by blast
+  have "n-1 < n"
+    using assms(2) assms(3) diff_less less_numeral_extra(1)
+    by (simp add: assms(3))
+  have "\<And>m. \<lbrakk>m > (n-1)\<rbrakk> \<Longrightarrow> p m = \<zero>"
+    by (metis One_nat_def Suc_lessI Suc_pred \<open>\<not> p n \<noteq> \<zero>\<close> assms(1) assms(2) assms(3) gt_deg_is_zero)
+  then have 2: "bound (zero R) (n-1) (coeff (UP R) p)"
+    by (simp add: UP_def assms(1) bound_def)
+  then have cont: "n-1 = (LEAST n. bound (zero R) n (coeff (UP R) p))" using 2  \<open>n-1 < n\<close> assms(1)
+    by (metis One_nat_def \<open>n = (LEAST n. bound \<zero> n (coeff (UP R) p))\<close>  neq0_conv not_less_Least zero_less_diff)
+  then have "n \<noteq> (LEAST n. bound (zero R) n (coeff (UP R) p))" using 2  assms(1) UP_def cont
+        not_less_Least order.asym neq0_conv lessI diff_less
+    using \<open>n - 1 < n\<close> by linarith
+  hence "n \<noteq> deg R p"
+    using cont1 by blast
+  thus False
+    using assms(2) by blast
+qed
 
 lemma(in domain) deg_shift_lt:
   assumes "p \<in> up R"
+  assumes "deg R p > 0"
   shows "deg R (shift p) < deg R p" 
 proof-
   have "\<exists>n. deg R p = n" by simp
@@ -88,18 +112,17 @@ proof-
     by auto
   have "shift p n = p (n+1)"
     by simp
-  have 1: "p (n+1) = \<zero>" using 1 assms deg_def
-    by (simp add: gt_deg_is_zero)
+  have 1: "p (n+1) = \<zero>" using 1 assms deg_def gt_deg_is_zero
+    by simp
   then have 2: "shift p n = p (n+1)" by simp
   then have 3: "shift p n = \<zero>" using 1 by auto
-  hence "deg R (shift p) < deg R p" using degr 1 2 3 assms sledgehammer
+  thus "deg R (shift p) < deg R p" using degr 1 2 3 assms(1) assms(2) deg_neq_0
+    by (metis (no_types, lifting)  dual_order.strict_trans2
+          gt_deg_is_zero less_add_one not_le_imp_less shift.elims shift_in_up_ring)
+qed
 
 lemma(in domain) deg_deriv_lt:
   assumes "p \<in> up R"
-  assumes "deg R p = n"
-  shows "deg R (deriv R p) = n - 1" 
-
-
-(*
-  obtain n where "deg R p = n" by simp
-  then have "n = (LEAST n. bound \<zero>\<^bsub>R\<^esub> n (coeff (UP R) p))" using deg_def  sledgehammer*)
+  assumes "deg R p > 0"
+  shows "deg R (deriv R p) < deg R p" using deriv_def shift_def mult_def sledgehammer
+  

@@ -52,6 +52,102 @@ proof
     using assms by fastforce
 qed
 
+fun trunc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+  "trunc R f = (\<lambda>i. (if i < (deg R f) then  f i else \<zero>\<^bsub>R\<^esub>))"
+
+lemma(in UP_ring) monom_simp:
+  assumes "a \<in> carrier R"
+  shows "(monom (UP R) a m) n = (if m=n then a else \<zero>)"
+proof-
+  have "(\<lambda>n. if n = m then a else \<zero>) \<in> up R"
+    using up_def assms(1) by force
+  with assms(1) show ?thesis by (simp add: UP_def)
+qed
+
+lemma trunc_is_poly:
+  assumes "f \<in> up R"
+  shows "trunc R f \<in> up R"
+proof
+  show "\<exists>n. bound \<zero>\<^bsub>R\<^esub> n (trunc R f)" 
+    by (meson bound_def less_le less_trans trunc.elims)
+  show "\<And>n. trunc R f n \<in> carrier R"
+  proof-
+    fix n
+    show "trunc R f n \<in> carrier R"
+    proof(cases "n < deg R f")
+      case True
+      then have "trunc R f n = f n"
+        by simp
+      
+      then show "trunc R f n \<in> carrier R"
+        by (simp add: assms mem_upD)
+    next
+      case False
+      then have "trunc R f n = \<zero>\<^bsub>R\<^esub>"
+        by simp
+      then show ?thesis
+        by (smt assms bound_def lessI mem_Collect_eq mem_upD up_def)
+    qed
+  qed
+qed
+
+fun lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
+  "lc R p = p (deg R p)"
+
+lemma(in UP_ring) monom_eq_deg:
+  assumes "deg R p = n"
+  assumes "m \<ge> n"
+  shows "monom (UP R) (p n) n m = p m"
+  proof(cases "m \<noteq> n")
+    case True
+    then show ?thesis 
+  next
+    case False
+    then show ?thesis using assms(1) assms(2) monom_simp UP_def 
+  qed
+
+lemma(in UP_ring) trunc_monom_0:
+  assumes "p \<in> up R"
+  assumes "deg R p > 0"
+  assumes "deg R p = n"
+  shows "p x = (trunc R p x) \<oplus>\<^bsub>R\<^esub> (monom (UP R) (p n) n x)"
+proof-
+  fix m
+  have "p m = trunc R p m \<oplus>\<^bsub>R\<^esub> monom (UP R) (p n) n m"
+  proof(cases "m < n")
+    case True
+    have "p m = p m \<oplus>\<^bsub>R\<^esub> \<zero>" 
+      by (simp add: assms(1) mem_upD)
+    then have 1: "monom (UP R) (p n) n m = \<zero>" using monom_simp
+      by (metis True assms(1) mem_upD nat_neq_iff)
+    then have 2: "trunc R p m = p m" 
+      by (simp add: True assms(3))
+    then have 3: "trunc R p m \<oplus>\<^bsub>R\<^esub> monom (UP R) (p n) n m = p m \<oplus>\<^bsub>R\<^esub> \<zero>"
+      by (simp add: \<open>monom (UP R) (p n) n m = \<zero>\<close>)
+    then show ?thesis using 1 2 3 assms(2) assms(3) \<open>p m = p m \<oplus> \<zero>\<close> by auto
+  next
+    case False
+    then have "\<not> (m < n)"
+      by simp
+    show ?thesis
+    proof(cases "n = m")
+      case False
+      then have "trunc R p m = \<zero>" sledgehammer
+        by (simp add: \<open>\<not> m < n\<close> assms(3))
+  qed
+
+lemma(in UP_ring) monom_simp:
+  assumes "a \<in> carrier R"
+  shows "(monom (UP R) a m) n = (if m=n then a else \<zero>)"
+proof-
+  have "(\<lambda>n. if n = m then a else \<zero>) \<in> up R"
+    using up_def assms(1) by force
+  with assms(1) show ?thesis by (simp add: UP_def)
+qed
+lemma monom_deriv:
+  assumes "p \<in> up R"
+  shows "deriv R (monom (UP R) p) = shift (multc R (monom (UP R) p))"
+
 (* deriv also returns a polynomial *)
 lemma(in domain) deriv_in_up_ring:
   assumes "p \<in> up R"
@@ -183,8 +279,18 @@ proof-
           gt_deg_is_zero less_add_one not_le_imp_less shift.elims shift_in_up_ring)
 qed
 
+(*fun mult :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+  "mult p q = *) 
 
-  
+lemma product_rule:
+  assumes "p \<in> up R" "q \<in> up R"
+  shows "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))" 
+proof
+  (*This proof seems difficult to do without talking explicitly about limits*)
+  have "deriv R (f \<otimes>\<^bsub>UP R\<^esub> g) = shift(multc R (f \<otimes>\<^bsub>UP R\<^esub> g))"
+    by (simp add: deriv_def)
+  have "
+qed
 (*lemma(in domain) multc_neq_0:
   assumes "p \<in> up R"
   assumes "p n \<noteq> \<zero>"

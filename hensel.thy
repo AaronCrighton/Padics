@@ -8,11 +8,11 @@ definition p_UP :: "nat \<Rightarrow> (nat \<Rightarrow> int, nat \<Rightarrow> 
 fun shift :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "shift b n = b (n + 1)"
 
-fun mult :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
-  "mult R b n = add_pow R n (b n)"
+fun multc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+  "multc R b n = add_pow R n (b n)"
 
 definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) \<Rightarrow> (nat \<Rightarrow> 'a)" where
-  "deriv R b = shift (mult R b)"
+  "deriv R b = shift (multc R b)"
 
 lemma(in domain) shift_in_up_ring:
   assumes "b \<in> up R"
@@ -38,17 +38,17 @@ proof
   qed
 qed
 
-lemma(in domain) mult_in_up_ring:
+lemma(in domain) multc_in_up_ring:
   assumes "b \<in> up R"
-  shows "mult R b \<in> up R" 
+  shows "multc R b \<in> up R" 
 proof
-  show "\<And>n. mult R b n \<in> carrier R"
+  show "\<And>n. multc R b n \<in> carrier R"
   proof-
     fix n
-    show "mult R b n \<in> carrier R" 
+    show "multc R b n \<in> carrier R" 
       by (simp add: assms mem_upD)
   qed
-  show "\<exists>n. bound \<zero> n (hensel.mult R b)"
+  show "\<exists>n. bound \<zero> n (hensel.multc R b)"
     using assms by fastforce
 qed
 
@@ -56,7 +56,7 @@ qed
 lemma(in domain) deriv_in_up_ring:
   assumes "p \<in> up R"
   shows "(deriv R p) \<in> up R" 
-  by (simp add: assms deriv_def mult_in_up_ring shift_in_up_ring)
+  by (simp add: assms deriv_def multc_in_up_ring shift_in_up_ring)
 
 lemma degr: "deg R p = (LEAST n. bound (zero R) n (coeff (UP R) p))" using deg_def by auto
 
@@ -185,22 +185,22 @@ qed
 
 
   
-(*lemma(in domain) mult_neq_0:
+(*lemma(in domain) multc_neq_0:
   assumes "p \<in> up R"
   assumes "p n \<noteq> \<zero>"
-  shows "mult R p n \<noteq> \<zero>" sledgehammer*)
+  shows "multc R p n \<noteq> \<zero>" sledgehammer*)
 
-(*lemma(in domain) deg_mult_eq:
+(*lemma(in domain) deg_multc_eq:
   assumes "p \<in> up R"
-  shows "deg R p \<le> deg R (mult R p)" 
+  shows "deg R p \<le> deg R (multc R p)" 
 proof-
-  have "\<lbrakk> p m \<noteq> \<zero> \<rbrakk> \<Longrightarrow> mult R p m \<noteq> \<zero>" using mult_def add_pow_def *)
+  have "\<lbrakk> p m \<noteq> \<zero> \<rbrakk> \<Longrightarrow> multc R p m \<noteq> \<zero>" using multc_def add_pow_def *)
 
 (*lemma(in domain) deg_deriv_lt:
   assumes "p \<in> up R"
   assumes "deg R p > 0"
-  shows "deg R (deriv R p) < deg R p" using deriv_def shift_def mult_def 
+  shows "deg R (deriv R p) < deg R p" using deriv_def shift_def multc_def 
 proof-
-  have "deriv R p = shift (mult R p)" 
+  have "deriv R p = shift (multc R p)" 
     using deriv_def by blast
-  have "deg R (shift (mult R p)) < deg R p" using deg_def shift_def deg_shift_lt *)
+  have "deg R (shift (multc R p)) < deg R p" using deg_def shift_def deg_shift_lt *)

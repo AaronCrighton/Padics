@@ -60,6 +60,68 @@ lemma(in domain) deriv_in_up_ring:
 
 lemma degr: "deg R p = (LEAST n. bound (zero R) n (coeff (UP R) p))" using deg_def by auto
 
+lemma(in domain) coeff_simp:
+  assumes "p \<in> up R"
+  shows "coeff (UP R) p = p" 
+proof-
+  have "coeff (UP R) = (\<lambda>p \<in> (up R). p)" 
+    by (simp add: UP_def)
+  then show  "coeff (UP R) p = p" using assms by auto 
+qed
+
+
+
+lemma(in domain) deg_simp_0:
+  assumes "p \<in> up R"
+  assumes "n = deg R p"
+  shows " bound (zero R) n (coeff (UP R) p)"
+proof
+  show "\<And>m. n < m \<Longrightarrow> coeff (UP R) p m = \<zero>"
+  proof-
+    fix m
+    assume "n < m"
+    show "coeff (UP R) p m = \<zero>" 
+    proof-
+      obtain f where f_def: "f = (coeff (UP R) p)"
+        by simp
+      obtain P where P_def: "P = (\<lambda> m. bound (zero R) m (coeff (UP R) p))" 
+        by simp
+      have "\<exists>n. bound \<zero> n f" 
+        using assms(1) up_def f_def coeff_simp by auto
+      then have "\<exists>m. P m" 
+        using P_def f_def by auto 
+      then have 0: "P (LEAST m. P m)"
+        using LeastI  by auto
+      have "P m =  bound (zero R) m (coeff (UP R) p)"
+        by (simp add: P_def)
+      then have 1: "(LEAST m. P m) = (LEAST m. ( bound (zero R) m (coeff (UP R) p)))"
+        by (simp add: P_def)
+      have 2: "deg R p = (LEAST m. ( bound (zero R) m (coeff (UP R) p)))"
+        using deg_def by auto
+      then have "(LEAST m. P m) = deg R p" 
+        using 1 2 by auto 
+      then have "P n" using 0 assms by auto
+      then show ?thesis using P_def 
+        using \<open>n < m\<close> by blast 
+    qed
+  qed
+qed
+
+(*
+lemma(in domain) deg_simp_1:
+  assumes "p \<in> up R"
+  assumes "n \<ge> deg R p"
+  shows " bound (zero R) n (coeff (UP R) p)"
+proof(cases "n=0")
+  case True
+  then show ?thesis 
+    using assms(1) assms(2) deg_simp_0 by force
+next
+  case False
+  then show ?thesis sorry
+qed
+*)
+
 lemma(in domain) gt_deg_is_zero:
   assumes "p \<in> up R"
   shows "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>"
@@ -121,8 +183,24 @@ proof-
           gt_deg_is_zero less_add_one not_le_imp_less shift.elims shift_in_up_ring)
 qed
 
-lemma(in domain) deg_deriv_lt:
+
+  
+(*lemma(in domain) mult_neq_0:
+  assumes "p \<in> up R"
+  assumes "p n \<noteq> \<zero>"
+  shows "mult R p n \<noteq> \<zero>" sledgehammer*)
+
+(*lemma(in domain) deg_mult_eq:
+  assumes "p \<in> up R"
+  shows "deg R p \<le> deg R (mult R p)" 
+proof-
+  have "\<lbrakk> p m \<noteq> \<zero> \<rbrakk> \<Longrightarrow> mult R p m \<noteq> \<zero>" using mult_def add_pow_def *)
+
+(*lemma(in domain) deg_deriv_lt:
   assumes "p \<in> up R"
   assumes "deg R p > 0"
-  shows "deg R (deriv R p) < deg R p" using deriv_def shift_def mult_def sledgehammer
-  
+  shows "deg R (deriv R p) < deg R p" using deriv_def shift_def mult_def 
+proof-
+  have "deriv R p = shift (mult R p)" 
+    using deriv_def by blast
+  have "deg R (shift (mult R p)) < deg R p" using deg_def shift_def deg_shift_lt *)

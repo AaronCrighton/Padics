@@ -77,6 +77,27 @@ definition
                                   \<and> (h \<zero>\<^bsub>R\<^esub>) = \<infinity>\<^bsub>S\<^esub> 
                                   \<and> (h \<one>\<^bsub>R\<^esub>) = \<one>\<^bsub>S\<^esub> }"
 
+lemma valuationI:
+  fixes R (structure)
+  fixes S (structure)
+  assumes "h \<in> carrier R \<rightarrow> vals S" 
+  assumes " (is_ultrametric R S h)"
+  assumes "(multiplicative R S h)"
+  assumes "(nonzero_to_group R S h)"
+  assumes " (h \<zero>\<^bsub>R\<^esub>) = \<infinity>\<^bsub>S\<^esub> "
+  assumes  "(h \<one>\<^bsub>R\<^esub>) = \<one>\<^bsub>S\<^esub> "
+  shows "h \<in> valuation R S"
+proof-
+  have A: " h \<in> carrier R \<rightarrow> vals S   \<and> (is_ultrametric R S h) 
+                                  \<and> (multiplicative R S h)
+                                  \<and> (nonzero_to_group R S h)
+                                  \<and> (h \<zero>\<^bsub>R\<^esub>) = \<infinity>\<^bsub>S\<^esub> 
+                                  \<and> (h \<one>\<^bsub>R\<^esub>) = \<one>\<^bsub>S\<^esub> "
+    using assms(2) assms(3) assms(4) assms(5) assms(6) by blast
+  then show ?thesis  
+    by (simp add: A valuation_def)
+qed
+
 
 (*Locale for a valued integral domain*)
 
@@ -88,6 +109,17 @@ locale valued_ring =
     "extended_ordered_abelian_group \<Gamma>"
   assumes a_valuation:
     "\<nu> \<in> valuation K \<Gamma>"
+
+lemma valued_ringI:
+  fixes G (structure)
+  assumes a_domain:
+    "Ring.domain K"
+  assumes a_val_group:
+    "extended_ordered_abelian_group \<Gamma>"
+  assumes a_valuation:
+    "\<nu> \<in> valuation K \<Gamma>"
+  shows "valued_ring G"
+  by (simp add: a_domain a_val_group a_valuation valued_ring_def)
 
 fun (in ring)
 int_const :: "int \<Rightarrow> 'a" ("c\<index>") where
@@ -267,6 +299,15 @@ locale valued_field = valued_ring +
   assumes val_surj:
     "surj \<nu>"
 
+lemma valued_fieldI:
+  fixes G (structure)
+  assumes "valued_ring G"
+  assumes a_field:
+    "Ring.field (ring G)"
+  assumes val_surj:
+    "surj \<nu>"
+  shows "valued_field G"
+  by (simp add: a_field assms(1) val_surj valued_field.intro valued_field_axioms_def)
 
 lemma (in valued_ring) prod_inequality:
   assumes "\<one>\<^bsub>\<Gamma>\<^esub> \<preceq>\<^bsub>\<Gamma>\<^esub> \<nu> x"

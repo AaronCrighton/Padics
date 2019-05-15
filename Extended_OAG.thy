@@ -134,13 +134,15 @@ proof
     by (smt None_notin_image_Some an_order extended_order.elims(3)
         gorder.select_convs(1) has_order.an_order image_iff option.inject
         ordered_monoid.simps(1) partial_object.select_convs(1) total_order.total_order_total)
-  show " \<And>a b c.
+  have "le_resp_mult G" 
+    using ordered_monoid_axioms ordered_monoid_def by auto
+  then show " \<And>a b c.
        a \<in> carrier (extended G) \<Longrightarrow>
        b \<in> carrier (extended G) \<Longrightarrow> 
        a \<preceq>\<^bsub>extended G\<^esub> b \<Longrightarrow>
        c \<in> carrier (extended G) \<Longrightarrow>
        a \<otimes>\<^bsub>extended G\<^esub> c \<preceq>\<^bsub>extended G\<^esub> b \<otimes>\<^bsub>extended G\<^esub> c" 
-    using le_resp_mult by auto
+    using None_notin_image_Some le_resp_mult_def by fastforce
   show "\<And>x y. x \<in> carrier (extended G) \<Longrightarrow> 
         y \<in> carrier (extended G) \<Longrightarrow> 
         x \<otimes>\<^bsub>extended G\<^esub> y = y \<otimes>\<^bsub>extended G\<^esub> x"
@@ -167,7 +169,7 @@ proof
     by auto
   show "\<And>x. x \<in> carrier (extended G) \<Longrightarrow> \<not> \<infinity>\<^bsub>extended G\<^esub> \<preceq>\<^bsub>extended G\<^esub> x" 
     by auto
-  show "\<infinity>\<^bsub>extended G\<^esub> \<preceq>\<^bsub>extended G\<^esub> \<infinity>\<^bsub>extended G\<^esub>" sledgehammer
+  show "\<infinity>\<^bsub>extended G\<^esub> \<preceq>\<^bsub>extended G\<^esub> \<infinity>\<^bsub>extended G\<^esub>" 
     by simp
   show "\<And>x. x \<in> carrier (extended G) \<Longrightarrow> x \<otimes>\<^bsub>extended G\<^esub> \<infinity>\<^bsub>extended G\<^esub> = \<infinity>\<^bsub>extended G\<^esub>" 
     by auto
@@ -379,7 +381,9 @@ next
   case False
   then show "((le G)(a\<otimes>\<^bsub>G\<^esub>c) (b\<otimes>\<^bsub>G\<^esub>c))" 
     using assms(1) assms(2) assms(3) assms(4)
-      infinity_infinity infinity_plus_right le_resp_mult by auto
+      infinity_infinity infinity_plus_right ordered_monoid_axioms 
+      ab comm_groupE(4) le_resp_mult1 by fastforce
+
 qed
 
 lemma (in extended_ordered_abelian_group) mult_closed:

@@ -52,8 +52,6 @@ proof(rule ring_hom_memI)
     by (simp add: assms(1) res_def residue_ring_def) 
 qed
 
-value "(1::int) mod 0"
-
 lemma res_id:
   assumes "x \<in> carrier (residue_ring n)"
   assumes "n \<ge>0"
@@ -73,7 +71,6 @@ next
   then show ?thesis 
     using res_def by auto
 qed
-
 
 lemma res_hom_p:
   assumes "(n::nat) \<ge> m"
@@ -215,9 +212,29 @@ proof(rule padic_set_mem)
       by (simp add: assms padic_one_def prime_gt_1_int residue_ring_def)
   qed
   show "\<And>m n. m < n \<Longrightarrow> res (int p ^ m) (padic_one p n) = padic_one p m"
-  by (smt Euclidean_Division.pos_mod_bound Euclidean_Division.pos_mod_sign assms
-      mod_pos_pos_trivial not_less0 of_nat_zero_less_power_iff padic_one_def
-      prime_gt_0_nat prime_nat_int_transfer prime_power_eq_one_iff res_def) 
+  proof- 
+    fix m n::nat
+    assume "m <n"
+    show "res (int p ^ m) (padic_one p n) = padic_one p m"
+    proof(cases "m = 0")
+      case True
+      then have 0:"padic_one p m = 0" 
+        by (simp add: padic_one_def)
+      have 1: "padic_one p n = 1" 
+        using \<open>m < n\<close> padic_one_def by auto
+      then show ?thesis using res_def 0 1 
+        by (simp add: True)
+    next
+      case False 
+      then have 0: "padic_one p m = 1"
+        by (simp add: padic_one_def)
+      have 1: "padic_one p n = 1"
+        using \<open>m < n\<close> padic_one_def by auto
+      show ?thesis using res_def 0 1 
+        by (metis \<open>\<And>m. padic_one p m \<in> carrier (residue_ring (int p ^ m))\<close>
+            of_nat_0_le_iff res_id zero_le_power)
+    qed
+  qed
 qed
 (*padic_zero is an element of the padics *)
 
@@ -285,9 +302,7 @@ proof(rule padic_set_mem)
         then have 0:"f m \<in> carrier (residue_ring (p^m))"  
           using assms(1) padic_set_simp0 by blast
         have 1: "residues (p^m)" 
-          using False 
-          by (smt assms(2) of_nat_0_less_iff of_nat_1 of_nat_eq_iff
-              prime_gt_0_nat prime_power_eq_one_iff residues.intro zero_less_power) 
+          using False assms(2) less_irrefl prime_gt_1_int residues.intro by auto
         then show ?thesis 
           using P0 by (simp add: residues.mod_in_carrier residues.res_neg_eq) 
       qed
@@ -324,8 +339,7 @@ proof(rule padic_set_mem)
         have 4: " cring (residue_ring (p ^ n))" 
           using \<open>m < n\<close> assms(2) prime_gt_1_int residues.cring residues.intro by auto 
         have 5: " cring (residue_ring (p ^ m))" 
-          by (smt False assms(2) of_nat_0_less_iff prime_gt_0_nat prime_power_eq_one_iff 
-              residues.cring residues.intro semiring_char_0_class.of_nat_eq_1_iff zero_less_power) 
+          using False assms(2) prime_gt_1_int residues.cring residues.intro by auto
         have  "ring_hom_cring (residue_ring (p ^ n))  (residue_ring (p ^ m)) (res (p ^ m))"
           using 3 4 5 UnivPoly.ring_hom_cringI by blast  
         then show ?thesis using 0  1 2 ring_hom_cring.hom_a_inv 
@@ -393,7 +407,8 @@ proof(rule padic_set_mem)
           using assms(2) padic_set_simp0 by auto 
         have 3: "res (int p ^ m) (f n \<otimes>\<^bsub>residue_ring (int (p ^ n))\<^esub> g n) 
                     = f m \<otimes>\<^bsub>residue_ring (int (p ^ m))\<^esub> g m" 
-          by (smt "0" "1" "2" A assms(1) assms(2) assms(3) less_imp_le of_nat_power padic_set_simp1 ring_hom_mult) 
+          using  "0" "1" "2" A assms(1) assms(2) assms(3) less_imp_le of_nat_power padic_set_simp1 
+            by (simp add: assms(2) ring_hom_mult)
         then show ?thesis
             using ring_hom_mult padic_simps[simp] by auto 
         qed
@@ -588,19 +603,32 @@ proof-
   have A: "?nm = ?n \<otimes>\<^bsub>residue_ring (p^((Suc (nat (?vf + ?vg))))) \<^esub> ?m" 
     using padic_mult_def  by simp 
   have 5: "f (nat ?vf + 1) = res (p^(nat ?vf + 1)) ?n" 
-    by (smt add.commute assms(1) assms(2) assms(5) int_nat_eq nat_int 
-        nat_le_iff not_less_eq_eq padic_set_simp1 padic_val_def plus_1_eq_Suc)     
+  proof-
+    have "(Suc (nat (?vf + ?vg))) \<ge> (nat ?vf + 1)" 
+      by (simp add: assms(5) padic_val_def)
+    then have "f (nat ?vf + 1) =  res (p^(nat ?vf + 1)) (f (Suc (nat (?vf + ?vg))))" 
+      using assms(1) assms(2) padic_set_simp1 by presburger
+    then show ?thesis by auto 
+  qed
   have 6: "f (nat ?vf) = res (p^(nat ?vf)) ?n" 
    using add.commute assms(1) assms(2) assms(5) int_nat_eq nat_int 
         nat_le_iff not_less_eq_eq padic_set_simp1 padic_val_def plus_1_eq_Suc  by auto 
   have 7: "g (nat ?vg + 1) = res (p^(nat ?vg + 1)) ?m"  
-    using add.commute assms(3) assms(5) int_nat_eq nat_int 
-        nat_le_iff not_less_eq_eq padic_set_simp1 padic_val_def plus_1_eq_Suc 
-       by (smt assms(1) assms(4)) 
+  proof-
+    have "(Suc (nat (?vf + ?vg))) \<ge> (nat ?vg + 1)" 
+      by (simp add: assms(4) padic_val_def)
+    then have "g (nat ?vg + 1) =  res (p^(nat ?vg + 1)) (g (Suc (nat (?vf + ?vg))))" 
+      using assms(1) assms(3) padic_set_simp1 by presburger
+    then show ?thesis by auto 
+  qed
   have 8: "g (nat ?vg) = res (p^(nat ?vg)) ?m"
-    using add.commute assms(3) assms(5) int_nat_eq nat_int 
-        nat_le_iff not_less_eq_eq padic_set_simp1 padic_val_def plus_1_eq_Suc 
-    by (smt assms(1) le_add2) 
+  proof-
+    have "(Suc (nat (?vf + ?vg))) \<ge> (nat ?vg)" 
+      by (simp add: assms(4) padic_val_def)
+    then have "g (nat ?vg) =  res (p^(nat ?vg)) (g (Suc (nat (?vf + ?vg))))" 
+      using assms(1) assms(3) padic_set_simp1 by presburger
+    then show ?thesis by auto 
+  qed 
   have 9: "f (nat ?vf) = 0" 
     by (simp add: "2" residue_ring_def) 
   have 10: "g (nat ?vg) = 0" 
@@ -632,7 +660,21 @@ proof-
     then have "?n \<ge>0" 
       by (simp add: residue_ring_def) 
     then have NN:"i \<ge> 0" 
-      by (smt A0 P1 P2 of_nat_0_le_iff of_nat_power res_def zero_le_mult_iff zmod_trival_iff) 
+    proof-
+      have S0:"?n \<ge>0" 
+        using \<open>0 \<le> f (Suc (nat (padic_val p f + padic_val p g)))\<close> by blast
+      have S1:"(int p^(nat ?vf)) > 0" 
+        using assms(1) by auto
+      have "\<not> i<0"
+      proof
+        assume "i < 0"
+        then have "?n < 0" 
+          using S1 A0 by (metis mult.commute times_int_code(1) zmult_zless_mono2)
+        then show False 
+          using S0  by linarith
+      qed
+      then show ?thesis by auto 
+    qed
     have A1: "\<not> p dvd (nat i)"
     proof
       assume "p dvd nat i"
@@ -666,10 +708,22 @@ proof-
       by fastforce 
     have "?m \<in> carrier (residue_ring (p^(Suc (nat (?vf + ?vg)))))" 
       using assms(3) padic_set_simp0 by blast 
-    then have "?m \<ge>0" 
+    then have S0: "?m \<ge>0" 
       by (simp add: residue_ring_def) 
     then have NN:"i \<ge> 0" 
-      by (smt A0 P1 P2 of_nat_0_le_iff of_nat_power res_def zero_le_mult_iff zmod_trival_iff) 
+    proof-
+      have S1:"(int p^(nat ?vg)) > 0" 
+        using assms(1) by auto
+      have "\<not> i<0"
+      proof
+        assume "i < 0"
+        then have "?m < 0" 
+          using S1 A0 by (metis mult.commute times_int_code(1) zmult_zless_mono2)
+        then show False 
+          using S0  by linarith
+      qed
+      then show ?thesis by auto 
+    qed    
     have A1: "\<not> p dvd (nat i)"
     proof
       assume "p dvd nat i"
@@ -700,17 +754,25 @@ proof-
       by (simp add: P1 res_def) 
   qed
   then have 15: "?nm mod ?i =  i*j*p^((nat ?vf) +(nat ?vg)) mod ?i"
-    by (smt I J int_ops(7) mult.assoc mult.left_commute power_add zmod_int) 
-  have 16: "\<not> p dvd (i*j)" using 13 14 
+    by (metis I J mult.assoc mult.left_commute of_nat_mult power_add zmod_int)
+  have 16: "\<not> p dvd (i*j)" using 13 14
     using I J assms(1) prime_dvd_mult_iff by auto 
   have 17: "((nat ?vf) +(nat ?vg)) < (Suc (nat (?vf + ?vg)))" 
     by (simp add: assms(4) assms(5) nat_add_distrib padic_val_def) 
-  have 18:"?nm mod ?i \<noteq>0" 
-    using 15  
-    by (smt "16" "17" assms(1) assms(4) assms(5) dvd_eq_mod_eq_0 dvd_times_left_cancel_iff
-        int_nat_eq mult.commute mult.right_neutral nat_add_distrib nat_int of_nat_0_le_iff 
-        of_nat_0_less_iff of_nat_eq_iff of_nat_le_0_iff padic_val_def plus_1_eq_Suc power_Suc 
-        power_commutes power_eq_0_iff prime_gt_0_nat zero_less_Suc) 
+  have 18:"?nm mod ?i \<noteq>0"
+  proof-
+    have A0:"\<not>  p^((Suc (nat (?vf + ?vg)))) dvd p^((nat ?vf) +(nat ?vg)) " 
+      using 17 by (metis One_nat_def assms(1) linorder_not_less power_dvd_imp_le prime_gt_Suc_0_nat)
+    then have A1: "p^((nat ?vf) +(nat ?vg)) mod ?i \<noteq> 0" 
+      using dvd_eq_mod_eq_0 by blast
+    have "\<not>  p^((Suc (nat (?vf + ?vg)))) dvd i*j*p^((nat ?vf) +(nat ?vg)) "
+      using 16 A0 assms(1) 
+      by (metis (no_types, lifting) "17" A1 One_nat_def assms(4) assms(5)
+          dvd_times_right_cancel_iff mod_less nat_int nat_plus_as_int padic_val_def
+          power_Suc power_strict_increasing_iff prime_gt_Suc_0_nat)
+    then show ?thesis 
+      using "15" by force
+  qed
   have 19: "(?nm mod ?i ) mod (p^(nat ?vf + nat ?vg)) = i*j*p^((nat ?vf) +(nat ?vg)) mod (p^(nat ?vf + nat ?vg))"
     using 15 by (simp add: assms(4) assms(5) nat_add_distrib padic_val_def)
   then have 20: "?nm mod (p^(nat ?vf + nat ?vg)) = 0" 
@@ -788,11 +850,26 @@ qed
      j \<notin> {k::nat. ((padic_mult p f g) (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (int p^(Suc k))\<^esub>}" 
     by (simp add: "23") 
   have "(nat (padic_val p f + padic_val p g)) = (LEAST k::nat. ((padic_mult p f g) (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (int p^(Suc k))\<^esub>) "
-    using 27 26 by (smt LeastI_ex linorder_neqE_nat mem_Collect_eq not_less_Least) 
+  proof-
+    obtain P where C0: "P= (\<lambda> k. ((padic_mult p f g) (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (int p^(Suc k))\<^esub>)" 
+      by simp
+    obtain x where C1: "x = (nat (padic_val p f + padic_val p g))" 
+      by blast
+    have C2: "P x" 
+      using "26" C0 C1  by blast
+    have C3:"\<And> j. j< x \<Longrightarrow> \<not> P j" 
+      using C0 C1 by (simp add: "23")
+    have C4: "\<And> j. P j \<Longrightarrow> x \<le>j" 
+      using C3 le_less_linear by blast
+    have "x = (LEAST k. P k)" 
+      using C2 C4 Least_equality by auto 
+    then show ?thesis using C0 C1 by auto
+  qed
   then have "padic_val p (padic_mult p f g) = (nat (padic_val p f + padic_val p g))" 
     using "25" by linarith
   then show ?thesis 
     by (simp add: assms(4) assms(5) padic_val_def)
+
 qed
 
 (*abbreviation for the ring of p_adic integers*)
@@ -803,6 +880,17 @@ abbreviation padic_int :: "nat \<Rightarrow> padic_int ring"
           zero = (padic_zero p), add = (padic_add p)\<rparr>"
 
 (*padic multiplication is associative*)
+
+lemma residues_n:
+  assumes "n \<noteq> 0"
+  assumes "prime p"
+  shows "residues (int p^n)" 
+proof
+  have "p > 1" using assms(2) 
+    using prime_gt_1_nat by auto
+  then show " 1 < int p ^ n "  
+    using assms(1) by auto
+qed
 
 lemma padic_mult_assoc:
 assumes "prime p"
@@ -827,14 +915,15 @@ proof-
             padic_mult_closed padic_set_simp2 partial_object.select_convs(1)) 
     next
       case False
-      then show ?thesis using padic_simps[simp] 
-        by (smt Ax Ay Az assms cring.cring_simprules(11) monoid.select_convs(1) 
-            of_nat_0_less_iff of_nat_1 of_nat_eq_iff padic_set_simp0 
-            partial_object.select_convs(1) prime_gt_0_nat prime_power_eq_one_iff
-            residues.cring residues.intro zero_less_power)
+      then have "residues (int p^n)" 
+        by (simp add: assms residues_n)
+      then show ?thesis 
+        using residues.cring padic_set_simp0 padic_mult_closed Ax Ay Az padic_mult_simp
+        by (simp add: cring.cring_simprules(11))
     qed
   qed
 qed
+
 
 (*The padics are closed under addition*)
 
@@ -939,11 +1028,17 @@ proof-
         let ?y = "(y n)"
         let ?z = "(z n)"
         have P1: "(?x \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?y) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?z = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
-          using Ex Ey Ez 
-          by (smt Ax Ay Az assms cring.cring_simprules(7) of_nat_0_less_iff of_nat_1
-              of_nat_eq_iff padic_add_closed padic_add_def padic_set_simp2 
-              partial_object.select_convs(1) prime_gt_0_nat prime_power_eq_one_iff
-              residues.cring residues.intro ring_record_simps(12) zero_less_power) 
+        proof(cases "n = 0")
+          case True
+          then show ?thesis 
+            by (simp add: residue_ring_def)
+        next
+          case False
+          then have "residues (int p^n)" 
+            by (simp add: assms residues_n)
+          then show ?thesis 
+            using Ex Ey Ez cring.cring_simprules(7) padic_add_simp residues.cring by fastforce
+        qed
         have " ((y n)) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n =((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
           using padic_add_def by simp 
         then have P0: "(x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n) = ((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n))"
@@ -987,11 +1082,9 @@ lemma padic_add_comm:
           have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
             using Ay padic_set_simp0 by auto 
           have LHS1: "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = ((x n) +(y n)) mod (p^n)"
-            using LHS0 
-            by (smt False assms of_nat_0_less_iff of_nat_1 of_nat_eq_iff prime_gt_0_nat prime_power_eq_one_iff residues.intro residues.res_add_eq zero_less_power) 
+            using LHS0 residue_ring_def by simp
           have RHS1: "(y \<oplus>\<^bsub>padic_int p\<^esub> x) n = ((y n) +(x n)) mod (p^n)"
-            using RHS0 
-            by (smt False assms of_nat_0_less_iff of_nat_1 of_nat_eq_iff prime_gt_0_nat prime_power_eq_one_iff residues.intro residues.res_add_eq zero_less_power) 
+            using RHS0 residue_ring_def by simp
           then show ?thesis using LHS1 RHS1 by presburger 
         qed
       qed
@@ -1006,14 +1099,28 @@ proof-
   assume Ax: "x \<in> carrier (padic_int p)"
   show " \<zero>\<^bsub>padic_int p\<^esub> \<oplus>\<^bsub>padic_int p\<^esub> x = x " 
   proof fix n
-    have "\<zero>\<^bsub>padic_int p\<^esub> n = 0" 
+    have A: "(padic_zero p) n = 0" 
       by (simp add: padic_zero_def) 
+    have "((padic_zero p) \<oplus>\<^bsub>padic_int p\<^esub> x) n = x n" 
+      apply(simp add:padic_add_simp)
+      apply(simp add:residue_ring_def)
+      apply(simp add: A)
+    proof-
+      have "x \<in>padic_set p" using Ax by auto 
+      then have "x n \<in> {0..p^n - 1}" 
+        using Ax padic_set_simp0 residue_ring_def assms int_ops(6) by auto
+      then have "x n \<le> (int p^n) - 1" 
+        using atLeastAtMost_iff 
+        by (metis assms of_nat_1 of_nat_diff of_nat_power one_le_power prime_ge_1_nat)
+      then have R: "x n < p^n" 
+        by simp
+      have "x n \<ge>0 " 
+        using \<open>x n \<in> {0..int (p ^ n - 1)}\<close> atLeastAtMost_iff by blast
+      then show "x n mod int p ^ n = x n" using R 
+        by simp
+    qed
     then show "(\<zero>\<^bsub>padic_int p\<^esub> \<oplus>\<^bsub>padic_int p\<^esub> x) n = x n" 
-      by (smt Ax assms cring.cring_simprules(8) of_nat_1 of_nat_eq_iff
-          of_nat_less_0_iff padic_add_closed padic_add_def padic_set_simp0
-          padic_set_simp2 padic_simps(1) partial_object.select_convs(1)
-          prime_gt_0_nat prime_power_eq_one_iff residues.cring residues.intro 
-          ring_record_simps(11) ring_record_simps(12) semiring_1_class.of_nat_simps(1) zero_less_power)
+      by simp
   qed
 qed
 
@@ -1037,16 +1144,24 @@ proof-
             using Ax assms padic_add_closed padic_set_simp2 padic_uminus_closed padic_zero_def by auto 
         next
           case False 
+          have C: "(x n) \<in> carrier (residue_ring (p^n))" 
+            using Ax padic_set_simp0 by auto
+          have R: "residues (int p^n)" 
+            using False  by (simp add: assms residues_n)
+          have "(?y \<oplus>\<^bsub>padic_int p\<^esub> x) n = (?y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> x n" 
+            by (simp add: padic_add_simp)
+          then have "(?y \<oplus>\<^bsub>padic_int p\<^esub> x) n = 0"
+            using C R residue_ring_def[simp] residues.cring 
+            by (metis cring.cring_simprules(9) of_nat_power padic_uminus_simp residues.res_zero_eq)
           then show ?thesis 
-          using Ax padic_simps[simp] 
-          by (smt assms cring.cring_simprules(9) of_nat_0_less_iff of_nat_1 of_nat_eq_iff padic_set_simp0 partial_object.select_convs(1) prime_gt_0_nat prime_power_eq_one_iff residues.cring residues.intro ring_record_simps(11) ring_record_simps(12) zero_less_power)
-      qed
+            by (simp add: padic_zero_def)
+        qed
     qed
-      then show "padic_uminus p x \<in> carrier (padic_int p)" 
-        using padic_uminus_closed
-          Ax assms prime_gt_0_nat by auto 
-    qed
+    then show "padic_uminus p x \<in> carrier (padic_int p)" 
+      using padic_uminus_closed
+        Ax assms prime_gt_0_nat by auto 
   qed
+qed
 
 (*The ring of padic integers forms an abelian group under addition*)
 
@@ -1088,11 +1203,11 @@ proof
           padic_mult_closed padic_one_mem padic_set_simp2 partial_object.select_convs(1)) 
   next
     case False
+    then have "residues (p^n)" 
+      by (simp add: assms(1) residues_n)
     then show ?thesis 
-      by (smt assms(1) assms(2) cring.cring_simprules(12) monoid.select_convs(1)
-          monoid.select_convs(2) neq0_conv of_nat_0_less_iff of_nat_1 of_nat_eq_iff 
-          padic_set_simp0 padic_simps(3) padic_simps(5) partial_object.select_convs(1)
-          prime_gt_0_nat prime_power_eq_one_iff residues.cring residues.intro zero_less_power) 
+      using False assms(2) cring.cring_simprules(12) 
+        padic_mult_simp padic_one_simp padic_set_simp0 residues.cring by fastforce
   qed
 qed
 
@@ -1196,8 +1311,7 @@ proof (rule cringI)
       next
         case False 
         then have "residues (p^n)" 
-          by (smt assms of_nat_0_less_iff of_nat_1 of_nat_eq_iff
-              prime_gt_0_nat prime_power_eq_one_iff residues.intro zero_less_power) 
+          by (simp add: assms residues_n)
         then show ?thesis 
           using Ex Ey Ez cring.cring_simprules(13) padic_add_simp 
             padic_mult_simp residues.cring by fastforce 
@@ -1275,7 +1389,7 @@ proof-
   let ?va = " nat (padic_val p a)"
   let ?vb = "nat (padic_val p b)"
   let ?vab = "nat (padic_val p (a \<oplus>\<^bsub>(padic_int p)\<^esub> b))"
-  have " \<not> ?vab < min ?va ?vb"
+  have P:" \<not> ?vab < min ?va ?vb"
   proof
     assume P0: "?vab < min ?va ?vb"
     then have "Suc ?vab \<le> min ?va ?vb"
@@ -1298,10 +1412,7 @@ proof-
       using assms(1) assms(3) zero_below_val 
       by (metis partial_object.select_convs(1)) 
     have "p^(?vab + 1) > 1" 
-      by (smt A B C One_nat_def S Suc_eq_plus1 Suc_less_eq2 assms(1) assms(2)
-          cring.cring_simprules(16) linorder_neqE_nat not_less0 of_nat_0_less_iff
-          of_nat_power padic_set_simp0 partial_object.select_convs(1) prime_gt_0_nat
-          prime_nat_int_transfer prime_power_eq_one_iff residues.cring residues.intro zero_less_power) 
+      using assms(1) by (metis add.commute plus_1_eq_Suc power_gt1 prime_gt_1_nat)
     then have "residues (p^(?vab + 1))" 
       using less_imp_of_nat_less residues.intro by fastforce 
     then have "(a \<oplus>\<^bsub>(padic_int p)\<^esub> b) (?vab + 1) = \<zero>\<^bsub>residue_ring (int p^((?vab + 1)))\<^esub> "
@@ -1309,21 +1420,24 @@ proof-
           cring.cring_simprules(8) of_nat_power residues.cring) 
     then show False using C by auto
   qed
-  then show ?thesis by (smt assms(6) int_nat_eq
-        min_def nat_int nat_less_iff padic_val_def
-        ring_record_simps(11))
+  have A0: "(padic_val p a) \<ge> 0" 
+    using assms(4) padic_val_def by auto
+  have A1: "(padic_val p b) \<ge> 0" 
+    using assms(5) padic_val_def by auto
+  have A2: "padic_val p (a \<oplus>\<^bsub>(padic_int p)\<^esub> b) \<ge> 0" 
+    using assms(6) padic_val_def by auto
+  show ?thesis using P A0 A1 A2 
+    by linarith 
 qed
 
 lemma padic_inv:
   assumes "prime p"
   assumes "a \<in> carrier (padic_int p)"
   shows "\<ominus>\<^bsub>padic_int p\<^esub> a = (\<lambda> n. \<ominus>\<^bsub>residue_ring (p^n)\<^esub> (a n))"
+
 proof
   fix n
-  have "(\<ominus>\<^bsub>padic_int p\<^esub> a) n \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (a n) = \<zero>\<^bsub>residue_ring (p^n)\<^esub>" 
-    by (metis (no_types, lifting) abelian_group.l_neg assms(1) assms(2) padic_add_def
-        padic_is_abelian_group padic_zero_simp ring_record_simps(11) ring_record_simps(12)) 
-  then show "(\<ominus>\<^bsub>padic_int p\<^esub> a) n = \<ominus>\<^bsub>residue_ring (int (p ^ n))\<^esub> a n" 
+  show "(\<ominus>\<^bsub>padic_int p\<^esub> a) n = \<ominus>\<^bsub>residue_ring (int (p ^ n))\<^esub> a n" 
   proof(cases "n=0")
     case True
     then show ?thesis 
@@ -1331,12 +1445,18 @@ proof
         padic_int_is_cring padic_set_simp2 partial_object.select_convs(1) power_0 res_1_prop residue_ring_def ring_record_simps(11)) 
   next
     case False
-    then show ?thesis 
-      by (smt \<open>(\<ominus>\<^bsub>padic_int p\<^esub> a) n \<oplus>\<^bsub>residue_ring (int (p ^ n))\<^esub> a n = \<zero>\<^bsub>residue_ring
-     (int (p ^ n))\<^esub>\<close> assms(1) assms(2) cring.sum_zero_eq_neg of_nat_0_less_iff of_nat_1 
-          of_nat_eq_iff padic_add_inv padic_int_is_cring padic_set_simp0 
-          partial_object.select_convs(1) prime_gt_0_nat prime_power_eq_one_iff
-          residues.cring residues.intro zero_less_power) 
+    then have R: "residues (p^n)" 
+      by (simp add: assms(1) residues_n)
+    have "(\<ominus>\<^bsub>padic_int p\<^esub> a) \<oplus>\<^bsub>padic_int p\<^esub> a = \<zero>\<^bsub>padic_int p\<^esub>" 
+      by (meson assms(1) assms(2) cring.cring_simprules(9) padic_int_is_cring)
+    then have P: "(\<ominus>\<^bsub>padic_int p\<^esub> a) n \<oplus>\<^bsub>residue_ring (p^n)\<^esub> a n = 0"
+      by (metis padic_add_def padic_zero_def ring_record_simps(11) ring_record_simps(12))
+    have Q: "(a n) \<in> carrier (residue_ring (p^n))" 
+      using assms(2) padic_set_simp0 by auto
+    show ?thesis using R Q residues.cring  
+      by (metis P abelian_group.minus_equality assms(1) assms(2)
+          cring.cring_simprules(3) padic_int_is_cring padic_set_simp0
+          partial_object.select_convs(1) residues.abelian_group residues.res_zero_eq)
   qed
 qed
 
@@ -1352,27 +1472,43 @@ next
   case False
   have 0: "\<And> n. (a n) = \<zero>\<^bsub>residue_ring (p^n)\<^esub> \<Longrightarrow> (\<ominus>\<^bsub>padic_int p\<^esub> a) n = \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
     using padic_inv 
-    by (smt assms(1) assms(2) cring.cring_simprules(22) of_nat_0_less_iff
-        prime_gt_0_nat res_1_prop residues.cring residues.intro zero_less_power) 
+    by (metis (no_types, lifting) One_nat_def assms(1) assms(2) cring.cring_simprules(22)
+        nat_power_eq_Suc_0_iff of_nat_1 of_nat_power res_1_prop residues.cring residues_n)
   have 1: "\<And> n. (a n) \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub> \<Longrightarrow> (\<ominus>\<^bsub>padic_int p\<^esub> a) n \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
     using padic_inv 
-    by (smt assms(1) assms(2) cring.cring_simprules(21) cring.cring_simprules(22)
-        cring.cring_simprules(3) of_nat_0_less_iff padic_int_is_cring prime_gt_0_nat
-        res_1_prop residues.cring residues.intro zero_less_power) 
+    by (metis (no_types, lifting) assms(1) assms(2) cring.cring_simprules(21)
+        cring.cring_simprules(22) cring.cring_simprules(3) of_nat_power
+        padic_int_is_cring padic_set_simp2 partial_object.select_convs(1) 
+        residues.cring residues_n)
   have A:"padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) \<ge> (padic_val p a)" 
-  proof-  
-    let ?n = "nat (padic_val p a)"
-    have "a (Suc ?n) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc ?n))\<^esub> " 
-      using False assms(2) val_of_nonzero(1) 
-      by (metis Suc_eq_plus1 assms(1) partial_object.select_convs(1) ring_record_simps(11)) 
-    then have "(\<ominus>\<^bsub>padic_int p\<^esub> a) (Suc ?n) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc ?n))\<^esub> "
-      using 1  by blast 
-    then show ?thesis using assms(1) assms(2) below_val_zero 
-      by (smt "0" One_nat_def add.right_neutral add_Suc_right
-          cring.cring_simprules(3) cring.cring_simprules(9)
-          nat_int of_nat_0_less_iff of_nat_le_0_iff padic_add_zero
-          padic_int_is_cring padic_val_def partial_object.select_convs(1)
-          prime_gt_0_nat ring.simps(1) val_of_nonzero(1))                           
+  proof-
+    have "\<not> padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) < (padic_val p a)" 
+    proof 
+      assume "padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) < padic_val p a"
+      let ?n = "padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a)"
+      let ?m = " padic_val p a"
+      have "(\<ominus>\<^bsub>padic_int p\<^esub> a)  \<noteq> (padic_zero p)" 
+        by (metis False assms(1) assms(2) cring.cring_simprules(9) padic_add_zero padic_int_is_cring ring_record_simps(11))
+      then have P0: "?n \<ge>0" 
+        by (simp add: padic_val_def)
+      have P1: "?m \<ge>0" using False 
+        using \<open>0 \<le> padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a)\<close> 
+          \<open>padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) < padic_val p a\<close> by linarith
+      have "(Suc (nat ?n)) < Suc (nat (padic_val p a))"
+        using P0 P1  \<open>padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) < padic_val p a\<close> by linarith
+      then have "int (Suc (nat ?n)) \<le> (padic_val p a)" 
+        using of_nat_less_iff by linarith
+      then have "a (Suc (nat ?n)) =  \<zero>\<^bsub>residue_ring (int p ^ ((Suc (nat ?n))))\<^esub>" 
+        using assms(1) assms(2) zero_below_val residue_ring_def by auto 
+      then have "(\<ominus>\<^bsub>padic_int p\<^esub> a) (Suc (nat ?n)) =  \<zero>\<^bsub>residue_ring (int p ^ ((Suc (nat ?n))))\<^esub>" 
+        using 0 by simp
+      then show False using below_val_zero assms 
+        by (metis (no_types, lifting) Suc_eq_plus1 \<open>\<ominus>\<^bsub>padic_int p\<^esub> a \<noteq> padic_zero p\<close> 
+            cring.cring_simprules(3) of_nat_power padic_int_is_cring 
+            partial_object.select_convs(1) val_of_nonzero(1))
+    qed
+    then show ?thesis 
+      by linarith
   qed
   have B: "padic_val p (\<ominus>\<^bsub>padic_int p\<^esub> a) \<le> (padic_val p a)" 
   proof-

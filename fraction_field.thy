@@ -2,6 +2,7 @@ theory fraction_field
   imports "HOL-Algebra.Ring" 
           "HOL-Algebra.UnivPoly"
           Localization
+          "HOL-Algebra.Subrings"
 begin
 
 definition nonzero :: "('a, 'b) ring_scheme \<Rightarrow> 'a set" where
@@ -46,6 +47,7 @@ proof-
 qed
 
 (*choice function for numerator*)
+
 definition(in eq_obj_rng_of_frac) denom where
 "denom a = (if (a = \<zero>\<^bsub>rec_rng_of_frac\<^esub>) then \<one> else ( snd (SOME x. x \<in> a)))"
       
@@ -71,9 +73,17 @@ proof-
   proof-
    have "carrier rel \<noteq> {}" 
      by (metis assms(1) empty_iff one_closed one_over0) 
-   then have "(\<exists> x. x \<in> a)" 
-      using rel_def assms rec_rng_of_frac_def set_eq_class_of_rng_of_frac_def  
-      by (smt equals0I mem_Collect_eq non_empty_class partial_object.select_convs(1)) 
+   have "\<exists> r s. (r \<in> carrier R \<and> s \<in> S \<and> (a = (r |\<^bsub>rel\<^esub> s)))" 
+     using rel_def assms(3) assms(1) set_eq_class_of_rng_of_frac_def rec_rng_of_frac_def  
+     by (smt mem_Collect_eq mem_Sigma_iff partial_object.select_convs(1))
+   then obtain r s where "r \<in> carrier R \<and> s \<in> S \<and> (a = (r |\<^bsub>rel\<^esub> s))" 
+     by blast
+   then have "a = class_of\<^bsub>rel\<^esub> (r, s)" 
+     by (simp add: class_of_to_rel)
+   then have "(r,s) \<in> a" using  eq_class_of_def rel_def  
+     using \<open>r \<in> carrier R \<and> s \<in> S \<and> a = (r |\<^bsub>rel\<^esub> s)\<close> equiv_obj_rng_of_frac equivalence.refl by fastforce
+   then have "(\<exists> x. x \<in> a)"
+     by blast 
    then have "(SOME x. x \<in> a) \<in> a" 
       by (meson some_eq_ex) 
    then have "(\<exists> x. x \<in> a \<and> (snd x = denom a))" 
@@ -129,12 +139,12 @@ proof-
     then have "a \<otimes>\<^bsub>rec_rng_of_frac\<^esub> rng_to_rng_of_frac (denom a) = (((denom a)\<otimes> (numer a)) |\<^bsub>rel\<^esub> ((denom a) \<otimes> \<one>))"
       using "4" "5" m_comm subset by auto 
     then have "a \<otimes>\<^bsub>rec_rng_of_frac\<^esub> rng_to_rng_of_frac (denom a) = ((denom a) |\<^bsub>rel\<^esub> (denom a)) \<otimes>\<^bsub>rec_rng_of_frac\<^esub>( (numer a) |\<^bsub>rel\<^esub> \<one>)"
-      using mult_rng_of_frac_fundamental_lemma by (smt "4" "5" mem_Sigma_iff monoid.simps(1)
-          one_closed partial_object.select_convs(1) rec_monoid_rng_of_frac_def rec_rng_of_frac_def rel_def set_mp subset) 
+      using mult_rng_of_frac_fundamental_lemma  "4" "5" S 
+        rec_monoid_rng_of_frac_def rec_rng_of_frac_def rel_def by auto
     then show ?thesis 
-      by (smt "4" "5" assms(1) basic_trans_rules(31) monoid.l_one monoid.simps(2)
-          one_closed one_over0 r_one rec_rng_of_frac_def ringE(2) ring_hom_closed
-          rng_rng_of_frac rng_to_rng_of_frac_def rng_to_rng_of_frac_is_ring_hom simp_in_frac subset) 
+      using "4" "5" \<open>a \<otimes>\<^bsub>rec_rng_of_frac\<^esub> rng_to_rng_of_frac 
+      (denom a) = (denom a \<otimes> numer a |\<^bsub>rel\<^esub> denom a \<otimes> \<one>)\<close> rel_def 
+        rng_to_rng_of_frac_def simp_in_frac by auto
   qed
 qed
 
@@ -378,10 +388,9 @@ lemma(in eq_obj_rng_of_frac) fraction_one':
   assumes "\<zero> \<notin> S"
   assumes "a \<in> S"
   shows "fraction a a = \<one>\<^bsub>rec_rng_of_frac\<^esub>"
-using fraction_def 
-  by (smt add_fraction assms(1) assms(2) assms(3) fraction_one
-      fraction_zero' l_one one_closed r_one r_zero set_mp subset zero_closed) 
-
+using fraction_def add_fraction assms(1) assms(2) assms(3) fraction_one
+      fraction_zero' l_one one_closed r_one r_zero set_mp subset zero_closed
+  by smt
 lemma(in eq_obj_rng_of_frac) fraction_im:
   assumes "domain R"
   assumes "\<zero> \<notin> S"
@@ -429,6 +438,14 @@ definition(in domain) frac where
 
 definition(in domain) inc ("\<iota>") where
 "inc =  eq_obj_rng_of_frac.rng_to_rng_of_frac R (nonzero R)"
+
+lemma(in domain) inc_equation:
+  assumes "a \<in> carrier R"
+  shows "\<iota> a = frac a \<one>"
+  using inc_def  
+  by (simp add: eq_obj_rng_of_frac.rng_to_rng_of_frac_def
+      eq_obj_rng_of_frac.fraction_def eq_obj_rng_of_frac_nonzero local.frac_def) 
+
 
 lemma(in domain) inc_is_hom:
 "inc \<in> ring_hom R Frac"
@@ -486,6 +503,12 @@ proof-
         domain.inc_inj1 domain_axioms is_abelian_group minus_closed) 
 qed
 
+(*Image of inclusion map is a subring*)
+
+lemma(in domain) inc_im_is_subring:
+"subring (\<iota> ` (carrier R)) Frac" 
+  using carrier_is_subring inc_is_hom1 ring_hom_ring.img_is_subring by blast 
+
 (*Fundamental properties of numer , denom, and frac*)
 
 lemma(in domain) numer_denom_facts:
@@ -539,13 +562,35 @@ lemma(in domain) frac_one:
   using eq_obj_rng_of_frac.fraction_one' Frac_def 
     assms domain_axioms eq_obj_rng_of_frac_nonzero frac_def nonzero_def by fastforce 
 
-
 lemma(in domain) frac_im:
   assumes "a \<in> carrier R"
   assumes "b \<in> nonzero R"
   shows "frac a b \<in> carrier Frac"
   using Frac_def eq_obj_rng_of_frac.fraction_im  assms(1) assms(2)
     domain_axioms eq_obj_rng_of_frac_nonzero frac_def nonzero_def by fastforce 
+
+
+lemma(in domain) nonzero_fraction:
+  assumes "a \<in> nonzero R"
+  assumes "b \<in> nonzero R"
+  shows "frac a b \<noteq> \<zero>\<^bsub>Frac\<^esub>"
+proof
+  assume "frac a b = \<zero>\<^bsub>Frac\<^esub>"
+  then have "(frac a b) \<otimes>\<^bsub>Frac\<^esub> (frac b a) = \<zero>\<^bsub>Frac\<^esub> \<otimes>\<^bsub>Frac\<^esub> (frac b a)"
+    by simp 
+  then have "(frac a b) \<otimes>\<^bsub>Frac\<^esub> (frac b a) = \<zero>\<^bsub>Frac\<^esub>"
+    by (metis Localization.submonoid.subset assms(1) assms(2) cring.cring_simprules(26) 
+      domain.axioms(1) frac_im fraction_field_is_domain nonzero_is_submonoid subsetCE) 
+  then have "frac (a \<otimes>b)  (b \<otimes> a)  = \<zero>\<^bsub>Frac\<^esub>"
+    by (metis (no_types, lifting) Localization.submonoid.subset 
+        assms(1) assms(2) frac_mult nonzero_is_submonoid subsetCE) 
+  then have "frac (a \<otimes>b)  (a \<otimes> b)  = \<zero>\<^bsub>Frac\<^esub>"
+    by (metis (no_types, lifting) Localization.submonoid.subset assms(1) assms(2) m_comm nonzero_is_submonoid subsetCE) 
+  then have "\<one>\<^bsub>Frac\<^esub> = \<zero>\<^bsub>Frac\<^esub>" 
+    using Localization.submonoid.m_closed assms(1) assms(2) frac_one nonzero_is_submonoid by force 
+  then show False 
+    using domain.one_not_zero fraction_field_is_domain by blast 
+qed
 
 lemma(in domain) units_of_fraction_field0:
   assumes "a \<in> carrier Frac"
@@ -614,6 +659,8 @@ proof
   qed
 qed
 
+
+
 (*The fraction field is a field!*)
 
 lemma(in domain) fraction_field_is_field:
@@ -623,9 +670,237 @@ proof(rule Ring.field.intro)
     done
   show "field_axioms Frac"
   proof
-    show "Units Frac = carrier Frac - {\<zero>\<^bsub>Frac\<^esub>}" sledgehammer
+    show "Units Frac = carrier Frac - {\<zero>\<^bsub>Frac\<^esub>}" 
       using units_of_fraction_field by blast 
   qed
 qed
 
+lemma(in domain) frac_inv:
+  assumes "a \<in> nonzero R"
+  assumes "b \<in> nonzero R" 
+  shows "inv\<^bsub>Frac\<^esub> (frac a b) = (frac b a)"
+proof-
+  have "(frac a b) \<otimes>\<^bsub>Frac\<^esub> (frac b a) = frac (a \<otimes> b) (b \<otimes> a)" 
+    by (meson Localization.submonoid.subset assms(1) assms(2) frac_mult nonzero_is_submonoid subsetCE) 
+  then have 0:"(frac a b) \<otimes>\<^bsub>Frac\<^esub> (frac b a) = \<one>\<^bsub>Frac\<^esub>"
+    by (metis Localization.submonoid.m_closed Localization.submonoid.subset assms(1) assms(2) frac_one m_comm nonzero_is_submonoid subsetCE) 
+  have 1: "(frac a b)  \<in> carrier Frac" 
+    using Localization.submonoid.subset assms(1) assms(2) frac_im nonzero_is_submonoid by blast 
+  have 2: "(frac b a) \<in> carrier Frac " 
+    using Localization.submonoid.subset assms(1) assms(2) frac_im nonzero_is_submonoid by blast 
+  have 3: "(frac b a) \<noteq> \<zero>\<^bsub>Frac\<^esub>" 
+    by (simp add: assms(1) assms(2) nonzero_fraction) 
+  have 4: "(frac a b) \<noteq> \<zero>\<^bsub>Frac\<^esub>" 
+    by (simp add: assms(1) assms(2) nonzero_fraction) 
+  show ?thesis using 0 1 2 3 4 fraction_field_is_field field_def domain_def cring_def 
+    by (simp add: comm_monoid.comm_inv_char cring.axioms(2) fieldE(1)) 
+qed
+
+lemma(in domain) frac_inv_id:
+  assumes "a \<in> nonzero R"
+  assumes "b \<in> nonzero R" 
+  assumes "c \<in> nonzero R"
+  assumes "d \<in> nonzero R" 
+  assumes "frac a b = frac c d"
+  shows "frac b a = frac d c"
+  using frac_inv assms  by metis  
+
+lemma(in domain) frac_uminus:
+  assumes "a \<in> carrier  R"
+  assumes "b \<in> nonzero R"
+  shows "\<ominus>\<^bsub>Frac\<^esub> (frac a b) = frac (\<ominus> a) b" 
+proof-
+  have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = frac (((\<ominus> a)\<otimes>b) \<oplus> (a \<otimes>b)) (b\<otimes>b)"
+    using frac_add  by (smt Localization.submonoid.subset add.inv_closed
+        assms(1) assms(2) m_comm nonzero_is_submonoid subsetCE) 
+  then have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = frac (b \<otimes>((\<ominus> a) \<oplus> a)) (b\<otimes>b)" 
+    by (metis (no_types, lifting) add.inv_closed  assms(1) assms(2)
+        local.ring_axioms m_comm mem_Collect_eq nonzero_def ringE(4) )
+  then have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = (frac \<zero> (b \<otimes>b))"  
+    using Localization.submonoid.subset assms(1) assms(2) l_neg nonzero_is_submonoid by fastforce 
+  then have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = (frac \<zero> \<one>) \<otimes>\<^bsub>Frac\<^esub>  (frac \<zero> (b \<otimes>b))"
+    using frac_mult    by (smt Localization.submonoid.m_closed Localization.submonoid.one_closed
+        Localization.submonoid.subset assms(2) l_one nonzero_is_submonoid r_null subsetCE zero_closed) 
+  then have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = \<zero>\<^bsub>Frac\<^esub> \<otimes>\<^bsub>Frac\<^esub>  (frac \<zero> (b \<otimes>b))" 
+    using Frac_def eq_obj_rng_of_frac.fraction_zero' eq_obj_rng_of_frac_nonzero local.frac_def nonzero_def by fastforce 
+  then have "frac (\<ominus> a) b \<oplus>\<^bsub>Frac\<^esub> (frac a b) = \<zero>\<^bsub>Frac\<^esub>"
+    using fraction_field_is_field 
+    by (simp add: Localization.submonoid.m_closed assms(2) cring.cring_simprules(26)
+        domain.axioms(1) frac_im fraction_field_is_domain nonzero_is_submonoid)
+  then show ?thesis 
+    by (metis add.inv_closed assms(1) assms(2) cring.sum_zero_eq_neg
+        domain.axioms(1) frac_im fraction_field_is_domain) 
+qed
+
+lemma(in domain) frac_cancel_l:
+  assumes "a \<in>nonzero R"
+  assumes "b \<in>nonzero R"
+  assumes "c \<in>carrier R"
+  shows "frac (a \<otimes>c) (a \<otimes>b) = frac c b" 
+proof-
+  have 0: "frac (a \<otimes>c) (a \<otimes>b) =(frac b b) \<otimes>\<^bsub>Frac\<^esub> (frac c b)" 
+    by (metis (no_types, lifting) assms(1) assms(2) assms(3)
+        frac_mult frac_one mem_Collect_eq nonzero_def)  
+  have 1: "frac b b = \<one>\<^bsub>Frac\<^esub>" 
+    by (simp add: assms(2) frac_one) 
+  show ?thesis using 0 1 
+    using Frac_def assms(2) assms(3) eq_obj_rng_of_frac.rng_rng_of_frac 
+      eq_obj_rng_of_frac_nonzero frac_im ring.ring_simprules(12) by fastforce 
+qed
+
+lemma(in domain) frac_cancel_r:
+  assumes "a \<in>nonzero R"
+  assumes "b \<in>nonzero R"
+  assumes "c \<in>carrier R"
+  shows "frac (c \<otimes>a) (b \<otimes>a) = frac c b"
+  by (metis (no_types, lifting) Localization.submonoid.subset assms(1)
+      assms(2) assms(3) frac_cancel_l m_comm nonzero_is_submonoid subsetCE) 
+
+lemma(in domain) frac_cancel_lr:
+  assumes "a \<in>nonzero R"
+  assumes "b \<in>nonzero R"
+  assumes "c \<in>carrier R"
+  shows "frac (a \<otimes>c) (b \<otimes>a) = frac c b"
+  by (metis (no_types, lifting) Localization.submonoid.subset assms(1)
+      assms(2) assms(3) frac_cancel_l m_comm nonzero_is_submonoid subsetCE) 
+
+lemma(in domain) frac_cancel_rl:
+  assumes "a \<in>nonzero R"
+  assumes "b \<in>nonzero R"
+  assumes "c \<in>carrier R"
+  shows "frac (c \<otimes>a) (a \<otimes>b) = frac c b"
+  by (metis (no_types, lifting) Localization.submonoid.subset assms(1)
+      assms(2) assms(3) frac_cancel_l m_comm nonzero_is_submonoid subsetCE)
+
+lemma(in domain) i_mult:
+  assumes "a \<in> carrier R"
+  assumes "c \<in> carrier R"
+  assumes "d \<in> nonzero R"
+  shows "(\<iota> a) \<otimes>\<^bsub>Frac\<^esub> (frac c d) = frac (a \<otimes> c) d"
+proof-
+  have "(\<iota> a) \<otimes>\<^bsub>Frac\<^esub> (frac c d) = (frac a \<one>) \<otimes>\<^bsub>Frac\<^esub> (frac c d)" 
+    by (simp add: assms(1) inc_equation)
+  then show ?thesis 
+    by (metis (mono_tags, lifting) assms(1) assms(2) assms(3) cring_simprules(12) 
+        cring_simprules(6) frac_mult local.one_not_zero mem_Collect_eq nonzero_def)
+qed
+
+lemma(in domain) frac_eq:
+  assumes "a \<in> carrier R"
+  assumes "b \<in> nonzero R"
+  assumes "c \<in> carrier R"
+  assumes "d \<in> nonzero R"
+  assumes "frac a b = frac c d"
+  shows "a \<otimes> d = b \<otimes> c"
+proof-
+  have "(\<iota> b) \<otimes>\<^bsub>Frac\<^esub> (frac a b) = (\<iota> b) \<otimes>\<^bsub>Frac\<^esub> (frac c d)" 
+    by (simp add: assms(5))
+  then have "(frac (a \<otimes> b)  b) = (frac (c \<otimes> b) d)" 
+    using i_mult 
+    by (metis (no_types, lifting) Localization.submonoid.subset assms(1) 
+        assms(2) assms(3) assms(4) m_comm nonzero_is_submonoid subsetCE)
+  then have "(frac a  \<one>) = (frac (c \<otimes> b) d)"
+    by (smt assms(1) assms(2) frac_cancel_r l_one mem_Collect_eq nonzero_def one_closed zero_not_one)
+  then have "(\<iota> d) \<otimes>\<^bsub>Frac\<^esub>(frac a  \<one>) =(\<iota> d) \<otimes>\<^bsub>Frac\<^esub> (frac (c \<otimes> b) d)"
+    by auto
+  then have "(frac (a \<otimes> d) \<one>) =(frac ((c \<otimes> b)\<otimes> d) d)"
+    using i_mult    
+    by (smt Localization.submonoid.m_closed Localization.submonoid.subset assms(1) assms(2) assms(3)
+        assms(4) cring_simprules(27) cring_simprules(6) local.one_not_zero m_comm
+        mem_Collect_eq nonzero_def nonzero_is_submonoid)
+  then have "(frac (a \<otimes> d) \<one>) =(frac (c \<otimes> b) \<one>)" 
+    by (smt Localization.submonoid.subset assms(2) assms(3) assms(4) cring_simprules(5)
+        cring_simprules(6) frac_one i_mult inc_equation inc_is_hom nonzero_is_submonoid
+        r_one ring_hom_mult ring_hom_one subsetCE)
+  then show ?thesis 
+    by (metis (no_types, lifting) Localization.submonoid.subset assms(1) assms(2) assms(3) assms(4)
+        domain.inc_inj2 domain_axioms inc_equation m_closed m_comm nonzero_is_submonoid subsetCE)
+qed
+
+lemma(in domain) frac_add_common_denom:
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  assumes "c \<in> nonzero R"
+  shows "(frac a c) \<oplus>\<^bsub>Frac\<^esub> (frac b c) = frac (a \<oplus> b) c"
+proof-
+  have "(frac a c) \<oplus>\<^bsub>Frac\<^esub> (frac b c) = frac ((a \<otimes> c) \<oplus> (b \<otimes> c)) (c \<otimes> c)"
+    using assms(1) assms(2) assms(3) domain.frac_add domain_axioms local.frac_eq by fastforce
+  then have "(frac a c) \<oplus>\<^bsub>Frac\<^esub> (frac b c) = frac ((a \<oplus> b) \<otimes> c) (c \<otimes> c)"
+    by (metis Localization.submonoid.subset assms(1) assms(2) assms(3) l_distr nonzero_is_submonoid subsetCE)
+  then show ?thesis 
+    by (simp add: assms(1) assms(2) assms(3) frac_cancel_r)
+qed
+
+lemma(in domain) common_denominator:
+  assumes "x \<in> carrier Frac"
+  assumes "y \<in> carrier Frac"
+  obtains a b c where
+    "a \<in> carrier R"
+    "b \<in> carrier R" 
+    "c \<in> nonzero R"
+    "x = frac a c"
+    "y = frac b c"
+proof-
+  obtain x1 x2 where X1: "x1 \<in> carrier R" and X2: "x2 \<in> nonzero R" and Fx: "x = frac x1 x2"
+    by (meson assms(1) numer_denom_facts(1) numer_denom_facts(2) numer_denom_facts(5))
+  obtain y1 y2 where Y1: "y1 \<in> carrier R" and Y2: "y2 \<in> nonzero R" and Fy: "y = frac y1 y2"
+    by (meson assms(2) numer_denom_facts(1) numer_denom_facts(2) numer_denom_facts(5))
+  let ?a = "x1 \<otimes> y2"
+  let ?b = "y1 \<otimes> x2"
+  let ?c = "x2 \<otimes> y2"
+  have 0: "?a \<in> carrier R" 
+    using X1 Y2  by (simp add: nonzero_def)
+  have 1: "?b \<in> carrier R" using Y1 X2 
+    by (simp add: nonzero_def)
+  have 2: "?c \<in> nonzero R" using X2 Y2 
+    by (simp add: Localization.submonoid.m_closed nonzero_is_submonoid)
+  have 3: "x = frac ?a ?c" 
+    using Fx X1 X2 Y2 frac_cancel_r by auto
+  have 4: "y = frac ?b ?c" 
+    using Fy X2 Y1 Y2 frac_cancel_rl by auto
+  then show ?thesis using 0 1 2 3 4 
+    using that by blast
+qed
+
+(*inclusions of natural numbers into Frac*)
+
+lemma(in domain) nat_0:
+"[(0::nat)]\<cdot>\<one> = \<zero>"
+  by simp
+
+lemma(in domain) nat_suc:
+"[Suc n]\<cdot>\<one> = \<one> \<oplus> [n]\<cdot>\<one>"
+  using add.nat_pow_Suc2 by auto
+
+lemma(in domain) nat_inc_rep:
+  fixes n::nat
+  shows "[n]\<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = frac ([n]\<cdot>\<one>) \<one>"
+proof(induction n)
+  case 0
+  have "[(0::nat)] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = \<zero>\<^bsub>Frac\<^esub>"
+    using fraction_field_is_domain by (simp add: domain.nat_0)
+  then show ?case 
+    by (simp add: Frac_def eq_obj_rng_of_frac.fraction_zero eq_obj_rng_of_frac_nonzero local.frac_def)
+next
+  case (Suc n)
+  assume A:  "[n] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = frac ([n] \<cdot> \<one>) \<one>"
+  have "[Suc n] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = \<one>\<^bsub>Frac\<^esub> \<oplus>\<^bsub>Frac\<^esub> [n] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub>" 
+    by (simp add: domain.nat_suc fraction_field_is_domain)
+  then have "[Suc n] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = (frac \<one> \<one>) \<oplus>\<^bsub>Frac\<^esub> (frac ([n] \<cdot> \<one>) \<one>)"
+    by (simp add: Suc.IH frac_one nonzero_def)
+  then have "[Suc n] \<cdot>\<^bsub>Frac\<^esub> \<one>\<^bsub>Frac\<^esub> = (frac (\<one>\<oplus>[n] \<cdot> \<one>) \<one>)"
+    by (simp add: frac_add_common_denom nonzero_def)
+  then show ?case 
+    using nat_suc by auto
+qed
+
+lemma(in domain) pow_0:
+  assumes "a \<in> nonzero R"
+  shows "a[^](0::nat) = \<one>"
+  by simp
+
+lemma(in domain) pow_suc:
+  assumes "a \<in> carrier R"
+  shows "a[^](Suc n) = a \<otimes>(a[^]n)"
+  using assms nat_pow_Suc2 by auto
 end

@@ -10,6 +10,7 @@ Main
           "~~/src/HOL/Algebra/IntRing"
           "~~/src/HOL/Algebra/RingHom"
           "~~/src/HOL/HOL-Computational_Algebra.Primes"
+
 begin
 
 lemma (in ideal) prin_ideal_in_ideal:
@@ -51,15 +52,84 @@ proof
       by (metis (mono_tags, lifting) ZMod_eq_mod ZMod_defs(1)
           abelian_subgroup.a_repr_independenceD 
           abelian_subgroupI3 ideal_def int.genideal_ideal 
-          int_Zcarr mem_Collect_eq ringE(1) top.extremum) 
-
-    
-    
-
+          int_Zcarr mem_Collect_eq ringE(1) top.extremum)
 
   qed
 qed
 
+lemma(in ideal) A:
+  assumes "x \<in> carrier R"
+  assumes "y \<in> carrier R"
+  assumes "cring R"
+  assumes "ideal I R"
+  shows "(set_add R (I  +>\<^bsub>R\<^esub> x) ( I +>\<^bsub>R\<^esub> y)) = I +>\<^bsub>R\<^esub> (x \<oplus>\<^bsub>R\<^esub> y)" 
+  by (simp add: a_rcos_sum assms(1) assms(2)) 
+
+
+lemma ZMod_add:
+  fixes n::int
+  fixes m::int
+  fixes l::int
+  shows "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub> ZMod n l = ZMod n (m + l)"
+proof-
+  have 0: "n \<in>carrier \<Z>" 
+    by simp 
+  have 1: "m \<in>carrier \<Z>" 
+    by simp 
+  have 2: "l \<in>carrier \<Z>" 
+    by simp 
+  have 3: "ideal (Idl\<^bsub>\<Z>\<^esub> {n}) \<Z>" 
+    using int.cgenideal_eq_genideal int.cgenideal_ideal by auto 
+  have 4: "cring \<Z>" 
+    by (simp add: int.cring_axioms) 
+  have 5: "(set_add \<Z> ((Idl\<^bsub>\<Z>\<^esub> {n})  +>\<^bsub>\<Z>\<^esub> m) ( (Idl\<^bsub>\<Z>\<^esub> {n}) +>\<^bsub>\<Z>\<^esub> l)) = (Idl\<^bsub>\<Z>\<^esub> {n}) +>\<^bsub>\<Z>\<^esub> (m \<oplus>\<^bsub>\<Z>\<^esub> l)" 
+    by (simp add: "3" ideal.A int.cring_axioms) 
+  have 7: "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub> ZMod n l = (set_add \<Z> (ZMod n m) (ZMod n l))" 
+    by (simp add: ZFact_def ZFact_defs(2))  
+  then have 8: "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub> ZMod n l = (set_add \<Z> ((Idl\<^bsub>\<Z>\<^esub> {n})  +>\<^bsub>\<Z>\<^esub> m) ( (Idl\<^bsub>\<Z>\<^esub> {n}) +>\<^bsub>\<Z>\<^esub> l))" 
+    by (simp add: ZMod_def) 
+  then have 9: "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub> ZMod n l = (Idl\<^bsub>\<Z>\<^esub> {n}) +>\<^bsub>\<Z>\<^esub> (m \<oplus>\<^bsub>\<Z>\<^esub> l)" using 5 
+    by blast 
+  then have "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub> ZMod n l = ZMod n (m \<oplus>\<^bsub>\<Z>\<^esub> l)"
+    using ZMod_def by blast 
+  then show ?thesis  by simp 
+qed
+
+lemma ZMod_mult:
+  fixes n::int
+  fixes m::int
+  fixes l::int
+  shows "ZMod n m \<otimes>\<^bsub>ZFact n\<^esub> ZMod n l = ZMod n (m * l)"
+proof-
+  have 0: "n \<in>carrier \<Z>" 
+    by simp 
+  have 1: "m \<in>carrier \<Z>" 
+    by simp 
+  have 2: "l \<in>carrier \<Z>" 
+    by simp 
+  have 3: "ideal (Idl\<^bsub>\<Z>\<^esub> {n}) \<Z>" 
+    using int.cgenideal_eq_genideal int.cgenideal_ideal by auto 
+  have 4: "cring \<Z>"     by (simp add: int.cring_axioms) 
+  have 5: "ZMod n m \<otimes>\<^bsub>ZFact n\<^esub> ZMod n l = rcoset_mult \<Z> (Idl\<^bsub>\<Z>\<^esub> {n}) (ZMod n m) ( ZMod n l)"
+    using ZMod_defs ZFact_defs  by (simp add: FactRing_def)
+  then show ?thesis 
+    by (simp add: "3" ZMod_def ideal.rcoset_mult_add) 
+qed
+
+lemma ZMod_uminus:
+  fixes n::int
+  fixes m::int
+  shows " \<ominus>\<^bsub>ZFact n\<^esub>(ZMod n m) =  ZMod n (- m)"
+proof-
+  have "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub>  ZMod n (- m) = ZMod n 0" 
+    by (simp add: ZMod_add) 
+  then have  "ZMod n m \<oplus>\<^bsub>ZFact n\<^esub>  ZMod n (- m) = \<zero>\<^bsub>ZFact n\<^esub>"
+    by (simp add: ZFact_defs(1) ZFact_defs(2) ZMod_defs(1)) 
+  then show ?thesis 
+    by (metis UNIV_I ZFact_defs(1) ZFact_defs(2) ZFact_is_cring 
+        ZMod_defs(1) cring.cring_simprules(21) cring.sum_zero_eq_neg
+        int.a_rcosetsI partial_object.select_convs(1) top.extremum) 
+qed
 (*Characterizes nat_rep on additive cosets of the integers with the mod operation*)
 
 lemma nat_rep_is_mod:
@@ -206,7 +276,6 @@ proof-
     by (simp add: int_Idl ZFact_defs(2)
         ZMod_defs(1) int.a_rcosetsI res_def) 
 qed
-
 
 (*Ideal formulation of universal property of kernels of ring homomorphims*)
 

@@ -427,6 +427,56 @@ proof-
   qed
 qed
 
+fun list_to_poly :: "'a list \<Rightarrow> nat \<Rightarrow> 'a" where
+"list_to_poly [] = (\<lambda>n. \<zero>)"|
+"list_to_poly (a#as) = (\<lambda>n. (if n=0 then a else (list_to_poly as (n-1))))"
+
+fun list_iter where
+"list_iter 0 f = [f 0]"|
+"list_iter (Suc n) f = (list_iter n ( f \<ominus>\<^bsub>P\<^esub> (lt f)))@ [(f n)]"
+
+definition poly_to_list where 
+"poly_to_list f = list_iter (degree f) f"
+
+lemma list_poly_inverse:
+  shows "poly_to_list(list_to_poly as) = as" sledgehammer
+
+lemma list_to_poly_is_poly:
+  shows "\<lbrakk>(set as) \<subset> carrier R\<rbrakk> \<Longrightarrow> list_to_poly as \<in> carrier (UP R)"
+proof(induction as)
+  case Nil
+  fix n
+  have "list_to_poly Nil n = \<zero>"
+    by simp
+  have "\<zero> \<in> carrier R" by simp
+  then show ?case 
+    by (smt P_def UP_cring.list_to_poly.simps(1) UP_cring_axioms UP_def UP_zero_closed ring.simps(1))
+next
+  case (Cons a as)
+  fix as
+  assume IH: "\<lbrakk>(set as) \<subset> carrier R\<rbrakk> \<Longrightarrow> list_to_poly as \<in> carrier (UP R)"
+  show "\<lbrakk>(set (a#as)) \<subset> carrier R\<rbrakk> \<Longrightarrow> list_to_poly (a#as) \<in> carrier (UP R)"
+  proof-
+    assume "set (a # as) \<subset> carrier R"
+    have "(set as) \<subset> carrier R"
+      using \<open>set (a # as) \<subset> carrier R\<close> set_subset_Cons subset_antisym by auto
+    then have "list_to_poly as \<in> carrier (UP R)" 
+      using IH by blast
+    obtain n where "bound \<zero> n (list_to_poly as)" 
+      by (metis (no_types, lifting) R.bound_upD UP_def \<open>list_to_poly as \<in> carrier (UP R)\<close> partial_object.select_convs(1))
+    have "\<And>m. list_to_poly as m = list_to_poly (a#as) (m+1)"
+      by simp
+    then have "\<And>m. \<lbrakk>m > (n+1)\<rbrakk> \<Longrightarrow> list_to_poly (a#as) m = \<zero>" 
+      by (metis (mono_tags, lifting) \<open>bound \<zero> n (list_to_poly as)\<close> add_less_same_cancel2 bound.bound less_diff_conv list_to_poly.simps(2) not_add_less2)
+      then have b0: "bound \<zero> (n+1) (list_to_poly (a#as))" 
+        by blast
+      have "\<And>m. list_to_poly(a#as) m \<in> carrier R" 
+        by (metis (no_types, lifting) UP_def \<open>list_to_poly as \<in> carrier (UP R)\<close> \<open>set (a # as) \<subset> carrier R\<close> list.set_intros(1) list_to_poly.simps(2) mem_upD partial_object.select_convs(1) psubsetD)
+      thus "list_to_poly (a # as) \<in> carrier (UP R)" using b0
+        by (metis (no_types, lifting) UP_def mem_upI partial_object.select_convs(1))
+    qed
+  qed
+
 
 
 end

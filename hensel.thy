@@ -14,7 +14,7 @@ fun multc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Righta
 definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "deriv R b = shift (multc R b)"
 
-lemma(in domain) shift_in_up_ring:
+lemma(in UP_ring) shift_in_up_ring:
   assumes "b \<in> up R"
   shows "shift  b \<in> up R" 
 proof
@@ -38,7 +38,7 @@ proof
   qed
 qed
 
-lemma(in domain) multc_in_up_ring:
+lemma(in UP_ring) multc_in_up_ring:
   assumes "b \<in> up R"
   shows "multc R b \<in> up R" 
 proof
@@ -64,7 +64,7 @@ proof-
   with assms(1) show ?thesis by (simp add: UP_def)
 qed
 
-lemma trunc_is_poly:
+lemma(in UP_ring) trunc_is_poly:
   assumes "f \<in> up R"
   shows "trunc R f \<in> up R"
 proof
@@ -144,19 +144,20 @@ proof-
     using up_def assms(1) by force
   with assms(1) show ?thesis by (simp add: UP_def)
 qed
-lemma monom_deriv:
+
+lemma(in UP_ring) monom_deriv:
   assumes "p \<in> up R"
   shows "deriv R (monom (UP R) p) = shift (multc R (monom (UP R) p))"
 
 (* deriv also returns a polynomial *)
-lemma(in domain) deriv_in_up_ring:
+lemma(in UP_ring) deriv_in_up_ring:
   assumes "p \<in> up R"
   shows "(deriv R p) \<in> up R" 
-  by (simp add: assms deriv_def multc_in_up_ring shift_in_up_ring)
+    by (simp add: assms deriv_def multc_in_up_ring shift_in_up_ring)
 
-lemma degr: "deg R p = (LEAST n. bound (zero R) n (coeff (UP R) p))" using deg_def by auto
+lemma(in UP_ring) degr: "deg R p = (LEAST n. bound (zero R) n (coeff (UP R) p))" using deg_def by auto
 
-lemma(in domain) coeff_simp:
+lemma(in UP_ring) coeff_simp:
   assumes "p \<in> up R"
   shows "coeff (UP R) p = p" 
 proof-
@@ -167,7 +168,7 @@ qed
 
 
 
-lemma(in domain) deg_simp_0:
+lemma(in UP_ring) deg_simp_0:
   assumes "p \<in> up R"
   assumes "n = deg R p"
   shows " bound (zero R) n (coeff (UP R) p)"
@@ -218,7 +219,7 @@ next
 qed
 *)
 
-lemma(in domain) gt_deg_is_zero:
+lemma(in UP_ring) gt_deg_is_zero:
   assumes "p \<in> up R"
   shows "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>"
 proof-
@@ -229,11 +230,11 @@ proof-
     using "1" by linarith
   then have "\<lbrakk>k > deg R p\<rbrakk> \<Longrightarrow> p k = \<zero>"
     by (smt LeastI UP_def \<open>deg R p = (LEAST n. bound \<zero> n (coeff (UP R) p))\<close> assms(1) bound_def bound_upD deg_def mem_Collect_eq restrict_apply up_def up_ring.simps(2))
-  then show "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>" using 1 2 3 assms(1) bound_def bound_upD deg_def mem_Collect_eq up_def up_ring.simps(2) 
-    by (smt UP_def cring_def domain_axioms domain_def restrict_apply ring.bound_upD wellorder_Least_lemma(1))
+  then show "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>" using 1 2 3 assms(1) bound_def bound_upD deg_def mem_Collect_eq up_def up_ring.simps(2)
+    by (metis coeff_simp deg_simp_0)
 qed
 
-lemma(in domain) deg_neq_0:
+lemma(in UP_ring) deg_neq_0:
   assumes "p \<in> up R"
   assumes "deg R p = n"
   assumes "n > 0"
@@ -260,7 +261,7 @@ proof(rule ccontr)
     using assms(2) by blast
 qed
 
-lemma(in domain) deg_shift_lt:
+lemma(in UP_ring) deg_shift_lt:
   assumes "p \<in> up R"
   assumes "deg R p > 0"
   shows "deg R (shift p) < deg R p" 
@@ -281,15 +282,132 @@ qed
 
 (*fun mult :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "mult p q = *) 
-
-lemma product_rule:
+lemma(in UP_ring) prod_of_poly_is_poly:
   assumes "p \<in> up R" "q \<in> up R"
-  shows "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))" 
+  shows "(p \<otimes>\<^bsub>UP R\<^esub> q) \<in> up R" using up_mult_closed
+  by (metis (no_types, lifting) UP_def UP_ring.UP_mult_closed UP_ring_axioms assms(1) assms(2) partial_object.select_convs(1))
+
+lemma(in UP_ring) add_of_poly_is_poly:
+  assumes "p \<in> up R" "q \<in> up R"
+  shows "(p \<oplus>\<^bsub>UP R\<^esub> q) \<in> up R"
+  by (metis (no_types, lifting) UP_def UP_ring.UP_a_closed UP_ring_axioms assms(1) assms(2) partial_object.select_convs(1))
+
+lemma(in UP_ring) deriv_mult_in_up:
+  assumes "q \<in> up R" "p \<in> up R"
+  shows "deriv R p \<otimes>\<^bsub>UP R\<^esub> q \<in> up R" using prod_of_poly_is_poly deriv_in_up_ring
+  by (simp add: assms(1) assms(2))
+
+lemma(in UP_ring) prod_monom_poly_in_up_0:
+  assumes "p \<in> up R" "q \<in> up R"
+  shows "p \<otimes>\<^bsub>UP R\<^esub> monom (UP R) (q n) (deg R q) \<in> up R" 
+  by (metis (no_types, lifting) UP_def UP_ring.monom_closed UP_ring_axioms assms(1) assms(2) mem_upD partial_object.select_convs(1) prod_of_poly_is_poly)
+
+lemma(in UP_ring) prod_monom_poly_in_up_1:
+  assumes "p \<in> up R" "q \<in> up R"
+  shows "monom (UP R) (q n) (deg R q) \<otimes>\<^bsub>UP R\<^esub> p \<in> up R" 
+  by (metis (no_types, lifting) UP_def UP_ring.monom_closed UP_ring.prod_of_poly_is_poly UP_ring_axioms assms(1) assms(2) mem_upD partial_object.select_convs(1))
+
+lemma(in UP_ring) deriv_add_comm:
+  shows "deriv R (p \<oplus>\<^bsub>UP R\<^esub> q) = deriv R p \<oplus>\<^bsub>UP R\<^esub> deriv R q"
 proof
+
+
+lemma(in UP_ring) deg_0_deriv_zero:
+  assumes "deg R q = 0"
+  assumes "q \<in> carrier P"
+  shows "deriv R q = \<zero>\<^bsub>P\<^esub>"
+  sorry
+
+lemma(in UP_ring) deg_0_is_monom:
+  assumes "deg R p = 0"
+  shows "\<exists>a. (p = monom P a 0)"
+  sorry
+
+lemma(in UP_cring) deg_0_smult:
+  assumes "deg R q = 0"
+  shows "p \<otimes>\<^bsub>P\<^esub> q = a \<odot>\<^bsub>P\<^esub> p" 
+proof
+  have "\<exists>a. (q = monom P a 0)" using deg_0_is_monom assms(1) by blast
+  then have "coeff (UP R) q 0 = a" 
+
+definition(in UP_ring) to_poly where
+"to_poly  = (\<lambda>a. monom P a 0)"
+
+lemma(in UP_ring) to_poly_is_ring_hom:
+"to_poly \<in> ring_hom R P"
+  unfolding P_def
+  unfolding to_poly_def
+  unfolding P_def
+  using UP_ring.const_ring_hom[of R]
+  UP_ring_axioms by blast
+
+lemma(in UP_cring) product_deg_0_cons:
+  assumes "p \<in> carrier P" "q \<in> carrier P"
+  assumes "deg R q = 0"
+  shows "(p \<otimes>\<^bsub>P\<^esub> q) n = (p n)\<otimes>(q 0)"
+proof-
+  have "(p \<otimes>\<^bsub>P\<^esub> q) n = (q \<otimes>\<^bsub>P\<^esub> p) n" 
+    by (simp add: P.m_comm assms(1) assms(2))
+  then have "(p \<otimes>\<^bsub>P\<^esub> q) n = (\<Oplus>\<^bsub>R\<^esub>i \<in> {..n}. q i \<otimes>\<^bsub>R\<^esub> p (n-i))"
+    using assms(1) assms (2) UP_def 
+
+    have
+
+(*
+  obtain n where ndef: "deg R p = n" by simp
+  have "(\<Oplus>k \<in> {..n + 0}. \<Oplus>i \<in> {..k}. p i \<otimes> q (k - i)) =
+    (\<Oplus>i \<in> {..n}. p i) \<otimes> (\<Oplus>i \<in> {..0}. q i)"
+  proof-
+    have 0:"bound \<zero> n p" using ndef 
+      by (metis (no_types, lifting) P_def UP_def assms(1) bound_def gt_deg_is_zero partial_object.select_convs(1))
+    have 1:"bound \<zero> 0 q"
+      by (metis (no_types, lifting) P_def UP_def UP_ring.gt_deg_is_zero UP_ring_axioms assms(2) assms(3) bound_def partial_object.select_convs(1))
+    have 2:"p \<in> {..n} \<rightarrow> carrier R" 
+      by (metis (no_types, lifting) P_def Pi_I UP_def assms(1) mem_upD partial_object.select_convs(1))
+    have 3:"q \<in> {..0} \<rightarrow> carrier R" 
+      by (metis (no_types, lifting) P_def Pi_I UP_def assms(2) mem_upD partial_object.select_convs(1))
+    show ?thesis using cauchy_product[of n p 0 q] 0 1 2 3 by auto
+
+*)
+
+lemma(in UP_ring) product_rule_deg_0:
+  assumes "p \<in> carrier P"
+  shows "\<And> q. q \<in> carrier P \<Longrightarrow> (deg R q) = 0 \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+proof-
+  fix q
+  assume C: "q \<in> carrier P" 
+  assume A: "(deg R q) = 0 "
+  then have 1: "deriv R q = \<zero>\<^bsub>P\<^esub>" 
+    using deg_0_deriv_zero A C by auto
+  then have "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) =  \<zero>\<^bsub>P\<^esub>" using UP_ring.UP_ring C assms(1)
+    using P.r_null P_def by auto
+  then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = ((deriv R p) \<otimes>\<^bsub>P\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
+    by simp
+  have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)"
+  proof
+
+definition(in UP_ring) is_monomial where
+"is_monomial q = (\<exists> n. \<exists> c. q = monom P c n)"
+
+
+lemma(in UP_ring) product_rule_monom:
+  shows "\<And> q. (deg R q) \<le> n \<and> (is_monomial q)\<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+proof(induction n)
+  case 0
+  then show ?case sorry
+next
+  case (Suc n)
+  then show ?case sorry
+qed
+
+
+lemma(in UP_ring) product_rule1:
+  shows "\<And> q. (deg R q) \<le> n \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+proof(induction n)
   (*This proof seems difficult to do without talking explicitly about limits*)
-  have "deriv R (f \<otimes>\<^bsub>UP R\<^esub> g) = shift(multc R (f \<otimes>\<^bsub>UP R\<^esub> g))"
+  have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) = shift(multc R (p \<otimes>\<^bsub>UP R\<^esub> q))"
     by (simp add: deriv_def)
-  have "
+  
 qed
 (*lemma(in domain) multc_neq_0:
   assumes "p \<in> up R"

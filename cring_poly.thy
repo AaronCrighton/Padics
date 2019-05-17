@@ -431,15 +431,62 @@ fun list_to_poly :: "'a list \<Rightarrow> nat \<Rightarrow> 'a" where
 "list_to_poly [] = (\<lambda>n. \<zero>)"|
 "list_to_poly (a#as) = (\<lambda>n. (if n=0 then a else (list_to_poly as (n-1))))"
 
+fun trunc :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+  "trunc f = (\<lambda>i. (if i < (degree f) then  f i else \<zero>\<^bsub>R\<^esub>))"
+
 fun list_iter where
-"list_iter 0 f = [f 0]"|
-"list_iter (Suc n) f = (list_iter n ( f \<ominus>\<^bsub>P\<^esub> (lt f)))@ [(f n)]"
+"list_iter 0 f = (if f 0 \<noteq> \<zero> then [f 0] else [])" |
+"list_iter (Suc n) f = (list_iter n (trunc f))@ [(f n)]"
 
 definition poly_to_list where 
 "poly_to_list f = list_iter (degree f) f"
 
-lemma list_poly_inverse:
-  shows "poly_to_list(list_to_poly as) = as" sledgehammer
+lemma poly_0:
+  shows "\<lbrakk>\<And>m. p m = \<zero>\<rbrakk> \<Longrightarrow> p = (\<lambda>a. \<zero>)" 
+  by auto
+
+lemma deg_0_poly_simp:
+  shows "degree (\<lambda>a. \<zero>) = 0"
+  unfolding degree_def
+proof-
+  have "\<And>m. (\<lambda>a. \<zero>) m = \<zero>" by simp
+  hence "bound \<zero> 0 (\<lambda>a. \<zero>)" by auto
+  thus "deg R (\<lambda>a. \<zero>) = 0" using deg_def
+    by (smt R.zero_closed UP_cring_axioms UP_cring_def UP_def UP_ring.intro UP_ring.lcoeff_nonzero_deg cring_def mem_upI partial_object.select_convs(1) restrict_apply up_ring.simps(2))
+qed
+
+lemma poly_to_list_simp_0:
+  shows "poly_to_list (\<lambda>a. \<zero>) = [\<zero>]"
+proof-
+  have 0: "degree (\<lambda>a. \<zero>) = 0" using deg_0_poly_simp by simp
+  have "poly_to_list (\<lambda>a. \<zero>) = list_iter (degree (\<lambda>a. \<zero>)) (\<lambda>a. \<zero>)"
+    by (simp add: poly_to_list_def)
+  hence "poly_to_list (\<lambda>a. \<zero>) = list_iter 0 (\<lambda>a. \<zero>)" using 0 by simp
+  have "list_iter 0 (\<lambda>a. \<zero>) = [\<zero>]"
+    by simp
+  thus ?thesis 
+    by (simp add: \<open>poly_to_list (\<lambda>a. \<zero>) = list_iter 0 (\<lambda>a. \<zero>)\<close>)
+qed
+
+
+lemma list_poly_inverse_0:
+  assumes "as \<noteq> bs @ [\<zero>]"
+  shows "poly_to_list(list_to_poly as) = as"
+  apply(induction as rule:list_to_poly.induct)
+  unfolding poly_to_list_def
+proof-
+  show "list_iter (degree (list_to_poly [])) (list_to_poly []) = []" 
+    by (simp add: UP_cring.deg_0_poly_simp UP_cring_axioms)
+    show "\<And>a as.
+       (\<And>x. x \<noteq> 0 \<Longrightarrow> list_iter (degree (list_to_poly as)) (list_to_poly as) = as) \<Longrightarrow>
+       list_iter (degree (list_to_poly (a # as))) (list_to_poly (a # as)) = a # as" 
+      using UP_cring.poly_to_list_simp_0 UP_cring_axioms \<open>list_iter (degree (list_to_poly [])) (list_to_poly []) = []\<close> poly_to_list_def 
+by fastforce
+qed
+  
+lemma list_poly_inverse_1:
+  shows "list_to_poly(poly_to_list p) = p" 
+  using deg_0_poly_simp poly_to_list_def poly_to_list_simp_0 by auto
 
 lemma list_to_poly_is_poly:
   shows "\<lbrakk>(set as) \<subset> carrier R\<rbrakk> \<Longrightarrow> list_to_poly as \<in> carrier (UP R)"

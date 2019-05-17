@@ -1,26 +1,29 @@
 theory hensel
-  imports Main "~~/src/HOL/Algebra/UnivPoly" "~~/src/HOL/Algebra/Valued_Fields/padic_construction"
+  imports Main "~~/src/HOL/Algebra/UnivPoly" "~~/src/HOL/Algebra/Valued_Fields/padic_construction" "~~/src/HOL/Algebra/Valued_Fields/cring_poly"
 begin
 
 definition p_UP :: "nat \<Rightarrow> (nat \<Rightarrow> int, nat \<Rightarrow> nat \<Rightarrow> int) up_ring" where
   "p_UP p = UP (padic_int p)"
 
-fun shift :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+definition shift :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "shift b n = b (n + 1)"
 
-fun multc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+definition multc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "multc R b n = add_pow R n (b n)"
 
 definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "deriv R b = shift (multc R b)"
+
+definition lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
+  "lc R p = p (deg R p)"
 
 lemma(in UP_ring) shift_in_up_ring:
   assumes "b \<in> up R"
   shows "shift  b \<in> up R" 
 proof
   show "\<And>n. shift b n \<in> carrier R" 
-    by (simp add: assms mem_upD)
-  show "\<exists>n. bound \<zero> n (shift b)" 
+    by (simp add: assms hensel.shift_def mem_upD)
+ show "\<exists>n. bound \<zero> n (shift b)" 
   proof- 
     obtain n where Bb: "bound \<zero> n b"
       using assms(1) by auto
@@ -29,7 +32,7 @@ proof
       fix m
       assume A: "n < m"
       have P0: "shift b m = b (m + 1)" 
-        by auto
+        by (simp add: hensel.shift_def)
       have P1: "n < m + 1" using A by auto 
       then show "shift b m = \<zero>"
         using Bb A P0 P1 by fastforce 
@@ -46,11 +49,12 @@ proof
   proof-
     fix n
     show "multc R b n \<in> carrier R" 
-      by (simp add: assms mem_upD)
-  qed
+      sledgehammer
+      by (simp add: assms mem_upD multc_def)
+    qed
   show "\<exists>n. bound \<zero> n (hensel.multc R b)"
-    using assms by fastforce
-qed
+    by (smt R.add.nat_pow_one R.bound_upD assms bound_def multc_def)
+  qed
 
 fun trunc :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "trunc R f = (\<lambda>i. (if i < (deg R f) then  f i else \<zero>\<^bsub>R\<^esub>))"
@@ -91,8 +95,7 @@ proof
   qed
 qed
 
-fun lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
-  "lc R p = p (deg R p)"
+
 
 lemma(in UP_ring) monom_eq_deg:
   assumes "deg R p = n"
@@ -132,7 +135,7 @@ proof-
     show ?thesis
     proof(cases "n = m")
       case False
-      then have "trunc R p m = \<zero>" sledgehammer
+      then have "trunc R p m = \<zero>" 
         by (simp add: \<open>\<not> m < n\<close> assms(3))
   qed
 
@@ -270,14 +273,15 @@ proof-
   obtain n where 1: "deg R p = n"
     by auto
   have "shift p n = p (n+1)"
-    by simp
+    using hensel.shift_def by auto
   have 1: "p (n+1) = \<zero>" using 1 assms deg_def gt_deg_is_zero
     by simp
-  then have 2: "shift p n = p (n+1)" by simp
+  then have 2: "shift p n = p (n+1)" using hensel.shift_def 
+    by (simp add: hensel.shift_def)
   then have 3: "shift p n = \<zero>" using 1 by auto
   thus "deg R (shift p) < deg R p" using degr 1 2 3 assms(1) assms(2) deg_neq_0
-    by (metis (no_types, lifting)  dual_order.strict_trans2
-          gt_deg_is_zero less_add_one not_le_imp_less shift.elims shift_in_up_ring)
+    
+    by (smt One_nat_def add.commute add.left_neutral add_Suc_right add_mono_thms_linordered_field(5) gt_deg_is_zero hensel.shift_def lessI less_imp_add_positive linorder_neqE_nat shift_in_up_ring)
 qed
 
 (*fun mult :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
@@ -311,25 +315,6 @@ lemma(in UP_ring) deriv_add_comm:
   shows "deriv R (p \<oplus>\<^bsub>UP R\<^esub> q) = deriv R p \<oplus>\<^bsub>UP R\<^esub> deriv R q"
 proof
 
-
-lemma(in UP_ring) deg_0_deriv_zero:
-  assumes "deg R q = 0"
-  assumes "q \<in> carrier P"
-  shows "deriv R q = \<zero>\<^bsub>P\<^esub>"
-  sorry
-
-lemma(in UP_ring) deg_0_is_monom:
-  assumes "deg R p = 0"
-  shows "\<exists>a. (p = monom P a 0)"
-  sorry
-
-lemma(in UP_cring) deg_0_smult:
-  assumes "deg R q = 0"
-  shows "p \<otimes>\<^bsub>P\<^esub> q = a \<odot>\<^bsub>P\<^esub> p" 
-proof
-  have "\<exists>a. (q = monom P a 0)" using deg_0_is_monom assms(1) by blast
-  then have "coeff (UP R) q 0 = a" 
-
 definition(in UP_ring) to_poly where
 "to_poly  = (\<lambda>a. monom P a 0)"
 
@@ -341,6 +326,36 @@ lemma(in UP_ring) to_poly_is_ring_hom:
   using UP_ring.const_ring_hom[of R]
   UP_ring_axioms by blast
 
+
+lemma(in UP_ring) deg_0_deriv_zero:
+  assumes "deg R q = 0"
+  assumes "q \<in> carrier P"
+  shows "deriv R q = \<zero>\<^bsub>P\<^esub>"
+  unfolding deriv_def
+  unfolding shift_def
+  unfolding multc_def
+  sorry
+
+lemma(in UP_ring) deg_0_is_monom:
+  assumes "deg R p = 0"
+  shows "\<exists>a. (p = monom P a 0)"
+  sorry
+
+lemma(in UP_cring) deg_0_smult:
+  assumes "deg R q = 0"
+  shows "p \<otimes>\<^bsub>P\<^esub> q = a \<odot>\<^bsub>P\<^esub> p" using monom_mult_is_smult sledgehammer
+proof
+  have "\<exists>a. (q = monom P a 0)" using deg_0_is_monom assms(1) by blast
+ monom_mult_is_smult
+
+lemma(in UP_ring) deg_0_monom_simp_0:
+  assumes "q \<in> carrier P"
+  assumes "deg R q = 0"
+  assumes "is_monomial q"
+  shows "\<And>i. \<lbrakk>i > 0\<rbrakk> \<Longrightarrow> q i = \<zero>"
+proof-
+  
+
 lemma(in UP_cring) product_deg_0_cons:
   assumes "p \<in> carrier P" "q \<in> carrier P"
   assumes "deg R q = 0"
@@ -348,10 +363,9 @@ lemma(in UP_cring) product_deg_0_cons:
 proof-
   have "(p \<otimes>\<^bsub>P\<^esub> q) n = (q \<otimes>\<^bsub>P\<^esub> p) n" 
     by (simp add: P.m_comm assms(1) assms(2))
-  then have "(p \<otimes>\<^bsub>P\<^esub> q) n = (\<Oplus>\<^bsub>R\<^esub>i \<in> {..n}. q i \<otimes>\<^bsub>R\<^esub> p (n-i))"
-    using assms(1) assms (2) UP_def 
+  have "(p \<otimes>\<^bsub>P\<^esub> q) n = (\<Oplus>\<^bsub>R\<^esub>i \<in> {..n}. q i \<otimes>\<^bsub>R\<^esub> p (n-i))"
+    using
 
-    have
 
 (*
   obtain n where ndef: "deg R p = n" by simp
@@ -378,23 +392,29 @@ proof-
   assume C: "q \<in> carrier P" 
   assume A: "(deg R q) = 0 "
   then have 1: "deriv R q = \<zero>\<^bsub>P\<^esub>" 
-    using deg_0_deriv_zero A C by auto
-  then have "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) =  \<zero>\<^bsub>P\<^esub>" using UP_ring.UP_ring C assms(1)
-    using P.r_null P_def by auto
-  then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = ((deriv R p) \<otimes>\<^bsub>P\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
+    using deg_0_deriv_zero A C 
+    by blast
+  then have "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) =  \<zero>\<^bsub>P\<^esub>" using UP_ring.UP_ring C assms(1) P.r_null P_def 
     by simp
+  then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = ((deriv R p) \<otimes>\<^bsub>P\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
+    by (simp add: P_def)
   have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)"
   proof
+    fix x
+    have "
 
 definition(in UP_ring) is_monomial where
 "is_monomial q = (\<exists> n. \<exists> c. q = monom P c n)"
 
+definition(in UP_ring) is_const where
+"is_const q = (is_monomial q) \<and> deg R q = 0"
 
 lemma(in UP_ring) product_rule_monom:
   shows "\<And> q. (deg R q) \<le> n \<and> (is_monomial q)\<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
 proof(induction n)
   case 0
-  then show ?case sorry
+  have ""
+  then show ?case
 next
   case (Suc n)
   then show ?case sorry

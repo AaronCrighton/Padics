@@ -435,11 +435,11 @@ fun trunc :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
   "trunc f = (\<lambda>i. (if i < (degree f) then  f i else \<zero>\<^bsub>R\<^esub>))"
 
 fun list_iter where
-"list_iter 0 f = (if f 0 \<noteq> \<zero> then [f 0] else [])" |
+"list_iter 0 f = [f 0]" |
 "list_iter (Suc n) f = (list_iter n (trunc f))@ [(f n)]"
 
 definition poly_to_list where 
-"poly_to_list f = list_iter (degree f) f"
+"poly_to_list f =(if (f = (\<lambda>n. \<zero>)) then [] else (list_iter (degree f) f))"
 
 lemma poly_0:
   shows "\<lbrakk>\<And>m. p m = \<zero>\<rbrakk> \<Longrightarrow> p = (\<lambda>a. \<zero>)" 
@@ -456,7 +456,10 @@ proof-
 qed
 
 lemma poly_to_list_simp_0:
-  shows "poly_to_list (\<lambda>a. \<zero>) = [\<zero>]"
+  shows "poly_to_list (\<lambda>a. \<zero>) = []"
+  sledgehammer
+  by (simp add: poly_to_list_def)
+(*
 proof-
   have 0: "degree (\<lambda>a. \<zero>) = 0" using deg_0_poly_simp by simp
   have "poly_to_list (\<lambda>a. \<zero>) = list_iter (degree (\<lambda>a. \<zero>)) (\<lambda>a. \<zero>)"
@@ -468,20 +471,37 @@ proof-
     by (simp add: \<open>poly_to_list (\<lambda>a. \<zero>) = list_iter 0 (\<lambda>a. \<zero>)\<close>)
 qed
 
+*)
+
+lemma degree_length:
+  shows "degree (list_to_poly as) = length as"
+proof-
+  obtain n where "degree(list_to_poly as) = n"
 
 lemma list_poly_inverse_0:
   assumes "as \<noteq> bs @ [\<zero>]"
   shows "poly_to_list(list_to_poly as) = as"
-  apply(induction as rule:list_to_poly.induct)
-  unfolding poly_to_list_def
-proof-
-  show "list_iter (degree (list_to_poly [])) (list_to_poly []) = []" 
-    by (simp add: UP_cring.deg_0_poly_simp UP_cring_axioms)
-    show "\<And>a as.
-       (\<And>x. x \<noteq> 0 \<Longrightarrow> list_iter (degree (list_to_poly as)) (list_to_poly as) = as) \<Longrightarrow>
-       list_iter (degree (list_to_poly (a # as))) (list_to_poly (a # as)) = a # as" 
-      using UP_cring.poly_to_list_simp_0 UP_cring_axioms \<open>list_iter (degree (list_to_poly [])) (list_to_poly []) = []\<close> poly_to_list_def 
-by fastforce
+proof(induction as)
+  case Nil
+  then show ?case 
+    by (simp add: poly_to_list_def)
+next
+  case (Cons a as)
+  fix a as
+  assume IH: "poly_to_list (list_to_poly as) = as"
+  show "poly_to_list (list_to_poly (a # as)) = a # as"  
+  
+  qed
+
+
+
+
+  show "poly_to_list (list_to_poly []) = []"
+    unfolding poly_to_list_def apply simp done
+  show "\<And>a as. (\<And>x. x \<noteq> 0 \<Longrightarrow> poly_to_list (list_to_poly as) = as) \<Longrightarrow> poly_to_list (list_to_poly (a # as)) = a # as "  
+  proof-
+    fix a as
+    assume 
 qed
   
 lemma list_poly_inverse_1:

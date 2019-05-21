@@ -336,17 +336,33 @@ lemma(in UP_ring) deg_0_deriv_zero:
   unfolding multc_def
   sorry
 
-lemma(in UP_ring) deg_0_is_monom:
+lemma(in UP_ring) deg_0_implies_0_coeffs:
+  assumes "p \<in> up R"
   assumes "deg R p = 0"
-  shows "\<exists>a. (p = monom P a 0)"
-  sorry
+  shows "\<And>n. n > 0 \<Longrightarrow> coeff P p n = \<zero>"
+  by (simp add: P_def UP_ring.coeff_simp UP_ring.gt_deg_is_zero UP_ring_axioms assms(1) assms(2))
+
+lemma(in UP_ring) deg_0_is_monom:
+  assumes "p \<in> up R"
+  assumes "deg R p = 0"
+  shows "\<exists>a. (monom P a 0 = p)" 
+  by (metis (no_types, lifting) P_def UP_def assms(1) assms(2) deg_zero_impl_monom partial_object.select_convs(1))
+
 
 lemma(in UP_cring) deg_0_smult:
+  assumes "p \<in> carrier P" "q \<in> carrier P"
+  assumes "a \<in> carrier R"
   assumes "deg R q = 0"
-  shows "p \<otimes>\<^bsub>P\<^esub> q = a \<odot>\<^bsub>P\<^esub> p" using monom_mult_is_smult sledgehammer
-proof
-  have "\<exists>a. (q = monom P a 0)" using deg_0_is_monom assms(1) by blast
- monom_mult_is_smult
+  shows "q \<otimes>\<^bsub>P\<^esub> p= a \<odot>\<^bsub>P\<^esub> p"
+proof- 
+  have "\<exists>b. monom P b 0 = q"
+    using assms(2) assms(4) deg_zero_impl_monom
+  by metis
+  then obtain b where "monom P b 0 = q" 
+    by blast
+  then have "coeff P (monom P b 0) 0 = b" sledgehammer
+  then have "b \<in> carrier R" sledgehammer
+  have "monom P b 0 \<otimes>\<^bsub>P\<^esub> p = b \<odot>\<^bsub>P\<^esub> p" using monom_mult_is_smult sledgehammer
 
 lemma(in UP_ring) deg_0_monom_simp_0:
   assumes "q \<in> carrier P"
@@ -422,7 +438,8 @@ proof-
   have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)"
   proof
     fix x
-    have "
+    have ""
+
 
 definition(in UP_ring) is_monomial where
 "is_monomial q = (\<exists> n. \<exists> c. q = monom P c n)"
@@ -430,20 +447,40 @@ definition(in UP_ring) is_monomial where
 definition(in UP_ring) is_const where
 "is_const q = (is_monomial q) \<and> deg R q = 0"
 
-lemma(in UP_ring) product_rule_monom:
-  shows "\<And> q. (deg R q) \<le> n \<and> (is_monomial q)\<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+lemma(in UP_ring) deg_0_deriv_is_zero:
+  assumes "deg R p = 0"
+  assumes "p \<in> carrier P"
+  shows "\<And>n. deriv R p n = \<zero>" using UP_smult_zero deg_0_smult deg_one 
+  by (metis (no_types, lifting) One_nat_def P_def R.add.nat_pow_one UP_def UP_ring add.left_neutral assms(1) assms(2) deg_0_deriv_zero deg_zero 
+      deriv_def gr0I gt_deg_is_zero hensel.shift_def lessI multc_def partial_object.select_convs(1) ring.ring_simprules(2))
+
+lemma(in UP_domain) product_rule_monom:
+  shows "\<And> q. (deg R q) = n \<and> (is_monomial q)\<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
 proof(induction n)
   case 0
-  have ""
-  then show ?case
+  fix "q"
+  have "deg R q = 0"
+    using UP_smult_zero deg_0_smult deg_one by fastforce
+  
+  have "\<And>n. deriv R q n= \<zero>" using
+    using UP_smult_zero deg_0_smult deg_one by fastforce
+  hence "\<And>n. (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) n = \<zero>" 
+    using UP_smult_zero deg_0_smult deg_one by fastforce
+  hence "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) n = \<zero>"
+    by blast
+  hence "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)" sledgehammer
+    using UP_smult_zero deg_0_smult deg_one by fastforce
+  thus ?case
+    using UP_smult_zero deg_0_smult deg_one by fastforce
 next
   case (Suc n)
-  then show ?case sorry
+  then show ?case
+    using UP_smult_zero deg_0_smult deg_one by fastforce
 qed
 
 
-lemma(in UP_ring) product_rule1:
-  shows "\<And> q. (deg R q) \<le> n \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+lemma(in UP_domain) product_rule1:
+  shows "\<And> q. (deg R q) = n \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
 proof(induction n)
   (*This proof seems difficult to do without talking explicitly about limits*)
   have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) = shift(multc R (p \<otimes>\<^bsub>UP R\<^esub> q))"

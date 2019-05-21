@@ -384,6 +384,27 @@ proof-
 
 *)
 
+lemma(in UP_ring) poly_is_sum_monom:
+  assumes "p \<in> carrier P"
+  assumes "degree p = n"
+  shows "p = (\<Oplus>\<^bsub>P\<^esub>i \<in>{..n}. (monom P (p i) 0))" 
+proof(induction n)
+  case 0
+  then have "n = 0" sledgehammer
+  then have "degree p = n" using assms(2) by auto
+  have "coeff P p 0 = monom P (p 0) 0 0"
+    by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp 
+          UP_ring_axioms assms(1) coeff_closed partial_object.select_convs(1))
+  have "\<And>n. n > 0 \<Longrightarrow> monom P (p 0) 0 n = \<zero>"
+    by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp
+          UP_ring_axioms assms(1) coeff_closed not_gr_zero partial_object.select_convs(1))
+  have "\<And>m. m > 0 \<Longrightarrow> coeff P p m = \<zero>" 
+  then show ?case sledgehammer
+next
+  case (Suc n)
+  then show ?case sorry
+qed
+
 lemma(in UP_ring) product_rule_deg_0:
   assumes "p \<in> carrier P"
   shows "\<And> q. q \<in> carrier P \<Longrightarrow> (deg R q) = 0 \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"

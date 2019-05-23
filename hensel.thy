@@ -104,9 +104,13 @@ qed
 (*lemma(in UP_ring) monom_eq_deg:
   assumes "deg R p = n"
   assumes "m \<ge> n"
-  shows "monom (UP R) (p n) n m = p m"
+  shows "monom P (p n) n m = p m"
   proof(cases "m \<noteq> n")
     case True
+    have "m > n" sledgehammer
+      using True assms(2) le_neq_implies_less by blast
+    have "bound \<zero> (deg R p) p" sledgehammer
+    have "monom P (p n) n m = \<zero>" sledgehammer
     then show ?thesis 
   next
     case False
@@ -318,7 +322,6 @@ proof-
     by (simp add: hensel.shift_def)
   then have 3: "shift p n = \<zero>" using 1 by auto
   thus "deg R (shift p) < deg R p" using degr 1 2 3 assms(1) assms(2) deg_neq_0
-    
     by (smt One_nat_def add.commute add.left_neutral add_Suc_right add_mono_thms_linordered_field(5) gt_deg_is_zero hensel.shift_def lessI less_imp_add_positive linorder_neqE_nat shift_in_up_ring)
 qed
 
@@ -514,11 +517,11 @@ proof-
   then have "((deriv R q) \<otimes>\<^bsub>(UP R)\<^esub> p) =  \<zero>\<^bsub>P\<^esub>" 
     using P.l_null P_def assms(1)  assms(2) assms(3) deg_0_deriv_zero by auto
   then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = (q \<otimes>\<^bsub>P\<^esub> (deriv R p)) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
-    using "1" P.r_null P_def assms(1) 
-    by (smt P.m_comm UP_def UP_ring.deriv_in_up_ring UP_ring_axioms assms(2) partial_object.select_convs(1))  
+    using "1" P.r_null P_def assms(1)
+    by (smt P.m_comm UP_def assms(2) deriv_in_up_ring partial_object.select_convs(1))
   then have "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R (a \<odot>\<^bsub>P\<^esub> p)" using P_def P_fact0 UP_ring_deg_zero_impl_monom assms(1) assms(2) assms(3) assms(4)
-    by (metis P_def P_fact0 UP_ring.deg_zero_impl_monom UP_ring_axioms adef assms(1) assms(2) assms(3) coeff_simp0 monom_mult_is_smult)
-  then have "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = (a \<odot>\<^bsub>P\<^esub> deriv R p) n" using deriv_cons_mult assms (1) assms(4)  
+      by (metis (no_types, lifting) P_def P_fact0 UP_def adef assms(1) assms(2) assms(3) deg_0_smult partial_object.select_convs(1))
+   then have "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = (a \<odot>\<^bsub>P\<^esub> deriv R p) n" using deriv_cons_mult assms (1) assms(4)  
     by (smt P_def P_fact0 UP_def UP_ring.coeff_simp UP_ring.coeff_smult UP_ring.deriv_in_up_ring UP_ring.prod_of_poly_is_poly UP_ring_axioms adef
         assms(1) assms(2) assms(3) deg_0_smult deriv_cons_mult partial_object.select_convs(1)) 
   hence "deriv R (a \<odot>\<^bsub>P\<^esub> p) = a \<odot>\<^bsub>P\<^esub> deriv R p" 
@@ -563,7 +566,7 @@ proof
     by simp
   hence "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n =  p (n+1) \<oplus>\<^bsub>R\<^esub> q (n+1)" 
     by (simp add: A1)
-  hence "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
+  hence A3: "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
     by (simp add: A2 hensel.shift_def)
   have "\<And>n. shift p n \<oplus>\<^bsub>R\<^esub> shift q n = (shift p \<oplus>\<^bsub>P\<^esub> shift q ) n" 
     by (smt P_def UP_def UP_ring.UP_a_closed UP_ring.coeff_add UP_ring_axioms assms(1) assms(2) coeff_simp partial_object.select_convs(1) shift_in_up_ring)

@@ -96,17 +96,21 @@ qed
 
 
 
-lemma(in UP_ring) monom_eq_deg:
+(*lemma(in UP_ring) monom_eq_deg:
   assumes "deg R p = n"
   assumes "m \<ge> n"
-  shows "monom (UP R) (p n) n m = p m"
+  shows "monom P (p n) n m = p m"
   proof(cases "m \<noteq> n")
     case True
+    have "m > n" sledgehammer
+      using True assms(2) le_neq_implies_less by blast
+    have "bound \<zero> (deg R p) p" sledgehammer
+    have "monom P (p n) n m = \<zero>" sledgehammer
     then show ?thesis 
   next
     case False
     then show ?thesis using assms(1) assms(2) monom_simp UP_def 
-  qed
+  qed*)
 
 lemma(in UP_ring) trunc_monom_0:
   assumes "p \<in> up R"
@@ -279,7 +283,6 @@ proof-
     by (simp add: hensel.shift_def)
   then have 3: "shift p n = \<zero>" using 1 by auto
   thus "deg R (shift p) < deg R p" using degr 1 2 3 assms(1) assms(2) deg_neq_0
-    
     by (smt One_nat_def add.commute add.left_neutral add_Suc_right add_mono_thms_linordered_field(5) gt_deg_is_zero hensel.shift_def lessI less_imp_add_positive linorder_neqE_nat shift_in_up_ring)
 qed
 
@@ -443,7 +446,7 @@ lemma(in UP_ring) poly_is_sum_monom:
   shows "p = (\<Oplus>\<^bsub>P\<^esub>i \<in>{..n}. (monom P (p i) 0))" 
 proof(induction n)
   case 0
-  then have "n = 0" sledgehammer
+  then have "n = 0" 
   then have "degree p = n" using assms(2) by auto
   have "coeff P p 0 = monom P (p 0) 0 0"
     by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp 
@@ -452,13 +455,13 @@ proof(induction n)
     by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp
           UP_ring_axioms assms(1) coeff_closed not_gr_zero partial_object.select_convs(1))
   have "\<And>m. m > 0 \<Longrightarrow> coeff P p m = \<zero>" 
-  then show ?case sledgehammer
+  then show ?case shammer
 next
   case (Suc n)
   then show ?case sorry
 qed
 
-lemma(in UP_ring) product_rule_deg_0:
+lemma(in UP_cring) product_rule_deg_0:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
   assumes "deg R q = 0"
@@ -470,11 +473,11 @@ proof-
   then have "((deriv R q) \<otimes>\<^bsub>(UP R)\<^esub> p) =  \<zero>\<^bsub>P\<^esub>" 
     using P.l_null P_def assms(1)  assms(2) assms(3) deg_0_deriv_zero by auto
   then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = (q \<otimes>\<^bsub>P\<^esub> (deriv R p)) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
-    using "1" P.r_null P_def assms(1) 
-    by (smt P.m_comm UP_def UP_ring.deriv_in_up_ring UP_ring_axioms assms(2) partial_object.select_convs(1))  
+    using "1" P.r_null P_def assms(1)
+    by (smt P.m_comm UP_def assms(2) deriv_in_up_ring partial_object.select_convs(1))
   then have "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R (a \<odot>\<^bsub>P\<^esub> p)" using P_def P_fact0 UP_ring_deg_zero_impl_monom assms(1) assms(2) assms(3) assms(4)
-    by (metis P_def P_fact0 UP_ring.deg_zero_impl_monom UP_ring_axioms adef assms(1) assms(2) assms(3) coeff_simp0 monom_mult_is_smult)
-  then have "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = (a \<odot>\<^bsub>P\<^esub> deriv R p) n" using deriv_cons_mult assms (1) assms(4)  
+      by (metis (no_types, lifting) P_def P_fact0 UP_def adef assms(1) assms(2) assms(3) deg_0_smult partial_object.select_convs(1))
+   then have "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = (a \<odot>\<^bsub>P\<^esub> deriv R p) n" using deriv_cons_mult assms (1) assms(4)  
     by (smt P_def P_fact0 UP_def UP_ring.coeff_simp UP_ring.coeff_smult UP_ring.deriv_in_up_ring UP_ring.prod_of_poly_is_poly UP_ring_axioms adef
         assms(1) assms(2) assms(3) deg_0_smult deriv_cons_mult partial_object.select_convs(1)) 
   hence "deriv R (a \<odot>\<^bsub>P\<^esub> p) = a \<odot>\<^bsub>P\<^esub> deriv R p" 
@@ -511,8 +514,6 @@ lemma(in UP_ring) shift_additive:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
   shows "shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
-  unfolding shift_def
-  apply(auto)
 proof-
   have A1: "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = (p \<oplus>\<^bsub>P\<^esub> q) (n+1)" using shift_def by simp
   have A2: "\<And>n. (p  \<oplus>\<^bsub>P\<^esub> q) n = p n \<oplus> q n" 
@@ -521,9 +522,9 @@ proof-
     by simp
   hence "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n =  p (n+1) \<oplus>\<^bsub>R\<^esub> q (n+1)" 
     by (simp add: A1)
-  hence "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
+  hence A3: "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
     by (simp add: A2 hensel.shift_def)
-  have "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n \<Longrightarrow> shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
+  thus "shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q" sledgehammer
 
 
 lemma(in UP_ring) deriv_additive:

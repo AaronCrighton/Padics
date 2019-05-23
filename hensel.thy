@@ -49,7 +49,6 @@ proof
   proof-
     fix n
     show "multc R b n \<in> carrier R" 
-      sledgehammer
       by (simp add: assms mem_upD multc_def)
     qed
   show "\<exists>n. bound \<zero> n (hensel.multc R b)"
@@ -150,7 +149,7 @@ qed
 
 lemma(in UP_ring) monom_deriv:
   assumes "p \<in> up R"
-  shows "deriv R (monom (UP R) p) = shift (multc R (monom (UP R) p))"
+  shows "deriv R (monom (UP R) a p) = shift (multc R (monom (UP R) a p))" sledgehammer
 
 (* deriv also returns a polynomial *)
 lemma(in UP_ring) deriv_in_up_ring:
@@ -233,7 +232,7 @@ proof-
     using "1" by linarith
   then have "\<lbrakk>k > deg R p\<rbrakk> \<Longrightarrow> p k = \<zero>"
     by (smt LeastI UP_def \<open>deg R p = (LEAST n. bound \<zero> n (coeff (UP R) p))\<close> assms(1) bound_def bound_upD deg_def mem_Collect_eq restrict_apply up_def up_ring.simps(2))
-  then show "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>" using 1 2 3 assms(1) bound_def bound_upD deg_def mem_Collect_eq up_def up_ring.simps(2)
+  then show "\<And>m. \<lbrakk>m > deg R p\<rbrakk> \<Longrightarrow> p m = \<zero>" using 1 2 3 assms(1) bound_def bound_upD 
     by (metis coeff_simp deg_simp_0)
 qed
 
@@ -331,10 +330,24 @@ lemma(in UP_ring) deg_0_deriv_zero:
   assumes "deg R q = 0"
   assumes "q \<in> carrier P"
   shows "deriv R q = \<zero>\<^bsub>P\<^esub>"
-  unfolding deriv_def
-  unfolding shift_def
-  unfolding multc_def
-  sorry
+proof-
+  have B0: "deg R q = 0 \<Longrightarrow> bound \<zero> 0 q"
+    by (metis (no_types, lifting) P_def UP_def UP_ring.gt_deg_is_zero UP_ring_axioms assms(2) bound_def partial_object.select_convs(1))
+  have "shift q n = q (n+1)" 
+    by (simp add: hensel.shift_def)
+  have "q n = \<zero> \<Longrightarrow> multc R q n = \<zero>"
+    by (simp add: multc_def)
+  hence "\<And>n. n > 0 \<Longrightarrow> multc R q n = \<zero>" using B0 assms(1) assms(2)
+    by (metis R.add.nat_pow_one bound.bound multc_def)
+  hence A1: "\<And>n. shift (multc R q) n = \<zero>" using B0 assms(1) assms(2)
+    by (simp add: hensel.shift_def)
+  have "deriv R q = shift (multc R q)" using deriv_def by auto
+  hence "\<And>n. deriv R q n = \<zero>"
+    by (simp add: A1)
+  thus "deriv R q = \<zero>\<^bsub>P\<^esub>"
+    by (metis (no_types, lifting) P_def UP_def UP_ring.deriv_in_up_ring UP_ring.lcoeff_nonzero 
+        UP_ring_axioms assms(2) coeff_simp partial_object.select_convs(1))
+qed
 
 lemma(in UP_ring) deg_0_implies_0_coeffs:
   assumes "p \<in> up R"
@@ -348,40 +361,47 @@ lemma(in UP_ring) deg_0_is_monom:
   shows "\<exists>a. (monom P a 0 = p)" 
   by (metis (no_types, lifting) P_def UP_def assms(1) assms(2) deg_zero_impl_monom partial_object.select_convs(1))
 
+lemma(in UP_ring) monom_coeff_simp:
+  assumes "p \<in> up R"
+  assumes "a \<in> carrier R"
+  shows "coeff P (monom P a n) n = a"
+  by (simp add: assms(2))
 
 lemma(in UP_cring) deg_0_smult:
-  assumes "p \<in> carrier P" "q \<in> carrier P"
+  assumes "p \<in> up R" "q \<in> up R"
   assumes "a \<in> carrier R"
   assumes "deg R q = 0"
+  assumes "q 0 = a"
   shows "q \<otimes>\<^bsub>P\<^esub> p= a \<odot>\<^bsub>P\<^esub> p"
 proof- 
-  have "\<exists>b. monom P b 0 = q"
+  have bdef: "\<exists>b \<in> carrier R. monom P b 0 = q"
     using assms(2) assms(4) deg_zero_impl_monom
-  by metis
-  then obtain b where "monom P b 0 = q" 
-    by blast
-  then have "coeff P (monom P b 0) 0 = b" sledgehammer
-  then have "b \<in> carrier R" sledgehammer
-  have "monom P b 0 \<otimes>\<^bsub>P\<^esub> p = b \<odot>\<^bsub>P\<^esub> p" using monom_mult_is_smult sledgehammer
+    by (metis (no_types, lifting) P_def UP_def lcoeff_closed partial_object.select_convs(1))
+   have "deg R (monom P a 0) = 0"
+    using assms(4) by
+  by (simp add: assms(3))
+  have " (monom P a 0) 0 = a" using UP_def bdef monom_coeff_simp 
+  using assms(2) assms(3) 
+  by (simp add: P_def UP_ring.monom_simp UP_ring_axioms)
+  have "monom P a 0 \<otimes>\<^bsub>P\<^esub> p = a \<odot>\<^bsub>P\<^esub> p" using monom_mult_is_smult
+    by (simp add: P_def UP_def assms(1) assms(3))
+  have A1: "\<And>n. n > 0 \<Longrightarrow> q n = \<zero>" using assms(3) assms(1)
+    by (simp add: assms(2) assms(4) gt_deg_is_zero)
+  have A2: "\<And>n. n > 0 \<Longrightarrow> monom P a 0 n = \<zero>"
+    by (simp add: P_def UP_ring.monom_simp UP_ring_axioms assms(3))
+  have "q 0 = monom P a 0 0"
+    by (simp add: \<open>monom P a 0 0 = a\<close> assms(5))
+  thus ?thesis
+    using P_def UP_ring.monom_simp UP_ring_axioms \<open>monom P a 0 \<otimes>\<^bsub>P\<^esub> p = a \<odot>\<^bsub>P\<^esub> p\<close> assms(5) bdef by fastforce
+qed
 
 lemma(in UP_ring) deg_0_monom_simp_0:
   assumes "q \<in> carrier P"
   assumes "deg R q = 0"
   assumes "is_monomial q"
   shows "\<And>i. \<lbrakk>i > 0\<rbrakk> \<Longrightarrow> q i = \<zero>"
-proof-
+  by (metis (no_types, lifting) P_def UP_def assms(1) assms(2) gt_deg_is_zero partial_object.select_convs(1))
   
-
-lemma(in UP_cring) product_deg_0_cons:
-  assumes "p \<in> carrier P" "q \<in> carrier P"
-  assumes "deg R q = 0"
-  shows "(p \<otimes>\<^bsub>P\<^esub> q) n = (p n)\<otimes>(q 0)"
-proof-
-  have "(p \<otimes>\<^bsub>P\<^esub> q) n = (q \<otimes>\<^bsub>P\<^esub> p) n" 
-    by (simp add: P.m_comm assms(1) assms(2))
-  have "(p \<otimes>\<^bsub>P\<^esub> q) n = (\<Oplus>\<^bsub>R\<^esub>i \<in> {..n}. q i \<otimes>\<^bsub>R\<^esub> p (n-i))"
-    using
-
 
 (*
   obtain n where ndef: "deg R p = n" by simp
@@ -399,6 +419,23 @@ proof-
     show ?thesis using cauchy_product[of n p 0 q] 0 1 2 3 by auto
 
 *)
+lemma(in UP_ring) deriv_cons_mult:
+  assumes "a \<in> carrier R"
+  assumes "p \<in> carrier P"
+  shows "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = a \<otimes>\<^bsub>R\<^esub> deriv R p n"
+proof-
+  fix n
+  have A1: "\<And>m. (a \<odot>\<^bsub>P\<^esub> p) m = a \<otimes>\<^bsub>R\<^esub> p m" 
+    by (smt P_def UP_def UP_ring.coeff_simp UP_ring_axioms UP_smult_closed assms(1) assms(2) coeff_smult partial_object.select_convs(1)) 
+  then have "\<And>m. shift (a \<odot>\<^bsub>P\<^esub> p) m = a \<otimes>\<^bsub>R\<^esub> p (m+1)"
+    by (simp add: hensel.shift_def)
+  have "multc R (a \<odot>\<^bsub>P\<^esub> p) n = a \<otimes>\<^bsub>R\<^esub> multc R p n" 
+    by (smt A1 P_def R.add_pow_rdistr UP_def assms(1) assms(2) mem_upD multc_def partial_object.select_convs(1))
+  hence "\<And>m. multc R (a \<odot>\<^bsub>P\<^esub> p) m = a \<otimes>\<^bsub>R\<^esub> multc R p m" 
+    by (metis (no_types, lifting) A1 P_def R.add_pow_rdistr UP.coeff_closed UP_def assms(1) assms(2) coeff_simp multc_def partial_object.select_convs(1))
+  thus "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = a \<otimes>\<^bsub>R\<^esub> deriv R p n"
+    by (simp add: deriv_def hensel.shift_def)
+qed
 
 lemma(in UP_ring) poly_is_sum_monom:
   assumes "p \<in> carrier P"
@@ -423,22 +460,38 @@ qed
 
 lemma(in UP_ring) product_rule_deg_0:
   assumes "p \<in> carrier P"
-  shows "\<And> q. q \<in> carrier P \<Longrightarrow> (deg R q) = 0 \<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+  assumes "q \<in> carrier P"
+  assumes "deg R q = 0"
+  shows "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) =  ((deriv R q) \<otimes>\<^bsub>UP R\<^esub> p) \<oplus>\<^bsub>UP R\<^esub> (q \<otimes>\<^bsub>(UP R)\<^esub> (deriv R p))"
 proof-
-  fix q
-  assume C: "q \<in> carrier P" 
-  assume A: "(deg R q) = 0 "
-  then have 1: "deriv R q = \<zero>\<^bsub>P\<^esub>" 
-    using deg_0_deriv_zero A C 
-    by blast
-  then have "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) =  \<zero>\<^bsub>P\<^esub>" using UP_ring.UP_ring C assms(1) P.r_null P_def 
-    by simp
-  then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = ((deriv R p) \<otimes>\<^bsub>P\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
-    by (simp add: P_def)
-  have "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)"
-  proof
-    fix x
-    have ""
+  obtain a where adef: "q 0 = a" by simp
+   have 1: "deriv R q = \<zero>\<^bsub>P\<^esub>" 
+    using  P_def UP_ring.deg_0_deriv_zero UP_ring_axioms assms(2) assms(3) by blast
+  then have "((deriv R q) \<otimes>\<^bsub>(UP R)\<^esub> p) =  \<zero>\<^bsub>P\<^esub>" 
+    using P.l_null P_def assms(1)  assms(2) assms(3) deg_0_deriv_zero by auto
+  then have 1:"((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>P\<^esub> (deriv R q)) = (q \<otimes>\<^bsub>P\<^esub> (deriv R p)) \<oplus>\<^bsub>UP R\<^esub> \<zero>\<^bsub>P\<^esub>" 
+    using "1" P.r_null P_def assms(1) 
+    by (smt P.m_comm UP_def UP_ring.deriv_in_up_ring UP_ring_axioms assms(2) partial_object.select_convs(1))  
+  then have "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R (a \<odot>\<^bsub>P\<^esub> p)" using P_def P_fact0 UP_ring_deg_zero_impl_monom assms(1) assms(2) assms(3) assms(4)
+    by (metis P_def P_fact0 UP_ring.deg_zero_impl_monom UP_ring_axioms adef assms(1) assms(2) assms(3) coeff_simp0 monom_mult_is_smult)
+  then have "\<And>n. deriv R (a \<odot>\<^bsub>P\<^esub> p) n = (a \<odot>\<^bsub>P\<^esub> deriv R p) n" using deriv_cons_mult assms (1) assms(4)  
+    by (smt P_def P_fact0 UP_def UP_ring.coeff_simp UP_ring.coeff_smult UP_ring.deriv_in_up_ring UP_ring.prod_of_poly_is_poly UP_ring_axioms adef
+        assms(1) assms(2) assms(3) deg_0_smult deriv_cons_mult partial_object.select_convs(1)) 
+  hence "deriv R (a \<odot>\<^bsub>P\<^esub> p) = a \<odot>\<^bsub>P\<^esub> deriv R p" 
+    by (simp add: ext)
+  thus ?thesis 
+    by (smt P_def P_fact0 UP_def UP_l_zero UP_mult_closed UP_ring.deriv_in_up_ring UP_ring_axioms \<open>deriv R q \<otimes>\<^bsub>UP R\<^esub> p = \<zero>\<^bsub>P\<^esub>\<close> adef assms(1) assms(2) 
+         assms(3) deg_0_smult partial_object.select_convs(1))
+qed
+(*  then have "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) =  (q \<otimes>\<^bsub>UP R\<^esub>(deriv R p) )"
+  proof-
+    have "\<exists>a \<in> carrier R. q = monom P a 0"
+      using assms(2) assms(3) deg_zero_impl_monom by fastforce
+    (*then obtain a where adef: "q = monom P a 0"
+      by blast*)
+    hence "q \<otimes>\<^bsub>UP R\<^esub> p =  a \<odot>\<^bsub>P\<^esub> p" using deg_0_smult
+      using P_def UP_ring.monom_simp UP_ring_axioms assms(1) assms(4) monom_mult_is_smult by fastforce*)
+    
 
 
 definition(in UP_ring) is_monomial where
@@ -454,28 +507,47 @@ lemma(in UP_ring) deg_0_deriv_is_zero:
   by (metis (no_types, lifting) One_nat_def P_def R.add.nat_pow_one UP_def UP_ring add.left_neutral assms(1) assms(2) deg_0_deriv_zero deg_zero 
       deriv_def gr0I gt_deg_is_zero hensel.shift_def lessI multc_def partial_object.select_convs(1) ring.ring_simprules(2))
 
+lemma(in UP_ring) shift_additive:
+  assumes "p \<in> carrier P"
+  assumes "q \<in> carrier P"
+  shows "shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
+  unfolding shift_def
+  apply(auto)
+proof-
+  have A1: "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = (p \<oplus>\<^bsub>P\<^esub> q) (n+1)" using shift_def by simp
+  have A2: "\<And>n. (p  \<oplus>\<^bsub>P\<^esub> q) n = p n \<oplus> q n" 
+    by (smt P_def UP_a_closed UP_def UP_ring.coeff_simp UP_ring_axioms assms(1) assms(2) coeff_add partial_object.select_convs(1))
+  then have "\<And>n. (p \<oplus>\<^bsub>P\<^esub> q) (n+1) = p (n+1) \<oplus>\<^bsub>R\<^esub> q (n+1)"
+    by simp
+  hence "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n =  p (n+1) \<oplus>\<^bsub>R\<^esub> q (n+1)" 
+    by (simp add: A1)
+  hence "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
+    by (simp add: A2 hensel.shift_def)
+  have "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n \<Longrightarrow> shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
+
+
+lemma(in UP_ring) deriv_additive:
+  assumes "p \<in> carrier P"
+  assumes "q \<in> carrier P"
+  shows "deriv R ( p \<oplus> q ) = deriv R p \<oplus> deriv R q"
+
+
 lemma(in UP_domain) product_rule_monom:
-  shows "\<And> q. (deg R q) = n \<and> (is_monomial q)\<Longrightarrow> deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q) \<oplus>\<^bsub>UP R\<^esub> (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q))"
+  assumes "p \<in> carrier P"
+  shows "\<And>q. \<lbrakk>q \<in> carrier P \<and> deg R q \<le> n \<and> is_monomial q \<rbrakk> \<Longrightarrow> deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = ((deriv R q) \<otimes>\<^bsub>UP R\<^esub> p) \<oplus>\<^bsub>UP R\<^esub> (q \<otimes>\<^bsub>(UP R)\<^esub> (deriv R p))"
 proof(induction n)
   case 0
-  fix "q"
-  have "deg R q = 0"
-    using UP_smult_zero deg_0_smult deg_one by fastforce
-  
-  have "\<And>n. deriv R q n= \<zero>" using
-    using UP_smult_zero deg_0_smult deg_one by fastforce
-  hence "\<And>n. (p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) n = \<zero>" 
-    using UP_smult_zero deg_0_smult deg_one by fastforce
-  hence "(p \<otimes>\<^bsub>(UP R)\<^esub> (deriv R q)) n = \<zero>"
-    by blast
-  hence "deriv R (p \<otimes>\<^bsub>UP R\<^esub> q) =  ((deriv R p) \<otimes>\<^bsub>UP R\<^esub> q)" sledgehammer
-    using UP_smult_zero deg_0_smult deg_one by fastforce
-  thus ?case
-    using UP_smult_zero deg_0_smult deg_one by fastforce
-next
+    then have 1: "deg R q = 0" 
+      by simp
+    have 2: "q \<in> carrier P"
+      by (simp add: "0.prems")
+    show ?case using product_rule_deg_0 1 2 assms(1) by auto
+  next
   case (Suc n)
-  then show ?case
-    using UP_smult_zero deg_0_smult deg_one by fastforce
+    fix n
+    assume "(\<And>q. q \<in> carrier P \<and> deg R q \<le> n \<and> is_monomial q \<Longrightarrow> deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p)"
+    assume "q \<in> carrier P \<and> deg R q \<le> Suc n \<and> is_monomial q"
+    show "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p" sledgehammer
 qed
 
 

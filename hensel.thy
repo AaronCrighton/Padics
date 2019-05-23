@@ -17,6 +17,11 @@ definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) 
 definition lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
   "lc R p = p (deg R p)"
 
+lemma(in UP_domain) multc_simp[simp]:
+  assumes "p \<in> carrier P"
+  shows "multc R p n = [n]\<cdot>(p n)" 
+  by (simp add: multc_def)
+
 lemma(in UP_ring) shift_in_up_ring:
   assumes "b \<in> up R"
   shows "shift  b \<in> up R" 
@@ -96,7 +101,7 @@ qed
 
 
 
-lemma(in UP_ring) monom_eq_deg:
+(*lemma(in UP_ring) monom_eq_deg:
   assumes "deg R p = n"
   assumes "m \<ge> n"
   shows "monom (UP R) (p n) n m = p m"
@@ -106,7 +111,7 @@ lemma(in UP_ring) monom_eq_deg:
   next
     case False
     then show ?thesis using assms(1) assms(2) monom_simp UP_def 
-  qed
+  qed*)
 
 lemma(in UP_ring) trunc_monom_0:
   assumes "p \<in> up R"
@@ -134,9 +139,43 @@ proof-
     show ?thesis
     proof(cases "n = m")
       case False
-      then have "trunc R p m = \<zero>" 
+      then have "` R p m = \<zero>" 
         by (simp add: \<open>\<not> m < n\<close> assms(3))
   qed
+
+lemma(in UP_ring) trunc_deg_lt:
+  assumes "p \<in> up R"
+  assumes "deg R p > 0"
+  shows "deg R (trunc R p) < deg R p" 
+proof-
+  have "\<And>n. n < deg R p \<Longrightarrow> trunc R p n = p n"
+    by simp
+  have "trunc R p (deg R p) = \<zero>" by simp
+  obtain n where ndef: "deg R p = n" by simp
+  have "deg R p = (LEAST n. bound \<zero> n (coeff (UP R) p))" using deg_def by auto
+  then have "bound \<zero> n (coeff (UP R) p)" using LeastI 
+    by (smt P_def UP_def \<open>deg R p = n\<close> assms(1) bound_def deg_aboveD partial_object.select_convs(1))
+  then have "\<And>m. m > n \<Longrightarrow> p m = \<zero>"
+    using \<open>deg R p = n\<close>
+    by (smt UP_def assms(1) bound.bound restrict_apply up_ring.simps(2))
+  have A1: "\<And>m. m > n \<Longrightarrow> trunc R p m = \<zero>"
+    using \<open>deg R p = n\<close> by auto
+  hence "bound \<zero> n (trunc R p)" using bound_def LeastI
+    by blast
+  have "trunc R p n = \<zero>"
+    by (simp add: \<open>deg R p = n\<close>)
+  hence B1: "bound \<zero> (n-1) (trunc R p)" using A1 
+    using \<open>deg R p = n\<close> less_trans by auto
+  have "(n-1) < n"
+    using \<open>deg R p = n\<close> assms(2) by auto
+  hence "deg R (trunc R p) \<noteq> n" using deg_def Least_def LeastI B1 
+    by (smt P_def UP_def UP_ring.trunc_is_poly UP_ring_axioms \<open>deg R p = n\<close> \<open>trunc R p n = \<zero>\<close> assms(1) assms(2) lcoeff_nonzero_deg 
+        neq0_conv partial_object.select_convs(1) restrict_apply up_ring.simps(2))
+  hence "deg R (trunc R p) < n" using deg_def LeastI sledgehammer
+    by (smt A1 UP_def UP_ring.deg_zero UP_ring.lcoeff_nonzero2 UP_ring.trunc_is_poly UP_ring_axioms assms(1) assms(2) linorder_neqE_nat ndef 
+        partial_object.select_convs(1) restrict_apply up_ring.simps(2))
+  thus ?thesis using ndef by simp
+qed
 
 lemma(in UP_ring) monom_simp:
   assumes "a \<in> carrier R"
@@ -438,27 +477,32 @@ proof-
 qed
 
 lemma(in UP_ring) poly_is_sum_monom:
-  assumes "p \<in> carrier P"
-  assumes "degree p = n"
-  shows "p = (\<Oplus>\<^bsub>P\<^esub>i \<in>{..n}. (monom P (p i) 0))" 
+  shows "\<lbrakk> p \<in> carrier P \<and> deg R p = n \<rbrakk> \<Longrightarrow> p = (\<Oplus>\<^bsub>P\<^esub>i \<in>{..n}. (monom P (p i) i))" 
 proof(induction n)
   case 0
-  then have "n = 0" sledgehammer
-  then have "degree p = n" using assms(2) by auto
-  have "coeff P p 0 = monom P (p 0) 0 0"
-    by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp 
-          UP_ring_axioms assms(1) coeff_closed partial_object.select_convs(1))
-  have "\<And>n. n > 0 \<Longrightarrow> monom P (p 0) 0 n = \<zero>"
-    by (metis (no_types, lifting) P_def UP_def UP_ring.coeff_simp UP_ring.monom_simp
-          UP_ring_axioms assms(1) coeff_closed not_gr_zero partial_object.select_convs(1))
+  then have "deg R p = 0"
+    by simp
+  have "coeff P p 0 = monom P (p 0) 0 0" 
+    by (metis (no_types, lifting) "0" P_def UP_def UP_ring.coeff_simp UP_ring_axioms deg_zero_impl_monom partial_object.select_convs(1))
+  have "\<And>n. n > 0 \<Longrightarrow> monom P (p 0) 0 n = \<zero>" 
+    by (metis (no_types, lifting) "0" P_def UP_def UP_ring.coeff_simp UP_ring_axioms deg_zero_impl_monom gt_deg_is_zero partial_object.select_convs(1))
   have "\<And>m. m > 0 \<Longrightarrow> coeff P p m = \<zero>" 
-  then show ?case sledgehammer
+    by (simp add: "0" deg_aboveD)
+  then show ?case 
+  proof -
+    have "carrier P = up R"
+      by (simp add: P_def UP_def)
+    then show ?thesis
+      by (metis (no_types) "0.prems" P_def UP_ring.coeff_simp UP_ring_axioms up_repr)
+  qed
 next
   case (Suc n)
-  then show ?case sorry
+  assume "p \<in> carrier P \<and> deg R p = n \<Longrightarrow> p = (\<Oplus>\<^bsub>P\<^esub>i\<in>{..n}. monom P (p i) i)" 
+  then show ?case sledgehammer
+    by (metis P_def Suc.prems UP_def UP_ring.coeff_simp UP_ring_axioms deg_def partial_object.select_convs(1) up_repr)
 qed
 
-lemma(in UP_ring) product_rule_deg_0:
+lemma(in UP_cring) product_rule_deg_0:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
   assumes "deg R q = 0"
@@ -511,9 +555,7 @@ lemma(in UP_ring) shift_additive:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
   shows "shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
-  unfolding shift_def
-  apply(auto)
-proof-
+proof
   have A1: "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = (p \<oplus>\<^bsub>P\<^esub> q) (n+1)" using shift_def by simp
   have A2: "\<And>n. (p  \<oplus>\<^bsub>P\<^esub> q) n = p n \<oplus> q n" 
     by (smt P_def UP_a_closed UP_def UP_ring.coeff_simp UP_ring_axioms assms(1) assms(2) coeff_add partial_object.select_convs(1))
@@ -523,13 +565,35 @@ proof-
     by (simp add: A1)
   hence "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n"
     by (simp add: A2 hensel.shift_def)
-  have "\<And>n. shift  (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n  \<oplus>\<^bsub>R\<^esub> shift q n \<Longrightarrow> shift (p \<oplus>\<^bsub>P\<^esub> q) = shift p \<oplus>\<^bsub>P\<^esub> shift q"
+  have "\<And>n. shift p n \<oplus>\<^bsub>R\<^esub> shift q n = (shift p \<oplus>\<^bsub>P\<^esub> shift q ) n" 
+    by (smt P_def UP_def UP_ring.UP_a_closed UP_ring.coeff_add UP_ring_axioms assms(1) assms(2) coeff_simp partial_object.select_convs(1) shift_in_up_ring)
+  thus "\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = (shift p \<oplus>\<^bsub>P\<^esub> shift q ) n" 
+    by (simp add: \<open>\<And>n. shift (p \<oplus>\<^bsub>P\<^esub> q) n = shift p n \<oplus> shift q n\<close>)
+qed
 
-
-lemma(in UP_ring) deriv_additive:
+lemma(in UP_ring) multc_additive:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
-  shows "deriv R ( p \<oplus> q ) = deriv R p \<oplus> deriv R q"
+  shows "multc R (p \<oplus>\<^bsub>P\<^esub> q) = multc R p \<oplus>\<^bsub>P\<^esub> multc R q" 
+proof
+  have A1: "\<And>n. multc R (p \<oplus>\<^bsub>P\<^esub> q) n = [n]\<cdot>(p \<oplus>\<^bsub>P\<^esub> q) n"
+    by (simp add: multc_def)
+  have A2: "\<And>n. [n]\<cdot>(p \<oplus>\<^bsub>P\<^esub> q) n = [n]\<cdot>(p n) \<oplus>\<^bsub>R\<^esub> [n]\<cdot>(q n)" 
+    by (smt P_def R.add.nat_pow_distr UP_a_closed UP_def UP_ring.coeff_add UP_ring.coeff_simp UP_ring_axioms assms(1) assms(2) 
+         mem_upD partial_object.select_convs(1))
+  have A3: "\<And>n. [n]\<cdot>(p n) \<oplus>\<^bsub>R\<^esub> [n]\<cdot>(q n) = multc R p n \<oplus>\<^bsub>R\<^esub> multc R q n" 
+    by (simp add: multc_def)
+  have "\<And>n. multc R p n \<oplus>\<^bsub>R\<^esub> multc R q n = (multc R p \<oplus>\<^bsub>P\<^esub> multc R q) n" 
+    by (smt P_def UP_def UP_ring.UP_a_closed UP_ring.coeff_add UP_ring.coeff_simp UP_ring_axioms assms(1) assms(2) multc_in_up_ring 
+        partial_object.select_convs(1))
+  thus "\<And>n. multc R (p \<oplus>\<^bsub>P\<^esub> q) n = (multc R p \<oplus>\<^bsub>P\<^esub> multc R q) n" using A1 A2 A3 assms(1) assms(2) by simp
+qed
+
+lemma(in UP_ring) deriv_additive[simp]:
+  assumes "p \<in> carrier P"
+  assumes "q \<in> carrier P"
+  shows "deriv R ( p \<oplus>\<^bsub>P\<^esub> q ) = deriv R p \<oplus>\<^bsub>P\<^esub> deriv R q"  using deriv_def shift_additive multc_additive assms(1) assms(2)
+  by (simp add: deriv_def P_def UP_def multc_in_up_ring partial_object.select_convs(1))
 
 
 lemma(in UP_domain) product_rule_monom:
@@ -547,7 +611,9 @@ proof(induction n)
     fix n
     assume "(\<And>q. q \<in> carrier P \<and> deg R q \<le> n \<and> is_monomial q \<Longrightarrow> deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p)"
     assume "q \<in> carrier P \<and> deg R q \<le> Suc n \<and> is_monomial q"
-    show "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p" sledgehammer
+    show "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p"
+    proof
+      have "deriv R (
 qed
 
 

@@ -592,12 +592,29 @@ proof
   thus "\<And>n. multc R (p \<oplus>\<^bsub>P\<^esub> q) n = (multc R p \<oplus>\<^bsub>P\<^esub> multc R q) n" using A1 A2 A3 assms(1) assms(2) by simp
 qed
 
-lemma(in UP_ring) deriv_additive[simp]:
+lemma(in UP_ring) deriv_additive_0:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
   shows "deriv R ( p \<oplus>\<^bsub>P\<^esub> q ) = deriv R p \<oplus>\<^bsub>P\<^esub> deriv R q"  using deriv_def shift_additive multc_additive assms(1) assms(2)
   by (simp add: deriv_def P_def UP_def multc_in_up_ring partial_object.select_convs(1))
 
+lemma(in UP_ring) deriv_additive_1:
+  assumes fin: "finite A"
+  assumes "A \<noteq> {}"
+  assumes "(p \<in> A) \<Longrightarrow> (p \<in> carrier P)"
+  shows "deriv R (\<Oplus>\<^bsub>P\<^esub> p \<in> A. p) = (\<Oplus>\<^bsub>P\<^esub> p \<in> A. deriv R p)"
+proof(induct "card A")
+  case C1: 0
+  show ?case
+    apply(rule ccontr)
+  proof-
+    assume "deriv R (\<Oplus>\<^bsub>P\<^esub>p\<in>A. p) \<noteq> finsum P (deriv R) A"
+    have "card A = 0" using C1 by simp
+    have "card A \<noteq> 0" using assms(2) assms(1) sledgehammer
+next
+  case (Suc x)
+  then show ?case sorry
+qed
 
 lemma(in UP_domain) product_rule_monom:
   assumes "p \<in> carrier P"
@@ -612,12 +629,14 @@ proof(induction n)
   next
   case (Suc n)
     fix n
-    assume "(\<And>q. q \<in> carrier P \<and> deg R q \<le> n \<and> is_monomial q \<Longrightarrow> deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p)"
-    assume "q \<in> carrier P \<and> deg R q \<le> Suc n \<and> is_monomial q"
-    show "deriv R (q \<otimes>\<^bsub>UP R\<^esub> p) = deriv R q \<otimes>\<^bsub>UP R\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>UP R\<^esub> deriv R p"
+    assume A1: "(\<And>q. q \<in> carrier P \<and> deg R q \<le> n \<and> is_monomial q \<Longrightarrow> deriv R (q \<otimes>\<^bsub>P\<^esub> p) = deriv R q \<otimes>\<^bsub>P\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>P\<^esub> deriv R p)"
+    assume A2: "q \<in> carrier P \<and> deg R q \<le> Suc n \<and> is_monomial q"
+    show "deriv R (q \<otimes>\<^bsub>P\<^esub> p) = deriv R q \<otimes>\<^bsub>P\<^esub> p \<oplus>\<^bsub>UP R\<^esub> q \<otimes>\<^bsub>P\<^esub> deriv R p"
     proof
-      have "deriv R (
-qed
+      have "q \<in> carrier P \<and> deg R q \<le> Suc n \<and> is_monomial q \<Longrightarrow> is_monomial q" by simp
+      then have "is_monomial q" using A2 by simp 
+      obtain a where "q (deg R q) = a"
+        then have "q \<otimes>\<^bsub>P\<^esub> p = a \<odot>\<^bsub>P\<^esub> p" sledgehammer
 
 
 lemma(in UP_domain) product_rule1:

@@ -1,4 +1,4 @@
-theory Zp_poly
+theory Zp_poly_test
 imports "~~/src/HOL/Algebra/UnivPoly" padic_sequences cring_poly
 begin
 
@@ -695,19 +695,11 @@ abbreviation hensel where
 
 lemma pre_hensel:
   assumes "hensel f a"
-  shows "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
-proof(induction n)
-  case 0
-  then show ?case 
-    using assms by auto 
-next
-  case (Suc n)
-  fix n
-  assume IH: "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
-  show "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc (Suc n)) = 0 \<and> b 1 = a 1"
-  proof-
-    obtain b where b_def: "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1" 
-      using IH by blast 
+  assumes "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
+  shows "\<exists> b' \<in> carrier Z\<^sub>p. (f \<star> b') (Suc (Suc n)) = 0 \<and> b' 1 = a 1 \<and> b' (Suc n) = b (Suc n)"
+proof-
+    have b_def: "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
+      using assms by blast 
     have  "val_Zp (\<p>[^](Suc n)) \<preceq>\<^bsub>G\<^esub> val_Zp (f \<star> b)"
     proof(cases "f \<star> b = \<zero>")
       case True

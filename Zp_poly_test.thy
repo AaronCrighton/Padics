@@ -1,4 +1,4 @@
-theory Zp_poly
+theory Zp_poly_test
 imports "~~/src/HOL/Algebra/UnivPoly" padic_sequences cring_poly
 begin
 
@@ -81,9 +81,7 @@ lemma(in cring) minus_pairs_cancel_2:
       abelian_group.right_inv_add assms(1) assms(2) assms(3) cring.cring_simprules(17) 
       is_abelian_group is_cring local.ring_axioms ring.ring_simprules(15) ring.ring_simprules(22))
 
-(*
-\<oplus> (d \<otimes> a2 \<ominus> d \<otimes> a)  \<oplus> d \<otimes>(a2 \<ominus> b2)
-*)
+
 type_synonym padic_int_poly = "nat \<Rightarrow> padic_int"
 
 
@@ -197,7 +195,6 @@ lemma add_zeroP[simp]:
    apply (simp add: assms cring.cring_simprules)
    apply (simp add: assms cring.cring_simprules)
    done
-
 
 (*Degree function*)
 abbreviation degree:: "padic_int_poly \<Rightarrow> nat" where
@@ -540,8 +537,9 @@ abbreviation Taylor ("T\<^bsub>_\<^esub>") where
 
 (*Derivative function*)
 
-abbreviation deriv  where
+abbreviation deriv   where
 "deriv \<equiv> derivative Z\<^sub>p"
+
 
 (*Zero coefficient function*)
 
@@ -571,7 +569,6 @@ abbreviation lin_part where
 
 abbreviation pderiv where
 "pderiv \<equiv> poly_deriv Z\<^sub>p"
-
 
 (*Evaluating polynomials in the residue rings*)
 
@@ -670,6 +667,7 @@ proof(rule UP_domain.poly_induct2[of Z\<^sub>p f])
   qed
 qed
 
+(*If a and b has equal kth residues, then do f'(a) and f'(b)*)
 lemma deriv_res:
   assumes "f \<in> carrier P_Zp"
   assumes "a \<in> carrier Z\<^sub>p"
@@ -689,25 +687,17 @@ proof-
 qed
     
 (*Predicate for a polynomial that satisfies the hypothesis of Hensel's lemma at a point a*)
-
 abbreviation hensel where
 "hensel f a \<equiv> (f \<in> carrier P_Zp \<and> a \<in> carrier Z\<^sub>p \<and> ((f \<star> a) 1) = 0 \<and> (deriv f a 1) \<noteq> 0)"
 
+(*Proving the existence of the sequence for hensel's lemma*)
 lemma pre_hensel:
   assumes "hensel f a"
-  shows "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
-proof(induction n)
-  case 0
-  then show ?case 
-    using assms by auto 
-next
-  case (Suc n)
-  fix n
-  assume IH: "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
-  show "\<exists> b \<in> carrier Z\<^sub>p. (f \<star> b) (Suc (Suc n)) = 0 \<and> b 1 = a 1"
-  proof-
-    obtain b where b_def: "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1" 
-      using IH by blast 
+  assumes "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
+  shows "\<exists> b' \<in> carrier Z\<^sub>p. (f \<star> b') (Suc (Suc n)) = 0 \<and> b' 1 = a 1 \<and> b' (Suc n) = b (Suc n)"
+proof-
+    have b_def: "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1"
+      using assms by blast 
     have  "val_Zp (\<p>[^](Suc n)) \<preceq>\<^bsub>G\<^esub> val_Zp (f \<star> b)"
     proof(cases "f \<star> b = \<zero>")
       case True
@@ -734,8 +724,11 @@ next
     have "ord_Zp (deriv f a) = 0" using 2 3  
       by (simp )
     then have 4: "(deriv f a) \<in> Units Z\<^sub>p" 
-      using 2 ord_Zp_0_imp_unit[of "(f' a)"] by simp  
+      using 2 ord_Zp_0_imp_unit[of "(deriv f a)"] 
+      by blast
+    
     obtain k where  k_def: "k =inv\<^bsub>(R 1)\<^esub> ((deriv f a) 1)" by simp
+    
     have "k \<otimes>\<^bsub>R 1\<^esub>((deriv f a) 1) = \<one>\<^bsub>R 1\<^esub> \<and> k \<in> carrier (R 1)"
     proof-
       have P0:"field (R 1)"
@@ -755,10 +748,12 @@ next
       then show ?thesis 
         using P3 P2 by auto 
     qed
+    
     obtain m::int where m_def: "m =(\<ominus>\<^bsub>R 1\<^esub> (((divide (f \<star> b) (\<p>[^](Suc n))) 1) \<otimes>\<^bsub>R 1\<^esub> k))"
       by simp
-    obtain t where t_def: "t = [m]\<cdot>\<one>" 
+    obtain t where t_def: "t = [m]\<cdot>\<one>"
       by simp
+   
     have 5: "(f \<star> (b \<oplus> ((\<p>[^](Suc n)) \<otimes> t))) (Suc (Suc n)) = 0"
     proof-
       obtain fb where fb_def[simp]: "fb = f \<star> b"
@@ -1052,8 +1047,10 @@ next
         using A8 A4 
         by (simp add: b_def cring.cring_simprules(10) pnt_car)
     qed
+   
     obtain b1 where b1_def: "b1 = (b \<oplus> ((\<p>[^](Suc n)) \<otimes> t))"
       by simp
+ 
     have b10: "b1 \<in> carrier Z\<^sub>p"
       by (simp add: Zp_int_mult_closed Zp_one_car b1_def b_def cring.cring_simprules(5) t_def)
     have b11: "(f \<star> b1) (Suc (Suc n)) = 0"
@@ -1079,123 +1076,257 @@ next
       qed
       then show ?thesis using b_def by auto 
     qed
-    show ?thesis using b10 b11 b12 by blast 
+    have b13: "b1 (Suc n) = b (Suc n)"
+      using b1_def 
+      by (simp add: Zp_int_mult_closed Zp_one_car b_def
+          cring.cring_simprules(14) cring.cring_simprules(5) t_def)
+    show ?thesis using b10 b11 b12 b13 by blast
+qed
+
+(*The sequence which will converge to the root obtained by hensel's lemma*)
+fun hensel_seq where
+"hensel_seq f a 0 = a"|
+"hensel_seq f a (Suc n) = (SOME b. b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc (Suc n)) = 0 \<and> b 1 = a 1 \<and> b (Suc n) = (hensel_seq f a n) (Suc n))"
+
+(*Inductive lemma for proving the properties of the hensel sequence*)
+lemma hensel_seq_id_induct:
+  assumes "hensel f a"
+  shows 
+ "\<And>b0 b1. b0  = hensel_seq f a n \<Longrightarrow>
+  b1  = hensel_seq f a (Suc n) \<Longrightarrow>
+  b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc n)) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc n) = b0 (Suc n)"
+proof(induction n)
+  show "\<And>b0 b1. b0 = hensel_seq f a 0 \<Longrightarrow> 
+        b1 = hensel_seq f a (Suc 0) \<Longrightarrow> 
+        b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc 0)) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc 0) = b0 (Suc 0)"
+  proof-
+    fix b0 b1
+    assume B:  "b0 = hensel_seq f a 0" 
+               "b1 = hensel_seq f a (Suc 0)"
+    have B0: "b0 = a" 
+      using B 
+      by simp
+    have B1: "b0 \<in> carrier Z\<^sub>p \<and> (f \<star> b0) (Suc 0) = 0 \<and> b0 1 = a 1"
+      using assms B0 
+      by auto 
+    have B2: "\<exists> b' \<in> carrier Z\<^sub>p. (f \<star> b') (Suc (Suc 0)) = 0 \<and> b' 1 = a 1 \<and> b' (Suc 0) = b0 (Suc 0)"
+      using pre_hensel assms B1 
+      by blast
+    have B3: "b1= (SOME b. b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc (Suc 0)) = 0 \<and> b 1 = a 1 \<and> b (Suc 0) = b0 (Suc 0))"
+      using B
+      by simp
+    show  "b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc 0)) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc 0) = b0 (Suc 0)"
+      using B3 B2 
+      by (metis (mono_tags, lifting) B0 One_nat_def someI_ex)
+  qed
+  show "\<And>n b0 b1. (\<And>b0 b1. b0 = hensel_seq f a n \<Longrightarrow> b1 = hensel_seq f a (Suc n) \<Longrightarrow>
+             b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc n)) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc n) = b0 (Suc n)) \<Longrightarrow>
+             b0 = hensel_seq f a (Suc n) \<Longrightarrow>
+             b1 = hensel_seq f a (Suc (Suc n)) \<Longrightarrow> 
+             b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc (Suc n))) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc (Suc n)) = b0 (Suc (Suc n))"
+  proof-
+    fix n b0 b1
+    assume IH: "(\<And> b0 b1. b0 = hensel_seq f a n \<Longrightarrow> b1 = hensel_seq f a (Suc n) \<Longrightarrow>
+             b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc n)) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc n) = b0 (Suc n))" 
+    assume A: "b0 = hensel_seq f a (Suc n)"
+              "b1 = hensel_seq f a (Suc (Suc n))"
+    show "b1 \<in> carrier Z\<^sub>p \<and> (f \<star> b1) (Suc (Suc (Suc n))) = 0 \<and> b1 1 = a 1 \<and> b1 (Suc (Suc n)) = b0 (Suc (Suc n))"
+    proof-
+      have A0: " b0 \<in> carrier Z\<^sub>p \<and> (f \<star> b0) (Suc (Suc n)) = 0 \<and> b0 1 = a 1 \<and> b0 (Suc n) = (hensel_seq f a n) (Suc n)"
+        using A IH 
+        by blast
+      have A1: "\<exists> b' \<in> carrier Z\<^sub>p. (f \<star> b') (Suc (Suc (Suc n))) = 0 \<and> b' 1 = a 1 \<and> b' (Suc (Suc n)) = b0 (Suc (Suc n))"
+        using pre_hensel A0 assms 
+        by auto 
+      have A2: "b1 = (SOME b. b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc (Suc (Suc n))) = 0 \<and> b 1 = a 1 \<and> b (Suc (Suc n)) = b0 (Suc (Suc n)))"
+        using A 
+        by simp
+      let ?P = "(\<lambda> b. b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc (Suc (Suc n))) = 0 \<and> b 1 = a 1 \<and> b (Suc (Suc n)) = b0 (Suc (Suc n)))"
+      show ?thesis 
+        using A1 A2 someI_ex[of ?P]
+        by blast 
+    qed
   qed
 qed
 
-definition hensel_sequence where 
-"hensel_sequence f a = (\<lambda>n::nat. (SOME b. b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1))"
-
-lemma hensel_sequence_id: 
+(*Properties of the hensel sequence*)
+lemma hensel_seq_id_0:
   assumes "hensel f a"
-  assumes " b = (hensel_sequence f a)"
-  assumes "n > m"
-  shows "(b n) m = (b m) m"
-proof-
-  obtain bn where bn_def[simp]: "bn = b n"
-    by simp
-  obtain bm where bm_def[simp]: "bm = b m"
-    by simp
-  
-  have bn: "bn \<in> carrier Z\<^sub>p \<and> (f \<star> (bn)) (Suc n) = 0 \<and> (bn) 1 = a 1"
-    using pre_hensel[of f a] assms bn_def
-    unfolding hensel_sequence_def 
-    by (smt someI_ex)
-  have bm: "bm \<in> carrier Z\<^sub>p \<and> (f \<star> (bm)) (Suc m) = 0 \<and> (bm) 1 = a 1"
-    using pre_hensel[of f a] assms bm_def
-    unfolding hensel_sequence_def 
-    by (smt someI_ex)
-  
-  obtain fbn where fbn_def[simp]: "fbn = fun_of f (bn)"
-    by simp
-  obtain fbm where fbm_def[simp]: "fbm = fun_of f (bm)"
-    by simp
-  
-  have fbn_car[simp]: "fbn \<in> carrier Z\<^sub>p"
-    using assms(1) bn continuous_is_closed fbn_def 
-        is_closed_fun_simp polynomial_is_continuous by blast
-  have fbm_car[simp]: "fbm \<in> carrier Z\<^sub>p"
-    using assms(1) bm continuous_is_closed fbm_def 
-         is_closed_fun_simp polynomial_is_continuous 
+  assumes "b = hensel_seq f a n"
+  shows "b \<in> carrier Z\<^sub>p \<and> (f \<star> b) (Suc n) = 0 \<and> b 1 = a 1" 
+proof(cases "n = 0")
+  case True
+  then have "a = b" 
+    using assms by simp
+  then show ?thesis 
+    using True[simp] assms(1) 
+    by auto 
+next
+  case False
+  obtain k where k_def: "n = Suc k"
+    using False 
+    by (meson lessI less_Suc_eq_0_disj)
+  show ?thesis 
+    using assms k_def[simp] hensel_seq_id_induct[of f a "hensel_seq f a k" k b]
     by blast
+qed
 
-  obtain f'a where f'a_def[simp]:"f'a = deriv f a"
-    by simp
-  have f'a_car[simp]: "f'a \<in> carrier Z\<^sub>p"
-    using assms f'a_def P_Zp_is_UP_domain 
-    by (simp add: UP_domain.derivative_closed)
-  
-  obtain fa where fa_def: "fa = fun_of f a"
-    by simp
-  have fa_car: "fa \<in> carrier Z\<^sub>p"
-    using fa_def P_Zp_is_UP_domain 
-    by (simp add: assms(1))
+lemma hensel_seq_id_1:
+  assumes "hensel f a"
+  shows "(hensel_seq f a n) (Suc n) = (hensel_seq f a (Suc n)) (Suc n)"
+  using assms hensel_seq_id_induct[of f a "(hensel_seq f a n)" n "(hensel_seq f a (Suc n))" ]
+  by auto
 
-  obtain cn where cn_def: "cn = fun_of (shift (2::nat) (T\<^bsub>a\<^esub> f)) (bn \<ominus> a)"
-    by simp
-  have cn_car[simp]: "cn \<in> carrier Z\<^sub>p"
-    using cn_def P_Zp_is_UP_domain 
-    by (metis UP_domain.Taylor_closed Zp_is_cring a_minus_def assms(1) 
-        bn cring.cring_simprules(3) fun_of_closed_UP_domain shift_closed_UP_domain sum_closed)
+(*Hensel sequence is closed over Z\<^sub>p*)
+lemma hensel_seq_closed:
+  assumes "hensel f a"
+  shows "is_closed_seq (hensel_seq f a)"
+  using assms hensel_seq_id_0[of f a] 
+  unfolding is_closed_seq_def 
+  by blast 
 
-  obtain cm where cm_def: "cm = fun_of (shift (2::nat) (T\<^bsub>a\<^esub> f)) (bm \<ominus> a)"
-    by simp 
-  have cm_car[simp]: "cm \<in> carrier Z\<^sub>p"
-    using cm_def P_Zp_is_UP_domain 
- 
-    by (metis UP_domain.Taylor_closed Zp_is_cring a_minus_def assms(1)
-        bm cring.cring_simprules(3) fun_of_closed_UP_domain shift_closed_UP_domain sum_closed)
-
-  have fbn0: "fbn =  fa \<oplus> f'a \<otimes> (bn \<ominus> a) \<oplus> (cn \<otimes> (bn \<ominus> a)[^](2::nat))"
-    using UP_domain.Taylor_deg_1_expansion[of Z\<^sub>p f a bn cn fa f'a] P_Zp_is_UP_domain 
-          assms(1) bn cn_def f'a_def fa_def fbn_def 
-    by blast
-  have fbm0: "fbm =  fa \<oplus> f'a \<otimes> (bm \<ominus> a) \<oplus> (cm \<otimes> (bm \<ominus> a)[^](2::nat))"
-    using UP_domain.Taylor_deg_1_expansion[of Z\<^sub>p f a bm cm fa f'a] P_Zp_is_UP_domain 
-          assms(1) bm cm_def f'a_def fa_def fbm_def 
-    by blast 
--
-  
-  have fb_diff: "fbn \<ominus> fbm = f'a \<otimes>(bn \<ominus> bm) \<oplus>  (cn \<otimes> (bn \<ominus> a) [^] (2::nat) \<ominus> cm \<otimes> (bm \<ominus> a) [^] (2::nat))"
+(*Hensel sequence is cauchy*)
+lemma hensel_seq_is_cauchy:
+  assumes "hensel f a"
+  shows "is_cauchy (hensel_seq f a)"
+proof(rule is_cauchyI)
+  show "is_closed_seq (hensel_seq f a)"
+    using hensel_seq_closed assms 
+    by auto 
+  show "\<And>n. \<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> hensel_seq f a n0 n = hensel_seq f a n1 n"
   proof-
-    have fb_d0:"fbn \<ominus> fbm = fa \<oplus> f'a \<otimes> (bn \<ominus> a) \<oplus> (cn \<otimes> (bn \<ominus> a)[^](2::nat))
-                    \<ominus>(fa \<oplus> f'a \<otimes> (bm \<ominus> a) \<oplus> (cm \<otimes> (bm \<ominus> a)[^](2::nat)))"
-      using fbn0 fbm0 by auto 
-    have fb_d1:"fbn \<ominus> fbm =  f'a \<otimes> (bn \<ominus> a) \<ominus> f'a \<otimes> (bm \<ominus> a) \<oplus> (cn \<otimes> (bn \<ominus> a) [^] (2::nat) \<ominus> cm \<otimes> (bm \<ominus> a) [^] (2::nat))"
+    fix n
+    have A0:  "\<And>m. hensel_seq f a (m+n) n = hensel_seq f a n n"
     proof-
-      have fb_d10[simp]:"f'a \<otimes> (bn \<ominus> a) \<in> carrier Z\<^sub>p" "f'a \<otimes> (bm \<ominus> a) \<in> carrier Z\<^sub>p" 
-        using Zp_is_cring cring_def[of Z\<^sub>p] 
-              fbn_car bn cn_car f'a_car fa_car  assms 
-              cring.cring_simprules(1-5)[of Z\<^sub>p] 
-              ring.ring_simprules(1-6)[of Z\<^sub>p] 
-        apply meson
-        using Zp_is_cring cring.cring_simprules(4)[of Z\<^sub>p]  cring.cring_simprules(5)[of Z\<^sub>p] 
-              assms(1) bm f'a_car 
-        apply blast done
-      have fb_d11[simp]:"cn \<otimes> (bn \<ominus> a) [^] (2::nat) \<in> carrier Z\<^sub>p" "cm \<otimes> (bm \<ominus> a) [^] (2::nat) \<in> carrier Z\<^sub>p"
-       apply (meson Zp_is_cring assms(1) bn cn_car cring.cring_simprules(4) monom_term_car)
-       by (meson Zp_is_cring assms(1) bm cm_car cring.cring_simprules(4) monom_term_car)
-     show ?thesis  
-       using fb_d0 fb_d10 fb_d11 cring_def fa_car
-              cring.minus_pairs_cancel_1[of Z\<^sub>p fa "f'a \<otimes> (bn \<ominus> a)" "(cn \<otimes> (bn \<ominus> a)[^](2::nat))"   
-                                                  "f'a \<otimes> (bm \<ominus> a)" "(cm \<otimes> (bm \<ominus> a)[^](2::nat))"]
-       by force
+      fix m
+      show "hensel_seq f a (m+n) n = hensel_seq f a n n"
+        apply(induction m)
+         apply simp
+      proof-
+        fix m
+        assume IH: "hensel_seq f a (m + n) n = hensel_seq f a n n "
+        show "hensel_seq f a (Suc m + n) n = hensel_seq f a n n"
+        proof-
+          have I0: "hensel_seq f a (Suc m + n) (Suc m + n) = hensel_seq f a (m+n) (Suc m + n)"
+            using assms hensel_seq_id_1[of f a "m+n"]
+            using add_Suc by presburger
+          have I1: "hensel_seq f a (Suc m + n) \<in> carrier Z\<^sub>p"  "hensel_seq f a (m+n) \<in> carrier Z\<^sub>p"
+            using hensel_seq_closed[of f a] assms 
+            unfolding is_closed_seq_def 
+            apply blast
+            using hensel_seq_closed[of f a] assms 
+            unfolding is_closed_seq_def 
+            apply blast done
+          have I2: "hensel_seq f a (Suc m + n) n = hensel_seq f a (m+n) n"
+          proof-
+            have I20: "hensel_seq f a (Suc m + n) n = (hensel_seq f a (Suc m + n) (Suc m + n)) mod (p^n)"
+              using I1 r_Zp r_def 
+              by auto
+            have I21: "hensel_seq f a (m + n) n = (hensel_seq f a (Suc m + n) (Suc m + n)) mod (p^n)"
+              using I1 r_Zp r_def I0
+              by auto 
+            show ?thesis 
+              using I20 I21 
+              by auto 
+          qed
+          show ?thesis 
+            using I2 IH 
+            by auto 
+        qed
+      qed
     qed
-    have fb_d2:"fbn \<ominus> fbm = f'a \<otimes> (bn \<ominus> a \<ominus> (bm \<ominus> a)) \<oplus>  (cn \<otimes> (bn \<ominus> a) [^] (2::nat) \<ominus> cm \<otimes> (bm \<ominus> a) [^] (2::nat))" 
-      using Zp_is_cring cring.minus_pair_factor[of Z\<^sub>p "(bn \<ominus> a)" "(bm \<ominus> a)" f'a ] 
-      by (metis assms(1) bm bn cring.cring_simprules(4) f'a_car fb_d1)
-    have fb_d3: "(bn \<ominus> a \<ominus> (bm \<ominus> a)) = bn \<ominus> bm"
-      using  cring.minus_pairs_cancel_2[of Z\<^sub>p bn bm a] 
-             Zp_is_cring assms(1) bm bn 
-      by blast
-    show ?thesis using fb_d2 fb_d3 
-      by auto 
+    have A1: "\<forall>n0 n1. n < n0 \<and> n < n1 \<longrightarrow> hensel_seq f a n0 n = hensel_seq f a n1 n"
+      apply auto
+    proof-
+      fix n0 n1
+      assume A00: "n < n0" "n < n1"
+      show " hensel_seq f a n0 n = hensel_seq f a n1 n" 
+        using A0 A00 
+        by (metis add.commute less_imp_add_positive)
+    qed
+    show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> hensel_seq f a n0 n = hensel_seq f a n1 n"
+      using A1 by blast 
   qed
+qed
 
-
-lemma hensels_lemma0:
+(*Basic version of hensel's lemma*)
+lemma hensels_lemma:
 assumes "hensel f a"
 shows "\<exists> \<alpha> \<in> carrier Z\<^sub>p. f\<star>\<alpha> = \<zero> \<and> \<alpha> 1 = a 1"
-
+proof-
+  obtain s where s_def: "s = hensel_seq f a"
+    by simp
+  have C: "is_cauchy s" 
+    using assms s_def hensel_seq_is_cauchy 
+    by auto 
+  obtain \<alpha> where alpha_def: "\<alpha>= res_lim s"
+    by simp
+  have Con: "converges_to s \<alpha>"
+    using C alpha_def 
+    by (simp add: C is_cauchy_imp_has_limit)
+  have Cont: "is_continuous (fun_of f)"
+    using assms  polynomial_is_continuous 
+    by blast
+  have A0: "(f\<star>\<alpha>) = res_lim ((fun_of f)\<^sub>*s)"
+    using C Cont alpha_def padic_integers.alt_seq_limit
+          padic_integers.res_lim_pushforward padic_integers.res_lim_pushforward'
+          padic_integers_axioms 
+    by auto
+  have A1: "res_lim ((fun_of f)\<^sub>*s) = \<zero>"
+  proof-
+    have "converges_to ((fun_of f)\<^sub>*s) \<zero>"
+    proof(rule converges_toI)
+      show "is_closed_seq((fun_of f)\<^sub>*s)"
+        using Con Cont continuous_is_closed converges_to_def push_forward_of_closed_is_closed by blast
+      show "\<zero> \<in> carrier Z\<^sub>p"  
+        by (simp add: cring.cring_simprules(2))
+      show "\<And>n. \<exists>N. \<forall>k>N. ((fun_of f)\<^sub>*s) k n = \<zero> n"
+      proof-
+        fix n 
+        show "\<exists>N. \<forall>k>N. ((fun_of f)\<^sub>*s) k n = \<zero> n"
+        proof-
+          have "\<forall>k>n. ((fun_of f)\<^sub>*s) k n = \<zero> n"
+          proof
+            fix k
+            show "n < k \<longrightarrow> ((fun_of f)\<^sub>*s) k n = \<zero> n"
+            proof
+              assume "n < k"
+              show "((fun_of f)\<^sub>*s) k n = \<zero> n"
+              proof-
+                have 0: "((fun_of f)\<^sub>*s) k n = (fun_of f) (s k) n"
+                  by (simp add: push_forward_def)
+                then have 1:  "((fun_of f)\<^sub>*s) k n  = (fun_of f) (hensel_seq f a k) n"
+                  using s_def by blast
+                have 2: "(fun_of f) (hensel_seq f a k) n = 0"
+                  by (smt Cont \<open>n < k\<close> assms continuous_is_closed 
+                      hensel_seq_id_0 is_closed_fun_simp less_imp_of_nat_less
+                      ord_Zp_geq semiring_1_class.of_nat_simps(2) zero_below_ord zero_vals)
+                show ?thesis using 1 2 
+                  by (simp add: zero_vals)
+              qed
+            qed
+          qed
+          then show ?thesis 
+            by blast
+        qed
+      qed
+    qed
+    then show ?thesis 
+      by (metis converges_to_def unique_limit')
+  qed
+  have A2: "(f\<star>\<alpha>) = \<zero>"
+    using A0 A1 by auto 
+  have "\<alpha> 1 = a 1"
+  proof-
+    obtain N where N_def: "s N 1 = \<alpha> 1"
+      using C alpha_def res_lim_cauchy by blast
+    then have "s N 1 = a 1"
+      using assms hensel_seq_id_0 s_def by blast
+    then show ?thesis 
+      using N_def by auto
+  qed
+  then show ?thesis using A2 
+    using Con converges_to_def by blast
+qed
 end
 end

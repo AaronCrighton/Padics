@@ -9,11 +9,11 @@ type_synonym padic_int_fun = "padic_int \<Rightarrow> padic_int"
 context padic_integers
 begin
 
-lemma Zp_is_cring:
+lemma Zp_is_cring[simp]:
 "cring Z\<^sub>p" 
   by (simp add: Zp_is_domain domain.axioms(1))
 
-lemma Zp_not_eq_diff_nonzero:
+lemma Zp_not_eq_diff_nonzero[simp]:
   assumes "a \<noteq>b"
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in>carrier Z\<^sub>p"
@@ -69,7 +69,8 @@ proof-
   have 0: "(a \<ominus> b) k = (a k) \<ominus>\<^bsub>R k\<^esub> (b k)" using assms  
     by (metis \<open>(a \<ominus> b) k = a k \<oplus>\<^bsub>R k\<^esub> \<ominus>\<^bsub>R k\<^esub> b k\<close> a_minus_def)
   have 1: "( a \<ominus> b) k = 0" using assms 
-    using Zp_is_cring cring.cring_simprules(4) zero_below_ord by fastforce
+    using Zp_is_cring cring.cring_simprules(4) zero_below_ord 
+    by (metis (no_types, hide_lams) dual_order.strict_trans less_irrefl not_less)
   then show ?thesis
   proof(cases "k=0")
     case True
@@ -85,7 +86,7 @@ proof-
   qed
 qed
 
-lemma Zp_res_eq2:
+lemma Zp_res_eq2[simp]:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in> carrier Z\<^sub>p"
   assumes "(a k) = (b k)" 
@@ -110,28 +111,29 @@ qed
 
 (**************************************************************************************************)
 (**************************************************************************************************)
-(**************************************************************************************************)
-(**************************************************************************************************)
-(**************************************************************************************************)
+(*************************************  Sequences over Zp  ****************************************)
 (**************************************************************************************************)
 (**************************************************************************************************)
 
+(*Predicate for a sequence of elements in Zp*)
 definition is_closed_seq :: "padic_int_seq \<Rightarrow> bool" where
 "is_closed_seq s = (\<forall> n. s n \<in> carrier Z\<^sub>p)"
 
-lemma is_closed_simp:
+lemma is_closed_simp[simp]:
   assumes "is_closed_seq s"
   shows "s n \<in> carrier Z\<^sub>p"
   using assms is_closed_seq_def by blast
 
-lemma is_closedI:
+lemma is_closedI[simp]:
   assumes "\<And> k. s k \<in> carrier Z\<^sub>p"
   shows "is_closed_seq s"
   by (simp add: assms is_closed_seq_def)
 
+(*The integer-valued padic (valuative) distance*)
 abbreviation ord_Zp_dist :: "padic_int \<Rightarrow> padic_int \<Rightarrow> int" where
 "ord_Zp_dist a b \<equiv> ord_Zp (a \<ominus> b)"
 
+(*Distance function is symmetric*)
 lemma ord_Zp_dist_sym:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in>carrier Z\<^sub>p"
@@ -150,6 +152,7 @@ next
     using ord_Zp_of_ominus  by (metis Zp_not_eq_diff_nonzero assms(1) assms(2))
 qed
 
+(*Distanc function obeys the ultrametic inequality*)
 lemma ord_Zp_dist_ultrametric:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in> carrier Z\<^sub>p"
@@ -177,6 +180,7 @@ proof-
     by (simp add: assms(1) assms(2) ord_Zp_dist_sym)
 qed
 
+(*Elements which are close have equal residues*)
 lemma ord_Zp_dist_res_eq:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in> carrier Z\<^sub>p"
@@ -184,13 +188,23 @@ lemma ord_Zp_dist_res_eq:
   shows "(a k) = (b k)" 
   by (simp add: Zp_res_eq assms(1) assms(2) assms(3))
 
+lemma ord_Zp_dist_res_eq1:
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "b \<in> carrier Z\<^sub>p"
+  assumes "a = b \<or> ord_Zp_dist a b > int k"
+  shows "(a k) = (b k)" 
+  using assms ord_Zp_dist_res_eq[of a b k] 
+  by blast 
+
+(*Elements with equal residues are close*)
 lemma ord_Zp_dist_res_eq2:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in> carrier Z\<^sub>p"
   assumes "(a k) = (b k)" 
   assumes "a \<noteq>b"
   shows "ord_Zp_dist a b \<ge>int k"
-  by (simp add: Zp_res_eq2 assms(1) assms(2) assms(3) assms(4))
+  by (simp add: assms(1) assms(2) assms(3) assms(4))
+
 
 lemma ord_Zp_dist_triangle_eqs:
   assumes "a \<in> carrier Z\<^sub>p"
@@ -211,13 +225,14 @@ proof-
   then have 0: "ord_Zp_dist b c > int n" 
     using assms(4) assms(5) by linarith
   have 1: "(a \<ominus> b) k = 0" 
-    using Zp_is_domain assms(1) assms(2) assms(4) assms(6) cring.cring_simprules(4)
-      domain.axioms(1) zero_below_ord by fastforce
+    using Zp_is_cring assms(1) assms(2) assms(4) assms(6) cring.cring_simprules(4)[of Z\<^sub>p a b]
+                          zero_below_ord[of "a \<ominus> b" k] by fastforce
   have 2: "(a \<ominus> c) k = 0" 
-    using Zp_is_domain assms(1) assms(3) assms(5) assms(6) cring.cring_simprules(4) 
-      domain.axioms(1) zero_below_ord by fastforce
+    using  Zp_is_cring assms(1) assms(3) assms(5) assms(6) cring.cring_simprules(4)[of Z\<^sub>p a c] 
+          zero_below_ord[of "a \<ominus>c" k] by  fastforce
   have 3: "(b \<ominus> c) k = 0"
-    using "0" Zp_is_cring assms(2) assms(3) assms(6) cring.cring_simprules(4) zero_below_ord by fastforce
+    using "0" Zp_is_cring assms(2) assms(3) assms(6) cring.cring_simprules(4)[of Z\<^sub>p b c]
+      zero_below_ord[of "b \<ominus>c" k] by fastforce
   show "a k = b k" 
     using Zp_res_eq assms(1) assms(2) assms(4) assms(6) by auto
   show "a k = c k" 
@@ -226,13 +241,16 @@ proof-
     using \<open>a k = b k\<close> \<open>a k = c k\<close> by auto
 qed
 
+(*Prediate for cauchy sequences*)
 definition is_cauchy :: "padic_int_seq \<Rightarrow> bool" where
 "is_cauchy s = ((is_closed_seq s) \<and> (\<forall> (n::int). \<exists> (N::nat). \<forall> m k::nat. (m>N \<and> k>N \<longrightarrow> (s m) = (s k) \<or> (ord_Zp_dist (s m) (s k)) > n)))"
 
+(*Relation for a sequence which converges to a point*)
 definition converges_to :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> bool" where
 "converges_to s a = ((a \<in> carrier Z\<^sub>p \<and> is_closed_seq s) 
     \<and> (\<forall>(n::int). (\<exists>(k:: nat). (\<forall>( m::nat). (m > k \<longrightarrow> (s m) = a \<or> (ord_Zp ((s m) \<ominus> a)) \<ge> n)))))"
 
+(*Cauchy sequences eventually have constant residues*)
 lemma is_cauchy_imp_eventually_const_0:
   assumes "is_cauchy s"
   fixes n::nat
@@ -260,9 +278,9 @@ proof-
       then have A0: "(ord_Zp_dist (s n0) (s n1)) > (int n)" 
         using C0 by blast
       have A1: "s n0 \<in> carrier Z\<^sub>p" 
-        using is_cauchy_def assms by (simp add: is_closed_simp)
+        using is_cauchy_def assms by (simp )
       have A2: "s n1 \<in> carrier Z\<^sub>p" 
-        using is_cauchy_def assms by (simp add: is_closed_simp)
+        using is_cauchy_def assms by (simp )
       show ?thesis 
         using A0 ord_Zp_dist_res_eq  A1 A2 by auto
     qed
@@ -271,7 +289,8 @@ proof-
     using that by blast
 qed
 
-lemma is_cauchyI:
+(*Introduction lemma for proving a sequence is cauchy*)
+lemma is_cauchyI[simp]:
   assumes "is_closed_seq s"
   assumes "\<And> n.  (\<exists>N. (\<forall> n0 n1. n0 > N \<and> n1 > N \<longrightarrow> (s n0) n = (s n1) n))"
   shows "is_cauchy s"
@@ -304,7 +323,7 @@ proof-
           next
             case False
             have 0: "(s m) \<in> carrier Z\<^sub>p"
-              by (simp add: assms(1) is_closed_simp)
+              by (simp add: assms(1))
             have 1: "(s k) \<in> carrier Z\<^sub>p" 
               using Z\<^sub>p_def assms(1) padic_integers.is_closed_simp padic_integers_axioms by blast
             have "int (Suc (nat n)) \<le> ord_Zp_dist (s m) (s k)" 
@@ -324,6 +343,7 @@ proof-
   then show ?thesis 
     using is_cauchy_def assms  by blast
 qed
+
 
 lemma is_cauchy_imp_eventually_const:
   assumes "is_cauchy s"
@@ -348,9 +368,11 @@ proof-
     using 0 1  that by blast
 qed
 
+(*The funciton which identifies the eventual residues of a cauchy sequence*)
 definition res_lim :: "padic_int_seq \<Rightarrow> padic_int" where
 "res_lim s = (\<lambda> k. (THE r. (\<exists>N.  (\<forall> m. m > N \<longrightarrow> (s m) k = r))))"
 
+(*(res_lim s) literally is the limit of s if s is cauchy*)
 lemma res_lim_cauchy_0:
   assumes "is_cauchy s"
   assumes "f = (res_lim s) k"
@@ -397,7 +419,6 @@ lemma res_lim_cauchy:
   assumes "is_cauchy s"
   obtains N where "\<And> m.  (m > N \<longrightarrow> (s m) k = (res_lim s) k)"
   using res_lim_cauchy_0 assms by presburger
-
 
 lemma res_lim_in_Zp:
   assumes "is_cauchy s"
@@ -469,7 +490,8 @@ proof-
           next
             case False
             have X: "(s m) \<in> carrier Z\<^sub>p" 
-              using "0" is_closed_simp by auto
+              using "0" is_closed_simp 
+              by blast
             have "(s m) (nat n) = (res_lim s) (nat n)"
               using A K_def  by blast
             then have "(s m) (nat n) = a (nat n)" 
@@ -489,12 +511,167 @@ proof-
     by (simp add: "0" converges_to_def)
 qed
 
+(*Convergent sequences are cauchy*)
+lemma convergent_imp_cauchy: 
+  assumes "is_closed_seq s"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "converges_to s a"
+  shows "is_cauchy s"
+  apply(rule is_cauchyI)
+  using assms apply simp 
+proof-
+  fix n
+  show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> s n0 n = s n1 n "
+  proof-
+    obtain k where k_def:"\<forall>m>k. s m = a \<or> (Suc n) \<le> ord_Zp_dist (s m) a"
+      using assms 
+      unfolding converges_to_def 
+      by blast 
+    have A0:  "\<forall>n0 n1. k < n0 \<and> k < n1 \<longrightarrow> s n0 n = s n1 n "
+      apply auto 
+    proof-
+      fix n0 n1
+      assume A: " k < n0" " k < n1"
+      show " s n0 n = s n1 n "
+      proof-
+        have 0: "(s n0) = a \<or> (Suc n) \<le> ord_Zp_dist (s n0) a"
+          using k_def using  A 
+          by blast  
+        have 1: "(s n1) = a \<or> (Suc n) \<le> ord_Zp_dist (s n1) a"
+          using k_def using  A 
+          by blast
+        have 2: "(s n0) n = a n"
+          using assms 0 ord_Zp_dist_res_eq1[of "s n0" a n] 
+          by (metis Suc_le_eq is_closed_simp nat_int nat_mono ord_Zp_def zless_nat_eq_int_zless)
+        have 3: "(s n1) n = a n"
+          using assms 1 ord_Zp_dist_res_eq1[of "s n1" a n] 
+          by (metis Suc_le_eq is_closed_simp nat_int nat_mono ord_Zp_def zless_nat_eq_int_zless)
+        show ?thesis 
+          using 2 3 
+          by auto 
+      qed
+    qed
+    show ?thesis 
+      using A0 
+      by blast 
+  qed
+qed
+
+(*A sequence converges to no more than one element*)
+lemma unique_limit:
+  assumes "is_closed_seq s"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "b \<in> carrier Z\<^sub>p"
+  assumes "converges_to s a"
+  assumes "converges_to s b"
+  shows "a = b"
+proof-
+  have "\<And>k. a k = b k"
+  proof-
+    fix k
+    obtain k0 where k0_def:"\<forall>m>k0. s m = a \<or> (Suc k) \<le> ord_Zp_dist (s m) a"
+      using assms unfolding converges_to_def by blast 
+    obtain k1 where k1_def:"\<forall>m>k1. s m = b \<or> (Suc k) \<le> ord_Zp_dist (s m) b"
+      using assms unfolding converges_to_def by blast 
+    have k0_prop: "\<And>m. m> k0 \<Longrightarrow> (s m) k = a k"
+      using k0_def assms is_closed_simp[of s] ord_Zp_dist_res_eq1[of _ a k]
+      by (smt of_nat_Suc)
+    have k1_prop: "\<And>m. m> k1 \<Longrightarrow> (s m) k = b k"
+      using k1_def assms is_closed_simp[of s] ord_Zp_dist_res_eq1[of _ b k]      
+      by (smt of_nat_Suc)
+    have "\<And> m. m > (max k0 k1) \<Longrightarrow> a k = b k"
+      using k0_prop k1_prop 
+      by force
+    then show "a k = b k"
+      by blast
+  qed
+  then show ?thesis 
+    by blast
+qed
+
+lemma unique_limit':
+  assumes "is_closed_seq s"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "converges_to s a"
+  shows "a = res_lim s"
+  using unique_limit[of s a "res_lim s"] assms 
+        convergent_imp_cauchy is_cauchy_imp_has_limit res_lim_in_Zp 
+  by blast
+
+(*Elimination and introduction lemmas for convergence*)
+lemma converges_toE:
+  assumes "is_closed_seq s"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "converges_to s a"
+  shows "\<exists>N. \<forall>k > N. s k n = a n"
+  by (metis assms(1) assms(2) assms(3) 
+      convergent_imp_cauchy 
+      res_lim_cauchy unique_limit')
+
+lemma converges_toI:
+  assumes "is_closed_seq s"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "\<And>n. \<exists>N. \<forall>k > N. s k n = a n"
+  shows "converges_to s a"
+proof-
+  have 0: "(a \<in> carrier Z\<^sub>p \<and> is_closed_seq s)" 
+    using assms
+    by auto 
+  have 1: "(\<forall>n. \<exists>k. \<forall>m>k. s m = a \<or> n \<le> ord_Zp_dist (s m) a) "
+    apply auto
+  proof-
+    fix n 
+    show "\<exists>k. \<forall>m>k. s m = a \<or> n \<le> ord_Zp_dist (s m) a "
+    proof(cases "n \<le>0")
+      case True
+      have "\<forall>m>0. s m = a \<or> n \<le> ord_Zp_dist (s m) a "
+        apply auto 
+      proof-
+        fix m ::nat
+        assume "m >0"
+        show " \<not> n \<le> ord_Zp_dist (s m) a \<Longrightarrow> s m = a"
+          by (smt True Zp_is_cring assms(1) assms(2) 
+              cring.cring_simprules(4) cring_def is_closed_simp ord_pos ring.r_right_minus_eq)
+      qed
+      then show ?thesis 
+        by blast
+    next
+      case False
+      then have P0: "n >0"
+        by auto 
+      obtain N where N_def: "\<forall>k > N. s k (nat n) = a (nat n)"
+        using assms by auto 
+      have "\<forall>m>N. s m = a \<or> n \<le> ord_Zp_dist (s m) a "
+      proof
+        fix m
+        show " N < m \<longrightarrow> s m = a \<or> n \<le> ord_Zp_dist (s m) a"
+        proof
+          assume A: "N < m"
+          then have A0: "s m (nat n) = a (nat n)"
+            using N_def by auto 
+          show "s m = a \<or> n \<le> ord_Zp_dist (s m) a"
+            using assms A0 
+            by (smt int_nat_eq is_closed_simp ord_Zp_dist_res_eq2)
+        qed
+      qed
+      then show ?thesis 
+        by blast 
+    qed
+  qed
+  show ?thesis 
+    unfolding converges_to_def 
+    using 0 1 
+    by blast 
+qed
+
+(*Sums and products of sequences*)
 definition seq_sum:: "padic_int_seq \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" where
 "seq_sum s1 s2 = (\<lambda> k. (s1 k) \<oplus> (s2 k))"
 
 definition seq_prod:: "padic_int_seq \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" where
 "seq_prod s1 s2 = (\<lambda> k. (s1 k) \<otimes> (s2 k))"
 
+(*Sums and products of closed sequences are closed*)
 lemma sum_of_closed_seq_is_closed_seq:
   assumes "is_closed_seq s"
   assumes "is_closed_seq t"
@@ -503,7 +680,7 @@ proof(rule is_closedI)
   fix k
   have "seq_sum s t k = (s k) \<oplus>(t k)" using seq_sum_def by auto 
   then show "seq_sum s t k \<in> carrier Z\<^sub>p" 
-    using assms is_closed_simp  by (simp add: Zp_is_cring cring.cring_simprules(1))
+    using assms is_closed_simp[of "seq_sum s t"]  by (simp add:cring.cring_simprules(1))
 qed
 
 lemma prod_of_closed_seq_is_closed_seq:
@@ -514,9 +691,11 @@ proof(rule is_closedI)
   fix k
   have "seq_prod s t k = (s k) \<otimes> (t k)" using seq_prod_def by auto 
   then show "seq_prod s t k \<in> carrier Z\<^sub>p" 
-    using assms is_closed_simp  by (simp add: Zp_is_cring cring.cring_simprules(5))
+    using assms is_closed_simp[of "seq_prod s t"]
+    by (simp add:cring.cring_simprules(5))
 qed
 
+(*Sums and products of cauchy sequences are cauchy*)
 lemma sum_of_cauchy_is_cauchy:
   assumes "is_cauchy s"
   assumes "is_cauchy t"
@@ -597,9 +776,11 @@ proof(rule is_cauchyI)
   qed
 qed
 
+(*Predicate for constant sequences*)
 definition is_constant_seq :: "padic_int_seq \<Rightarrow> bool" where
 "is_constant_seq s = (\<exists>x \<in> carrier Z\<^sub>p. \<forall>k. s k = x)"
 
+(*Constant sequences are cauchy*)
 lemma constant_is_cauchy:
   assumes "is_constant_seq s"
   shows "is_cauchy s"
@@ -618,12 +799,149 @@ qed
 
 (**************************************************************************************************)
 (**************************************************************************************************)
+(*******************************   SEQUENTIAL COMPACTNESS  ****************************************)
+(*******************************          OF ZP            ****************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+
+(*The refinement of a sequence by a function nat \<Rightarrow> nat*)
+definition take_subseq :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+"take_subseq s f = (\<lambda>k. s (f k))"
+
+(*Predicate for increasing function on the natural numbers*)
+definition is_increasing :: "(nat \<Rightarrow> nat) \<Rightarrow> bool" where
+"is_increasing f = (\<forall> n m::nat. n>m \<longrightarrow> (f n) > (f m))"
+
+(*Elimination and introduction lemma for increasing functions*)
+lemma is_increasingI:
+  assumes "\<And> n m::nat. n>m \<Longrightarrow> (f n) > (f m)"
+  shows "is_increasing f"
+  unfolding is_increasing_def 
+  using assms 
+  by blast 
+
+lemma is_increasingE: 
+  assumes "is_increasing f"
+  assumes " n> m"
+  shows "f n > f m"
+  using assms
+  unfolding is_increasing_def 
+  by blast 
+
+(*The subsequence predicate*)
+definition is_subseq_of :: "(nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> bool" where
+"is_subseq_of s s' = (\<exists>(f::nat \<Rightarrow> nat). is_increasing f \<and> s' = take_subseq s f)"
+
+(*Subsequence introduction lemma*)
+lemma is_subseqI:
+  assumes "is_increasing f"
+  assumes "s' = take_subseq s f"
+  shows "is_subseq_of s s'"
+  using assms 
+  unfolding is_subseq_of_def 
+  by auto 
+
+(*Given a sequence and a predicate, returns the funciton nat\<Rightarrow>nat which represents the increasing
+sequences of indices n on which P (s n) holds.*)
+
+fun filtering_function :: "(nat \<Rightarrow>'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> nat" where
+"filtering_function s P (0::nat) = (LEAST k::nat. P (s k))"|
+"filtering_function s P (Suc n) = (LEAST k:: nat. (P (s k)) \<and> k > (filtering_function s P n))"   
+
+definition filtered_sequence :: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+"filtered_sequence s P = take_subseq s (filtering_function s P)"
+
+definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<Rightarrow> bool)" ("Pr _  _")where
+"kth_res_equals k n a = (a k = n)"
+
+(*The characteristic function of the underlying set of a sequence*)
+definition indicator:: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a  \<Rightarrow> bool)" where
+"indicator s a = (\<exists>n::nat. s n = a)"
+
+(*Every subsequence is obtains by the "filtered_sequence" function*)
+lemma subseq_is_filtered:
+  assumes "is_subseq_of s s'"
+  shows "s' = filtered_sequence s (indicator s')"
+  sorry
+
+(*Every filtering function is the indicator of the sequence that it filters*)
+lemma filtering_function_is_indicator:
+  assumes "s' = filtered_sequence s P"
+  assumes "is_subseq s s'"
+  shows "P = indicator s'"
+  sorry
+
+(*For every closed sequence, and every n, there is a subsequence for which all elements have the 
+same nth residue*)
+lemma subseq_equal_res:
+  assumes "is_closed_seq s"
+  shows "\<exists>s' n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n)) "
+  sorry
+
+(*choice function for a subsequence with constant kth residue. Could be made constructive by 
+choosing the LEAST n if we wanted.*)
+definition equal_res_choice :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" ("Cseq _ _") where
+"equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" 
+
+(*The constant kth residue value for the sequence obtained by the previous function*)
+definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> int" ("Cres") where
+"equal_res_choice_res k s = (THE n. (\<forall> m. (Cseq k s) m k = n))" 
+
+(*The subsequence chosen by equal_res_choice is actually a subsequence*)
+lemma res_choice_subseq: 
+  assumes "is_closed_seq s"
+  shows "is_subseq_of s (Cseq k s)"
+  sorry
+
+(*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
+lemma res_choice_res: 
+  assumes "is_closed_seq s"
+  shows "(Cseq k s) m k = (Cres k s)"
+  sorry
+
+(*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
+definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
+"acc_point s k =(if k=0 then 0 else (Cres k (Cseq (k-1) s)))"
+
+lemma acc_point_closed:
+  assumes "is_closed_seq s"
+  shows "acc_point s \<in> carrier Z\<^sub>p"
+  sorry
+
+(*Choice function for a subsequence of s which converges to a, if it exists*)
+fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> (nat \<Rightarrow> nat)" where
+"convergent_subseq_fun s a 0 = 0"|
+"convergent_subseq_fun s a (Suc n) = (SOME k. k > (convergent_subseq_fun s a n)
+                                                \<and> (s k k) = a k)"
+
+definition convergent_subseq :: "padic_int_seq \<Rightarrow> padic_int_seq" where
+"convergent_subseq s = take_subseq s (convergent_subseq_fun s (acc_point s))"
+
+lemma convergent_subseq_is_subseq:
+  assumes "is_closed_seq s"
+  shows "is_subseq_of s (convergent_subsequent s)"
+  sorry
+
+lemma convergent_subsequence_is_convergent:
+  assumes "is_closed_seq s"
+  shows "converges_to (convergent_subsequence s) (acc_point s)"
+  sorry
+
+lemma Zp_is_compact:
+  assumes "is_closed_seq s"
+  shows "\<exists>s'. is_subseq_of s s' \<and> (converges_to s' (acc_point s))" 
+  sorry
+
+
+
+(**************************************************************************************************)
+(**************************************************************************************************)
 (*******************************   CONTINUOUS FUNCTIONS    ****************************************)
 (**************************************************************************************************)
 (**************************************************************************************************)
 
 definition push_forward :: "padic_int_fun \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" ("_\<^sub>*_") where
-"push_forward f s = (\<lambda> k. f ( s k))"
+"push_forward f s = (\<lambda> k . f ( s k))"
 
 definition is_closed_fun :: "padic_int_fun \<Rightarrow> bool" where
 "is_closed_fun f = (\<forall> x. x \<in> carrier Z\<^sub>p \<longrightarrow> f x \<in> carrier Z\<^sub>p)"
@@ -637,10 +955,42 @@ definition fun_prod:: "padic_int_fun \<Rightarrow> padic_int_fun \<Rightarrow> p
 definition is_constant_fun :: "padic_int_fun \<Rightarrow> bool" where
 "is_constant_fun f = (\<exists>x \<in> carrier Z\<^sub>p. \<forall>y \<in> carrier Z\<^sub>p. f y = x)"
 
+definition eq_on_Zp :: "padic_int_fun \<Rightarrow> padic_int_fun \<Rightarrow> bool" (infixl "\<doteq>" 78) where
+"eq_on_Zp f g = (\<forall>x. x \<in> carrier Z\<^sub>p \<longrightarrow> f x = g x)"
+
+lemma eq_simp:
+  assumes "(f \<doteq> g)"
+  assumes "x \<in> carrier Z\<^sub>p"
+  shows "f x = g x" 
+  using eq_on_Zp_def assms(1) assms(2) by blast
+
+
+lemma push_forward_eq:
+  assumes "f \<doteq> g "
+  assumes "is_closed_seq s"
+  shows "(f\<^sub>*s) = (g\<^sub>*s)"
+proof
+  fix x 
+  have "s x \<in> carrier Z\<^sub>p"
+    by (simp add: assms(2))
+  then show "(f\<^sub>*s) x = (g\<^sub>*s) x" 
+    using assms(1) eq_simp padic_integers.push_forward_def padic_integers_axioms by auto
+qed
+
+
 lemma is_closed_funI:
   assumes "\<And>x. x \<in> carrier Z\<^sub>p \<Longrightarrow> f x \<in> carrier Z\<^sub>p"
   shows "is_closed_fun f"
   by (simp add: assms is_closed_fun_def)
+
+lemma is_closed_eq:
+  assumes "is_closed_fun f"
+  assumes "f \<doteq> g"
+  shows "is_closed_fun g"
+proof(rule is_closed_funI)
+  show "\<And>x. x \<in> carrier Z\<^sub>p \<Longrightarrow> g x \<in> carrier Z\<^sub>p" 
+    using assms eq_simp  by (simp add: is_closed_fun_def)
+qed
 
 lemma constant_is_closed:
   assumes "is_constant_fun f"
@@ -651,8 +1001,9 @@ lemma push_forward_of_constant_is_constant:
   assumes "is_constant_fun f"
   assumes "is_closed_seq s"
   shows "is_constant_seq (f\<^sub>*s)"
-  using assms(1) assms(2) is_closed_simp is_constant_fun_def is_constant_seq_def
-    padic_integers.push_forward_def padic_integers_axioms by auto
+  using assms(1) assms(2) 
+  by (metis (full_types) is_closed_simp is_constant_fun_def
+      is_constant_seq_def padic_integers.push_forward_def padic_integers_axioms)
 
 lemma is_closed_fun_simp:
   assumes "x \<in> carrier Z\<^sub>p"
@@ -712,6 +1063,17 @@ proof-
   qed
   then show ?thesis 
     using assms(1) is_continuous_def by blast
+qed
+
+lemma is_continuous_eq:
+  assumes "is_continuous f"
+  assumes "f \<doteq> g"
+  shows "is_continuous g"
+proof(rule is_continuousI)
+  show "is_closed_fun g" 
+    using assms(1) assms(2) continuous_is_closed is_closed_eq by blast
+  show "\<And>s. is_cauchy s \<Longrightarrow> is_cauchy (g\<^sub>*s)" 
+    using assms(1) assms(2) is_cauchy_def is_continuous_def push_forward_eq by auto
 qed
 
 lemma constant_is_continuous:
@@ -774,6 +1136,207 @@ proof(rule is_continuousI)
         using A assms is_continuous_def prod_of_cauchy_is_cauchy by simp
     qed
   qed
+qed
+
+definition alt_seq where
+"alt_seq s = (\<lambda>k. (if (even k) then (s k) else (res_lim s)))"
+
+lemma alt_seq_cauchy:
+  assumes "is_cauchy s"
+  shows "is_cauchy (alt_seq s)"
+proof(rule is_cauchyI)
+  show "is_closed_seq (alt_seq s)"
+    using alt_seq_def[of s] 
+          assms 
+    unfolding  is_cauchy_def 
+    using Z\<^sub>p_def assms padic_integers.is_closedI 
+          padic_integers.is_closed_simp
+          padic_integers_axioms res_lim_in_Zp 
+    by presburger
+  fix n
+  show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> alt_seq s n0 n = alt_seq s n1 n "
+  proof-
+    obtain N where N_def: " \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> s n0 n =  s n1 n "
+      using assms padic_integers.is_cauchy_imp_eventually_const_0
+            padic_integers_axioms 
+      by blast
+    have "\<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> alt_seq s n0 n = alt_seq s n1 n "
+      apply auto 
+    proof-
+      fix n0 n1
+      assume A: "N < n0" "N < n1"
+      show "alt_seq s n0 n = alt_seq s n1 n"
+        using N_def 
+        unfolding alt_seq_def 
+        by (smt A(1) A(2) assms lessI max_less_iff_conj 
+            padic_integers.res_lim_cauchy padic_integers_axioms)
+    qed
+    then show ?thesis 
+      by blast
+  qed
+qed
+
+lemma alt_seq_limit:
+  assumes "is_cauchy s"
+  shows "res_lim(alt_seq s) = res_lim s"
+proof-
+  have "\<And>k. res_lim(alt_seq s) k = res_lim s k"
+  proof-
+    fix k
+    obtain N where N_def: "\<forall> m. m> N \<longrightarrow>  s m k = res_lim s k"
+      using assms res_lim_cauchy 
+      by blast
+    obtain N' where N'_def: "\<forall> m. m> N' \<longrightarrow>  (alt_seq s) m k = res_lim (alt_seq s) k"
+      using assms res_lim_cauchy 
+            alt_seq_cauchy 
+      by blast
+    have "\<And>m. m > (max N N') \<Longrightarrow> s m k = res_lim (alt_seq s) k"
+    proof-
+      fix m 
+      assume A0: "m > (max N N')"
+      have A1: "s m k = res_lim s k"
+        using A0 N_def 
+        by simp
+      have A2: "(alt_seq s) m k = res_lim (alt_seq s) k"
+        using A0 N'_def 
+        by simp
+      have A3: "(alt_seq s) m k = res_lim s k"
+        using alt_seq_def A1 A2 
+        by presburger
+      show "s m k = res_lim (alt_seq s) k" 
+        using A1 A2 A3 
+        by auto 
+    qed
+    then have P:"\<And>m. m > (max N N') \<Longrightarrow> (res_lim s k) = res_lim (alt_seq s) k" 
+      using N_def 
+      by auto
+    show "res_lim(alt_seq s) k = res_lim s k" 
+      using P[of "Suc (max N N')"] 
+      by auto 
+  qed
+  then show ?thesis 
+    by (simp add: ext)
+qed
+
+lemma res_lim_pushforward: 
+  assumes "is_continuous f"
+  assumes "is_cauchy s"
+  assumes "t = alt_seq s"
+  shows "res_lim (f\<^sub>*t) = f (res_lim t)"
+proof-
+  have 0: "converges_to (f\<^sub>*t) (res_lim (f\<^sub>*t))"
+    using assms alt_seq_cauchy is_cauchy_imp_has_limit 
+          is_continuous_def 
+    by blast
+  have  "\<And>k. res_lim (f\<^sub>*t) k = f (res_lim t) k"
+  proof-
+    fix k
+    show "res_lim (f\<^sub>*t) k = f (res_lim t) k"
+    proof-
+      obtain N where N_def: "\<And>m. m> N \<Longrightarrow> (f\<^sub>*t) m k = (res_lim (f\<^sub>*t)) k"
+        using 0  
+        by (meson convergent_imp_cauchy converges_to_def res_lim_cauchy)
+      obtain M where M_def: "M = 2*(Suc N) + 1"
+        by simp
+      have 0: "t M = res_lim s"
+        using assms 
+        unfolding alt_seq_def
+        by (simp add: M_def)
+      have 1: "(f\<^sub>*t) M k = (res_lim (f\<^sub>*t)) k"
+        using N_def M_def 
+        by auto 
+      have 2: "(f\<^sub>*t) M k = f (t M) k"
+        by (simp add: push_forward_def)
+      have 3: "(f\<^sub>*t) M k = f (res_lim s) k"
+        using 0 2 by simp
+      have 4: "(f\<^sub>*t) M k = f (res_lim t) k"
+        using 3 assms alt_seq_limit[of s] 
+        by auto
+      show ?thesis 
+        using 4 1 by auto 
+    qed
+  qed
+  then show ?thesis by(simp add: ext)
+qed
+
+lemma res_lim_pushforward': 
+  assumes "is_continuous f"
+  assumes "is_cauchy s"
+  assumes "t = alt_seq s"
+  shows "res_lim (f\<^sub>*s) = res_lim (f\<^sub>*t)"
+proof-
+  obtain a where a_def: "a = res_lim (f\<^sub>*s)"
+    by simp
+  obtain b where b_def: "b = res_lim (f\<^sub>*t)"
+    by simp 
+  have "\<And>k. a k = b k"
+  proof-
+    fix k
+    obtain Na where Na_def: "\<And>m. m > Na \<Longrightarrow> (f\<^sub>*s) m k = a k"
+      using a_def assms  padic_integers.is_continuous_def 
+            padic_integers_axioms res_lim_cauchy
+      by blast
+    obtain Nb where Nb_def: "\<And>m. m > Nb \<Longrightarrow> (f\<^sub>*t) m k = b k"
+      using b_def assms padic_integers.is_continuous_def 
+            padic_integers_axioms res_lim_cauchy
+            alt_seq_cauchy 
+      by blast
+    obtain M where M_def: "M = 2*(max Na Nb) + 1"
+      by simp
+    have M0: "odd M"
+      by (simp add: M_def)
+    have M1: "M > Na" 
+      using M_def 
+      by auto 
+    have M2: "M > Nb" 
+      using M_def 
+      by auto 
+    have M3: "t M = res_lim s"
+      using assms alt_seq_def M0 
+      by auto 
+    have M4: "((f\<^sub>*t) M) = f (res_lim s)"
+      using M3 
+      unfolding push_forward_def 
+      by auto 
+    have M5: "((f\<^sub>*t) M) k = b k"
+      using M2 Nb_def by auto 
+    have M6: "f (res_lim s) = f (res_lim t)" 
+      using assms alt_seq_limit[of s] 
+      by auto 
+    have M7: "f (res_lim t) k = b k"
+      using M4 M5 M6 by auto
+    have M8: "(f\<^sub>*s) M k = (f\<^sub>*s) (Suc M) k"
+      using M1 Na_def by auto
+    have M9: "(f\<^sub>*s) (Suc M) = (f\<^sub>*t) (Suc M)"
+      using assms unfolding push_forward_def alt_seq_def
+      using M_def 
+      by auto 
+    have M10: "(f\<^sub>*t) M k = (f\<^sub>*t) (Suc M) k"
+      by (simp add: M2 Nb_def less_SucI)
+    have M11: "(f\<^sub>*t) M k = (f\<^sub>*s) M k"
+      by (simp add: M10 M8 M9)
+    show "a k = b k" 
+      using M1 M11 M5 Na_def by auto
+  qed
+  then show ?thesis using a_def b_def ext[of a b] by auto 
+qed
+
+lemma continuous_limit:
+  assumes "is_continuous f"
+  assumes "is_cauchy s"
+  shows "converges_to (f\<^sub>*s) (f (res_lim s))"
+proof-
+  obtain t where t_def: "t = alt_seq s"
+    by simp
+  have 0: "converges_to (f\<^sub>*s) (res_lim (f\<^sub>*s))"
+    using assms(1) assms(2) is_continuous_def 
+      padic_integers.is_cauchy_imp_has_limit padic_integers_axioms by blast
+  have 1: "converges_to (f\<^sub>*s) (res_lim (f\<^sub>*t))"
+    using "0" assms(1) assms(2) res_lim_pushforward' t_def by auto
+  have 2: "converges_to (f\<^sub>*s) (f (res_lim t))"
+    using "1" assms(1) assms(2) padic_integers.res_lim_pushforward padic_integers_axioms t_def by auto
+  then show  "converges_to (f\<^sub>*s) (f (res_lim s))"
+    by (simp add: alt_seq_limit assms(2) t_def)
 qed
 
 definition X_Zp :: "padic_int_fun" where
@@ -923,4 +1486,16 @@ proof-
   then show ?thesis 
     by (simp add: X_pow_Zp_is_continuous scalar_mult_is_continuous)
 qed
+
+definition mon:: "padic_int \<Rightarrow> nat \<Rightarrow> padic_int_fun" where
+"mon c n = scalar_mult c (X_pow_Zp n)"
+
+lemma mon_is_monomial:
+  assumes "c \<in> carrier Z\<^sub>p"
+  shows "is_monomial (mon c n)"
+  using assms is_monomial_def mon_def by blast
+
+
+
 end
+end 

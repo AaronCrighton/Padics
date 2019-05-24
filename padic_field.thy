@@ -155,6 +155,23 @@ lemma(in padic_integers) Min_min:
 (*************************************************************************************************)
 (*************************************************************************************************)
 
+lemma(in field) field_inv[simp]:
+  assumes "a \<in> carrier R"
+  assumes "a \<noteq>\<zero>"
+  shows "inv\<^bsub>R\<^esub> a \<otimes> a = \<one>"
+        "a \<otimes> inv\<^bsub>R\<^esub> a = \<one>"
+        "inv \<^bsub>R\<^esub> a \<in> carrier R"
+proof-
+  have "a \<in> Units R"
+    using assms by (simp add: local.field_Units)
+  then show "inv\<^bsub>R\<^esub> a \<otimes> a = \<one>" 
+    by simp
+  show "a \<otimes> inv a = \<one>" 
+    using \<open>a \<in> Units R\<close> by auto
+  show "inv \<^bsub>R\<^esub> a \<in> carrier R"
+    by (simp add: \<open>a \<in> Units R\<close>)
+qed
+
 (*Maps between residue rings*)
 
 abbreviation(in padic_integers) r:: "nat \<Rightarrow> int \<Rightarrow> _" where
@@ -249,6 +266,50 @@ qed
 lemma(in padic_integers) zero_vals:
 "\<zero> n = 0"
   using r_def zero_rep by auto 
+
+lemma(in padic_integers) res_mult_zero[simp]:
+  assumes "k >0"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "b \<in> carrier Z\<^sub>p"
+  assumes "a k = 0"
+  shows "(a \<otimes>b) k = 0" "(b \<otimes>a) k = 0"
+   apply (metis Z\<^sub>p_def assms(3) assms(4) cring.cring_simprules(26)
+      monoid.simps(1) padic_int_is_cring padic_mult_simp prime zero_vals)
+  by (metis Z\<^sub>p_def assms(3) assms(4) cring.cring_simprules(27) monoid.simps(1) 
+      padic_int_is_cring padic_integers.zero_vals padic_integers_axioms padic_mult_simp prime)
+
+lemma(in padic_integers) res_add_zero[simp]:
+  assumes "k >0"
+  assumes "a \<in> carrier Z\<^sub>p"
+  assumes "b \<in> carrier Z\<^sub>p"
+  assumes "a k = 0"
+  shows "(a \<oplus> b) k = b k" "(b \<oplus> a) k = b k"
+proof-
+  have "(a \<oplus> b) k = (a k) \<oplus>\<^bsub>R k\<^esub> (b k)"
+    by (simp add: Res_def Z\<^sub>p_def padic_add_simp)
+  then have "(a \<oplus> b) k = \<zero>\<^bsub>R k\<^esub> \<oplus>\<^bsub>R k\<^esub> (b k)"
+    using R_residues Res_def assms(1) assms(4) residues.res_zero_eq by auto
+  then show 1: "(a \<oplus> b) k = b k"
+    by (metis R_cring Res_def Z\<^sub>p_def assms(1) assms(3) 
+        cring.cring_simprules(8) padic_set_simp0 partial_object.select_convs(1))
+  show "(b \<oplus> a) k = b k" 
+    using assms 1  Z\<^sub>p_def padic_add_comm prime 
+    by auto
+qed
+
+lemma(in padic_integers) res_mult_closed[simp]:
+  assumes "k> 0"
+  assumes "a \<in> carrier (R k)"
+  assumes "b \<in> carrier (R k)"
+  shows "a \<otimes>\<^bsub>R k\<^esub> b \<in> carrier (R k)"
+  by (simp add: R_cring assms(1) assms(2) assms(3) cring.cring_simprules(5))
+
+lemma(in padic_integers) res_add_closed[simp]:
+  assumes "k> 0"
+  assumes "a \<in> carrier (R k)"
+  assumes "b \<in> carrier (R k)"
+  shows "a \<oplus>\<^bsub>R k\<^esub> b \<in> carrier (R k)"
+  by (simp add: R_cring assms(1) assms(2) assms(3) cring.cring_simprules(1))
 
 (*************************************************************************************************)
 (*************************************************************************************************)
@@ -477,7 +538,7 @@ lemma(in padic_integers) frac_one:
   shows "frac a a = \<one>\<^bsub>Q\<^sub>p\<^esub>"
   by (simp add: Q\<^sub>p_def Zp_is_domain assms domain.frac_one local.frac_def)
 
-lemma(in padic_integers) frac_im:
+lemma(in padic_integers)  frac_closed:
   assumes "a \<in> carrier Z\<^sub>p"
   assumes "b \<in> nonzero Z\<^sub>p"
   shows "frac a b \<in> carrier Q\<^sub>p"
@@ -639,6 +700,26 @@ proof-
   show ?thesis 
     by (simp add: P0 P1)
 qed
+
+lemma(in padic_integers) frac_eq:
+  assumes "a \<in> nonzero Z\<^sub>p"
+  assumes "b \<in> nonzero Z\<^sub>p"
+  assumes "frac a b = \<one>\<^bsub>Q\<^sub>p\<^esub>"
+  shows "a = b"
+proof-
+  have "frac a b = frac b b"
+    by (simp add: assms(2) assms(3) frac_one)
+  then have "frac a \<one> = frac b \<one>"
+    by (metis (no_types, lifting) Q\<^sub>p_def Qp_is_domain Z\<^sub>p_def
+        Zp_nonzero_def(1) Zp_one_nonzero assms(1) assms(2) assms(3)
+        cring.cring_simprules(11) cring.cring_simprules(12) cring.cring_simprules(14) 
+        domain.axioms(1) fract_frac local.inc_def padic_integers.frac_closed 
+        padic_integers.frac_inv padic_integers_axioms)
+  then show ?thesis 
+    using Zp_is_domain Zp_nonzero_def(1) \<iota>_def assms(1) assms(2) 
+      domain.inc_inj2 local.inc_def by force
+qed
+
 
 lemma(in domain) nat_pow_nonzero:
   assumes "x \<in>nonzero R"
@@ -951,7 +1032,30 @@ qed
 abbreviation(in padic_integers) \<p> where
 "\<p> \<equiv> [p] \<cdot> \<one>"
 
+lemma(in padic_integers) p_natpow_prod:
+"\<p>[^](n::nat) \<otimes> \<p>[^](m::nat) = \<p>[^](n + m)"
+  using Zp_is_domain Zp_nat_inc_closed Zp_one_car domain.axioms(1) monoid.nat_pow_mult
+  by (metis  cring.axioms(1) domain_def ring_def)
 
+lemma(in padic_integers) p_natpow_prod_Suc:
+"\<p> \<otimes> \<p>[^](m::nat) = \<p>[^](Suc m)"
+"\<p>[^](m::nat)  \<otimes> \<p> = \<p>[^](Suc m)"
+proof-
+  have "\<p> \<otimes> \<p>[^](m::nat) = \<p>[^](1::nat) \<otimes>\<p>[^](m::nat) "
+    by (metis Zp_is_domain Zp_nat_inc_closed cring_def
+        domain.axioms(1) int_pow_int monoid.nat_pow_eone of_nat_1 ring_def)
+    then have "\<p> \<otimes> \<p>[^](m::nat) = \<p>[^]((1::nat) + m)"
+      using p_natpow_prod by auto
+    then show 0: "\<p> \<otimes> \<p>[^](m::nat) = \<p>[^](Suc m)"
+      by auto
+    then show "\<p>[^](m::nat)  \<otimes> \<p> = \<p>[^](Suc m)"
+    proof-
+      have "\<p>[^](m::nat)  \<otimes> \<p> =  \<p> \<otimes> \<p>[^](m::nat) "
+        using Zp_is_domain Zp_one_car  domain.axioms(1) monoid.nat_pow_Suc
+        by (metis "0" cring_def ring_def)
+      then show ?thesis using 0 by auto 
+    qed
+qed
 
 (*************************************************************************************************)
 (*************************************************************************************************)
@@ -1151,8 +1255,6 @@ proof(rule ccontr)
     using above_ord_nonzero by auto
 qed
 
-
-
 lemma(in padic_integers) ord_equals:
   assumes "x \<in> carrier Z\<^sub>p"
   assumes "x (Suc n) \<noteq> 0"
@@ -1288,7 +1390,7 @@ proof-
     by (metis monoid.select_convs(1) Z\<^sub>p_def) 
 qed
 
-lemma(in padic_integers) ord_Zp_pow:
+lemma(in padic_integers) ord_Zp_pow[simp]:
   assumes "x \<in> nonzero Z\<^sub>p"
   shows "ord_Zp (x[^](n::nat)) = n*(ord_Zp x)"
 proof(induction n)
@@ -1329,7 +1431,7 @@ next
     by simp
 qed
 
-lemma(in padic_integers) val_Zp_pow:
+lemma(in padic_integers) val_Zp_pow[simp]:
   assumes "x \<in> nonzero Z\<^sub>p"
   shows "val_Zp (x[^](n::nat)) = *(n*(ord_Zp x))*"
   using Z\<^sub>p_def Zp_nat_pow_nonzero Zp_nonzero_def(2) assms ord_Zp_def
@@ -1360,6 +1462,31 @@ proof-
   then show ?thesis  
     using ord_Zp_p_pow  by (simp add: ord_Zp_def val_Zp_def)
 qed
+
+lemma(in padic_integers) p_pow_factor[simp]:
+  assumes "h \<in> carrier Z\<^sub>p"
+  assumes "(n::nat) \<ge> m"
+  shows "(h \<otimes> (\<p>[^]n)) m = 0"
+proof(cases "h = \<zero>")
+  case True
+  then show ?thesis 
+    using Z\<^sub>p_def Zp_is_domain Zp_nat_inc_closed Zp_nat_pow_nonzero domain.axioms(1) ord_Zp_p
+      padic_integers.Zp_nonzero_def(1) padic_integers.ord_of_nonzero(2)
+      padic_integers_axioms zero_vals
+    by (metis assms(1) cring_def domain.integral_iff domain_def monoid.nat_pow_closed ring_def)
+next
+  case False
+  then have "ord_Zp (h \<otimes> (\<p>[^]n)) \<ge> int m"
+    using assms Z\<^sub>p_def Zp_nat_inc_closed Zp_nat_pow_nonzero ord_Zp_p
+          ord_Zp_p_pow ord_pos padic_integers.ord_Zp_mult 
+          padic_integers.ord_of_nonzero(2) padic_integers_axioms 
+    by fastforce
+  then show ?thesis 
+    by (metis (mono_tags) Zp_is_domain Zp_nat_inc_closed Zp_nat_pow_nonzero assms(1) 
+        cring.cring_simprules(5) domain_def mem_Collect_eq nonzero_def 
+        ord_Zp_p ord_of_nonzero(2) zero_below_ord zero_le_one)
+qed
+
 
 (*Ultrametric inequality for ord*)
 
@@ -1510,7 +1637,7 @@ qed
 
 (*Elements with valuation 0 in Zp are the units*)
 
-lemma(in padic_integers) ord_Zp_0_criterion:
+lemma(in padic_integers) ord_Zp_0_criterion[simp]:
   assumes "x \<in> carrier Z\<^sub>p"
   assumes "x 1 \<noteq> 0"
   shows "ord_Zp x = 0"
@@ -1525,7 +1652,7 @@ qed
 
 (*Units in Zp have ord 0*)
 
-lemma(in padic_integers) unit_imp_ord_Zp0:
+lemma(in padic_integers) unit_imp_ord_Zp0[simp]:
   assumes "x \<in> Units Z\<^sub>p"
   shows "ord_Zp x = 0"
 proof-
@@ -1556,7 +1683,7 @@ qed
 
 (*Units in Zp have val 0*) 
 
-lemma(in padic_integers) unit_imp_val_Zp0:
+lemma(in padic_integers) unit_imp_val_Zp0[simp]:
   assumes "x \<in> Units Z\<^sub>p"
   shows "val_Zp x = Some 0"
   using unit_imp_ord_Zp0 val_ord_Zp G_def
@@ -1564,7 +1691,7 @@ lemma(in padic_integers) unit_imp_val_Zp0:
 
 (*elements in Zp with ord 0 are units*)
 
-lemma(in padic_integers) ord_Zp0_imp_unit0:
+lemma(in padic_integers) ord_Zp0_imp_unit0[simp]:
   assumes "ord_Zp x = 0"
   assumes "x \<in> carrier Z\<^sub>p"
   fixes n::nat
@@ -1622,7 +1749,7 @@ proof-
         le_eq_less_or_eq residues.m_gt_one residues.mod_in_res_units)  
 qed
 
-lemma(in padic_integers) ord_Zp_0_imp_unit:
+lemma(in padic_integers) ord_Zp_0_imp_unit[simp]:
   assumes "ord_Zp x = 0"
   assumes "x \<in> carrier Z\<^sub>p"
   shows "x \<in> Units Z\<^sub>p"
@@ -1886,15 +2013,14 @@ next
   qed
 qed
 
-lemma(in padic_integers) p_pow_nonzero_0:
+lemma(in padic_integers) p_pow_nonzero_0[simp]:
   shows "(\<p>[^](n::nat)) \<in> carrier Z\<^sub>p"
         "(\<p>[^](n::nat)) \<noteq> \<zero>"
-  apply (simp add: Zp_nat_mult_closed Zp_nat_pow_nonzero Zp_nonzero_def(1)
-      Zp_one_car ord_Zp_p ord_of_nonzero(2))
+  apply (simp add: Zp_nat_inc_closed p_pow_rep0)
   apply (simp add: Zp_nat_inc_closed p_pow_rep0)
   using Zp_nat_inc_closed ord_Zp_p_pow ord_of_nonzero(1) p_pow_rep0 by auto
 
-lemma(in padic_integers) p_pow_nonzero:
+lemma(in padic_integers) p_pow_nonzero[simp]:
   shows "(\<p>[^](n::nat)) \<in> nonzero Z\<^sub>p"
   using nonzero_def p_pow_nonzero_0 
   by (simp add: ord_of_nonzero(2) ord_pos) 
@@ -1905,12 +2031,13 @@ lemma(in padic_integers) p_pow_rep:
   shows "(\<p>[^]n) k = (p^n) mod (p^k)"
   by (metis Zp_nat_inc_rep of_nat_mod p_pow_rep0 r_def)
 
-lemma(in padic_integers) p_pow_car_nat:
+
+lemma(in padic_integers) p_pow_car_nat[simp]:
   fixes n::nat
   shows "(\<p>[^]n) \<in> carrier Z\<^sub>p"
-  using Zp_nat_inc_closed p_pow_rep0  by simp 
+  by simp
 
-lemma(in padic_integers) p_pow_car:
+lemma(in padic_integers) p_pow_car[simp]:
   assumes " (n::int)\<ge> 0"
   shows "(\<p>[^]n) \<in> carrier Z\<^sub>p"
 proof-
@@ -1920,15 +2047,12 @@ proof-
     by simp 
 qed
 
-lemma(in padic_integers) p_int_pow_nonzero:
+lemma(in padic_integers) p_int_pow_nonzero[simp]:
   assumes "(n::int) \<ge>0"
   shows "(\<p>[^]n) \<in> nonzero Z\<^sub>p"
   by (metis assms int_eq_iff int_pow_int p_pow_nonzero)
 
 (*Every element of Zp is a unit times a power of p.*)
-
-
-
 
 lemma(in padic_integers) res_factor_unique:
   assumes "k>0"
@@ -1962,9 +2086,13 @@ proof-
   then have X1: "(x (m+k)) \<ge> 0" 
     using R_residues Res_def assms(2) residues.res_carrier_eq  by simp
   then have X2: "(x (m+k)) > 0"  
-    using assms(1) assms(2) assms(3) assms(4) above_ord_nonzero by fastforce
+    using assms(1) assms(2) assms(3) assms(4) above_ord_nonzero 
+    by (metis add.right_neutral add_cancel_right_right 
+        add_gr_0 int_nat_eq less_add_same_cancel1 
+        less_imp_of_nat_less not_gr_zero of_nat_0_less_iff of_nat_add ord_pos)
   have 0: "x m = 0" 
-    using  Z\<^sub>p_def assms(1) assms(3) zero_below_val  ord_nat zero_below_ord zero_vals by fastforce
+    using  Z\<^sub>p_def assms(1) assms(3) zero_below_val  ord_nat zero_below_ord[of x m] zero_vals 
+           assms(4) ord_Zp_def by auto
   then have 1: "x (m +k) mod int (p ^ m) = 0" 
     using assms(2) assms(3) r_Zp res_def by auto
   then have "\<exists> u.  u*(int p^m) = (x (m+k))" 
@@ -2036,7 +2164,7 @@ proof-
   then show ?thesis using U0 by auto  
 qed
 
-lemma(in padic_integers) ac_res:
+lemma(in padic_integers) ac_res[simp]:
   assumes "m >k"
   assumes "n = nat (ord_Zp x)"
   assumes "x \<in> carrier Z\<^sub>p"
@@ -2082,7 +2210,7 @@ next
     by (simp add: Uk0 Um0 res_def)
 qed
 
-lemma(in padic_integers) ac_in_Zp:
+lemma(in padic_integers) ac_in_Zp[simp]:
   assumes "x \<in> carrier Z\<^sub>p"
   assumes "x \<noteq>\<zero>"
   shows "ac x \<in> carrier Z\<^sub>p"
@@ -2114,23 +2242,24 @@ proof-
     by (simp add: Z\<^sub>p_def \<open>ac x \<in> padic_set p\<close>)
 qed
 
-lemma(in padic_integers) ac_is_Unit:
+lemma(in padic_integers) ac_is_Unit[simp]:
   assumes "x \<in> carrier Z\<^sub>p"
   assumes "x \<noteq>\<zero>"
   shows "ac x \<in> Units Z\<^sub>p"
 proof(rule ord_Zp_0_imp_unit)
   show "ac x \<in> carrier Z\<^sub>p" 
-    by (simp add: ac_in_Zp assms(1) assms(2))
+    by (simp add: assms(1) assms(2))
   obtain m where M: "m = nat (ord_Zp x)"
     by blast
   have AC1: "(ac x 1)*(p^m) = (x (m+1))"
     using M ac_equation assms(1) assms(2) by auto
   have "(x (m+1)) \<noteq>0" 
-    using M assms by (simp add: above_ord_nonzero)
+    using M assms 
+    by (metis Suc_eq_plus1 Suc_le_eq nat_int nat_mono nat_neq_iff ord_Zp_geq)
   then have "(ac x 1) \<noteq> 0" 
     using AC1 by auto
   then show "ord_Zp (ac x) = 0"
-    by (simp add: ac_in_Zp assms(1) assms(2) ord_Zp_0_criterion)
+    by (simp add: assms(1) assms(2))
 qed
 
 lemma(in padic_integers) ac_factors_x:
@@ -2151,9 +2280,10 @@ proof
     proof(cases "k \<le> ord_Zp x")
       case True
       have 0: "x k = 0" 
-        by (simp add: True assms(1) zero_below_ord)
+        using True assms(1) zero_below_ord by blast
       have 1: "(\<p>[^](nat (ord_Zp x))) k = 0" 
-        using True ord_Zp_p_pow p_pow_car_nat zero_below_ord by auto
+        using True ord_Zp_p_pow p_pow_car_nat zero_below_ord 
+              assms(1) assms(2) ord_nat by presburger
       have "((\<p>[^](nat (ord_Zp x))) \<otimes> (ac x)) k = (\<p>[^](nat (ord_Zp x))) k * (ac x) k mod p^k" 
         using Z\<^sub>p_def padic_mult_simp residue_ring_def by simp
       then have "((\<p>[^](nat (ord_Zp x))) \<otimes> (ac x)) k = 0" 
@@ -2255,7 +2385,7 @@ proof-
   have "(frac (\<p>[^]n) (\<p>[^]m)) = \<iota> (\<p>[^](n-m))" 
     by (simp add: assms(1) assms(2) pow_p_frac_0) 
   then have P0:"(frac (\<p>[^]n) (\<p>[^]m)) = frac (\<p>[^](n-m)) \<one>" 
-    by (simp add: assms(1) local.inc_def p_pow_car) 
+    by (simp add: assms(1) local.inc_def) 
   have P1: "\<one>\<in>nonzero Z\<^sub>p" 
     by (simp add: Localization.submonoid.one_closed Zp_is_domain domain.nonzero_is_submonoid) 
   have P2: "\<p>[^]n \<in> nonzero Z\<^sub>p" 
@@ -2270,6 +2400,7 @@ proof-
     using P0 P1 P2 P3 P4 p_pow_nonzero domain.frac_inv_id frac_def Zp_is_domain 
     by (metis (mono_tags, lifting)) 
 qed
+
 
 (*The copy of the prime p living in Q\<^sub>p*)
 
@@ -2288,7 +2419,7 @@ proof-
     by (simp add: local.inc_def Zp_nat_inc_closed)
 qed
 
-lemma(in padic_integers) p_nonzero:
+lemma(in padic_integers) p_nonzero[simp]:
 "\<pp>\<in>nonzero Q\<^sub>p"
   by (simp add: inc_of_nonzero Zp_nat_inc_closed ord_Zp_p ord_of_nonzero(2) p_inc)
 
@@ -2345,7 +2476,7 @@ definition(in padic_integers) ord where
 definition(in padic_integers) val where
 "val x = (if (x = \<zero>\<^bsub>Q\<^sub>p\<^esub>) then \<infinity>\<^bsub>G\<^esub> else (Some (ord x)))"
 
-lemma(in padic_integers) val_ord:
+lemma(in padic_integers) val_ord[simp]:
   assumes "a \<in> nonzero Q\<^sub>p"
   shows "val a = *ord a*"
   using assms nonzero_def val_def by force
@@ -2382,12 +2513,12 @@ qed
 lemma(in padic_integers) val_zero:
 "val (\<zero>\<^bsub>Q\<^sub>p\<^esub>) = \<infinity>\<^bsub>G\<^esub>" by (simp add: val_def)
 
-lemma(in padic_integers) ord_one:
+lemma(in padic_integers) ord_one[simp]:
 "ord (\<one>\<^bsub>Q\<^sub>p\<^esub>) = 0"
   using Z\<^sub>p_def Zp_is_domain cring.cring_simprules(6) domain.axioms(1) domain.one_not_zero
     frac_one ord_of_nonzero(2) ord_pos padic_integers.ord_of_frac padic_integers_axioms by fastforce
 
-lemma(in padic_integers) val_one:
+lemma(in padic_integers) val_one[simp]:
 "val (\<one>\<^bsub>Q\<^sub>p\<^esub>) = \<zero>\<^bsub>G\<^esub>"
   using ord_one by (simp add: Qp_is_field gzero_id one_not_zero val_def)
 
@@ -2409,7 +2540,7 @@ next
     by (metis nonzero_numer_imp_nonzero_fraction)
 qed
 
-lemma(in padic_integers) Zp_division_Qp_0:
+lemma(in padic_integers) Zp_division_Qp_0[simp]:
   assumes "u \<in> Units Z\<^sub>p"
   assumes "v \<in> Units Z\<^sub>p"
   shows "frac (u \<otimes> (inv\<^bsub>Z\<^sub>p\<^esub> v))  \<one> = frac u v"
@@ -2419,8 +2550,9 @@ proof-
   have 1:"(inv\<^bsub>Z\<^sub>p\<^esub> v) \<in> carrier Z\<^sub>p"
     using assms  Zp_is_domain  by (metis cring_def domain_def monoid.Units_inv_closed ring_def)
   have 2:"frac (u \<otimes> (inv\<^bsub>Z\<^sub>p\<^esub> v))  \<one>  \<in> carrier Q\<^sub>p"
-    using 1 assms Units_def  Units_nonzero_Zp Zp_is_domain cring.cring_simprules(5)
-      domain.axioms(1) frac_im Zp_nonzero_def(1) Zp_one_nonzero by fastforce
+    using 1 assms  Units_nonzero_Zp Zp_is_domain cring.cring_simprules(5)
+      domain.axioms(1) frac_closed Zp_nonzero_def(1) Zp_one_nonzero 
+    by (metis (mono_tags, hide_lams)   local.frac_def )
   have 3: "frac (u \<otimes> (inv\<^bsub>Z\<^sub>p\<^esub> v))  \<one> =  (frac (u \<otimes> (inv\<^bsub>Z\<^sub>p\<^esub> v))  \<one>) \<otimes>\<^bsub>Q\<^sub>p\<^esub> frac v v"
     using Qp_is_field 0 2 
     by (metis "1" Units_nonzero_Zp Zp_is_domain assms(1) cring.cring_simprules(5)
@@ -2459,7 +2591,7 @@ qed
 
 (*Showing that the image of Zp in Qp is a valuation ring*)
 
-lemma(in padic_integers) Zp_ord_criterion:
+lemma(in padic_integers) Zp_ord_criterion[simp]:
   assumes "a \<in> carrier Q\<^sub>p"
   assumes "a \<noteq> \<zero>\<^bsub>Q\<^sub>p\<^esub>"
   assumes "ord a \<ge> 0"
@@ -2475,11 +2607,11 @@ proof-
     by simp
   have P5:"c = (\<p>[^]m) \<otimes> u" and P6:"u \<in> Units Z\<^sub>p"
      apply (metis P1 P3 \<open>u = ac c\<close> ac_factors_x int_pow_int Zp_nonzero_def(1) Zp_nonzero_def(2) ord_nat)
-     by (simp add: P1 \<open>u = ac c\<close> ac_is_Unit Zp_nonzero_def(1) Zp_nonzero_def(2))
+     by (simp add: P1 \<open>u = ac c\<close> Zp_nonzero_def(1) Zp_nonzero_def(2))
   obtain v where "v = ac d" by simp
   have  P7:"d = (\<p>[^]n) \<otimes> v" and P8:"v \<in> Units Z\<^sub>p"
      apply (metis P2 P4 \<open>v = ac d\<close> ac_factors_x int_pow_int Zp_nonzero_def(1) Zp_nonzero_def(2) ord_nat)
-    by (simp add: P2 \<open>v = ac d\<close> ac_is_Unit Zp_nonzero_def(1) Zp_nonzero_def(2))
+    by (simp add: P2 \<open>v = ac d\<close> Zp_nonzero_def(1) Zp_nonzero_def(2))
   have P9: "a = frac ((\<p>[^]m) \<otimes> u) ((\<p>[^]n) \<otimes> v)" 
   by (simp add: P0 P5 P7)
   have P10: "(\<p>[^]m) \<in> carrier Z\<^sub>p"
@@ -2489,7 +2621,8 @@ proof-
   have P12: "u \<in> carrier Z\<^sub>p"
     using P6 Units_def by fastforce
   have P13: "v \<in> nonzero Z\<^sub>p"
-    using P8 Units_def ord_of_nonzero(2) unit_imp_ord_Zp0 by fastforce
+    using P8 Units_def ord_of_nonzero(2) unit_imp_ord_Zp0 
+    by (simp add: Units_def)
   have P14: "a = (frac (\<p>[^]m) (\<p>[^]n)) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (frac u v)"
     using P12 P13 P10 P11 Q\<^sub>p_def frac_def frac_mult  by (simp add: P9)
   have P15: "m \<ge> n" 
@@ -2502,17 +2635,17 @@ proof-
   have P16: "n \<ge> 0" 
     using P2 P4 Z\<^sub>p_def  padic_integers_axioms Zp_nonzero_def(1) Zp_nonzero_def(2) ord_pos by blast
   have P17: "a = (frac (\<p>[^](m-n)) \<one>) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (frac u v)" 
-    by (simp add: P14 P15 P16 local.inc_def p_pow_car pow_p_frac_0)
+    by (simp add: P14 P15 P16 local.inc_def  pow_p_frac_0)
   obtain w where P18: "w \<in> Units Z\<^sub>p" and P19: "\<iota> w = frac u v "
     using  Zp_division_Qp_1 P6 P8 by blast
   have P20: "w \<in> carrier Z\<^sub>p" 
     using P18 Units_def by fastforce
   have P21:  "a = \<iota> (\<p>[^](m-n)) \<otimes>\<^bsub>Q\<^sub>p\<^esub> \<iota> w" 
-    by (simp add: P15 P17 P19 local.inc_def p_pow_car)
+    by (simp add: P15 P17 P19 local.inc_def)
   have P22:  "a = (frac (\<p>[^](m-n)) \<one>) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (frac w \<one>)" 
     using P17 P19 P20 local.inc_def by auto
   have P23: "\<p>[^](m-n) \<in> carrier Z\<^sub>p" 
-    by (simp add: P15 p_pow_car)
+    by (simp add: P15)
   have P24: "a = (frac ((\<p>[^](m-n)) \<otimes> w) \<one>)" 
     using P20 P22 P23 frac_mult Zp_is_domain  
     by (simp add: cring_def domain_def ring_def domain.one_not_zero ord_of_nonzero(2) ord_pos)
@@ -2580,7 +2713,7 @@ next
     using Zp_ord_criterion assms(1) Nz by auto
 qed 
 
-lemma(in padic_integers) Zp_val_criterion:
+lemma(in padic_integers) Zp_val_criterion[simp]:
   assumes "a \<in> carrier Q\<^sub>p"
   assumes "val a \<succeq>\<^bsub>G\<^esub> \<zero>\<^bsub>G\<^esub>"
   shows "a \<in> \<O>\<^sub>p"
@@ -2594,9 +2727,97 @@ next
     using G_ord(2) Zp_ord_criterion assms(1) assms(2) gzero_id val_def by auto
 qed 
 
+(*function for division of a padic_integer by a power of n*)
+
+definition(in padic_integers) divide where 
+"divide a b = (if a = \<zero> then \<zero> else (THE c. c \<in> carrier Z\<^sub>p \<and> \<iota> c = frac a b))"
+
+lemma(in padic_integers) divide_id[simp]:
+assumes "a \<in> nonzero Z\<^sub>p"
+assumes "b \<in> nonzero Z\<^sub>p"
+assumes "ord_Zp a \<ge> ord_Zp b"
+shows "divide a b \<in> carrier Z\<^sub>p"
+      "(divide a b) \<otimes> b = a"
+proof-
+  have  "(frac a b) \<in> \<O>\<^sub>p"
+    using nonzero_def frac_closed[of a b] assms ord_of_frac[of a b]
+      Zp_ord_criterion[of "frac a b"] Zp_nonzero_def(1)
+      nonzero_numer_imp_nonzero_fraction by auto
+  then obtain c where c_def: "c \<in> carrier Z\<^sub>p \<and> \<iota> c = frac a b"
+    by auto 
+  obtain P where P_def: "P = (\<lambda>x. x \<in> carrier Z\<^sub>p \<and> \<iota> x = frac a b)"
+    by simp 
+  have 0: "(THE x. P x) = c"
+  proof(rule the_equality)
+    show "P c" using P_def c_def by auto 
+    show " \<And>x. P x \<Longrightarrow> x = c" 
+      using P_def domain.inc_inj2 Zp_is_domain  \<iota>_def c_def by fastforce
+  qed
+  have 1: "c \<otimes> b = a"
+  proof-
+    have "frac (c \<otimes> b) a = (frac c \<one>) \<otimes>\<^bsub>Q\<^sub>p\<^esub> frac b a"
+      using assms c_def  Zp_nonzero_def(1) i_mult local.inc_def by auto
+    then have "frac (c \<otimes> b) a = (frac a b) \<otimes>\<^bsub>Q\<^sub>p\<^esub> frac b a" 
+      using c_def \<iota>_def local.inc_def by auto
+    then have "frac (c \<otimes> b) a = \<one>\<^bsub>Q\<^sub>p\<^esub>" 
+      using assms(1) assms(2) 
+      by (simp add: Zp_nonzero_def(1) frac_cancel_rl frac_mult frac_one)
+    then show ?thesis using assms c_def 
+      by (metis Qp_one_notzero Zp_is_domain Zp_nonzero_def(1) cring.cring_simprules(5)
+          domain.axioms(1) local.frac_eq nonzero_fraction_imp_nonzero_numer)
+  qed
+  have "a \<noteq>\<zero>"
+    using assms(1) by (simp add: Zp_nonzero_def(2))
+  then have 2: "c = divide a b"
+    using 0 P_def divide_def[of a b] by auto 
+  show "local.divide a b \<in> carrier Z\<^sub>p" using c_def 2 by auto 
+  show "local.divide a b \<otimes> b = a" using 1 2 by auto 
+qed
+
+lemma(in padic_integers) divide_id'[simp]:
+assumes "a \<in> carrier Z\<^sub>p"
+assumes "b \<in> nonzero Z\<^sub>p"
+assumes "val_Zp b \<preceq>\<^bsub>G\<^esub> val_Zp a"
+shows "divide a b \<in> carrier Z\<^sub>p"
+      "(divide a b) \<otimes> b = a"
+proof-
+  show  "(divide a b) \<otimes> b = a"
+  proof(cases "a = \<zero>")
+    case True
+    have "divide a b = \<zero>" 
+      by (simp add: True divide_def)
+    then show ?thesis 
+      by (simp add: True Zp_is_domain Zp_nonzero_def(1)
+          assms(2) cring.cring_simprules(26) domain.axioms(1))
+  next
+    case False
+    then have 0: "a \<in> nonzero Z\<^sub>p" 
+      by (simp add: False assms(1) nonzero_def)
+    have 1: "ord_Zp b \<le> ord_Zp a"  using 0 assms 
+      by (simp add: G_ord(2) Zp_nonzero_def(2) ord_Zp_def val_Zp_def) 
+    then show ?thesis using divide_id assms 0 1 by auto 
+  qed
+  show "divide a b \<in> carrier Z\<^sub>p"
+  proof(cases "a = \<zero>")
+    case True
+    then have "divide a b = \<zero>"
+      by (simp add: divide_def)
+    then show ?thesis 
+      using True assms(1) by auto
+  next
+    case False
+    then have 0: "a \<in> nonzero Z\<^sub>p" 
+      by (simp add: False assms(1) nonzero_def)
+    have 1: "ord_Zp b \<le> ord_Zp a"  using 0 assms 
+      by (simp add: G_ord(2) Zp_nonzero_def(2) ord_Zp_def val_Zp_def) 
+    then show ?thesis using divide_id assms 0 1 by auto 
+  qed
+qed
+
+
 (*Ultrametric inequality on Qp*)
 
-lemma(in padic_integers) ord_ultrametric:
+lemma(in padic_integers) ord_ultrametric[simp]:
   assumes "x \<in> nonzero Q\<^sub>p"
   assumes "y \<in> nonzero Q\<^sub>p"
   assumes "x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y \<in> nonzero Q\<^sub>p"
@@ -2632,10 +2853,11 @@ proof-
   have Ordxy: "ord (x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y) = ord_Zp (a \<oplus> b) - ord_Zp c"
     using Fxy ABn C ord_of_frac by auto  
   then show ?thesis
-    using Ordx Ordy Ordxy ord_Zp_ultrametric ABn An Bn by force
+    using Ordx Ordy Ordxy ord_Zp_ultrametric[of a b] ABn An Bn 
+    by linarith
 qed
 
-lemma(in padic_integers) val_ultrametric0:
+lemma(in padic_integers) val_ultrametric0[simp]:
   assumes "x \<in> nonzero Q\<^sub>p"
   assumes "y \<in> nonzero Q\<^sub>p"
   assumes "x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y \<in> nonzero Q\<^sub>p"
@@ -2648,12 +2870,12 @@ proof-
   have 2: "val y = *ord y*" 
     using assms(2) nonzero_def val_def by force
   have 3: "ord (x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y) \<ge> min (ord x) (ord y)" 
-    by (simp add: assms(1) assms(2) assms(3) ord_ultrametric)
+    by (simp add: assms(1) assms(2) assms(3) )
   then show ?thesis using  Min_min G_ord 0 1 2 3 
     by presburger
 qed
 
-lemma(in padic_integers) val_ultrametric:
+lemma(in padic_integers) val_ultrametric[simp]:
   assumes "x \<in> carrier Q\<^sub>p"
   assumes "y \<in> carrier Q\<^sub>p"
   shows " Min\<^bsub>G\<^esub> (val x) (val y) \<preceq>\<^bsub>G\<^esub> val (x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y)"
@@ -2701,7 +2923,7 @@ qed
 
 (*val and ord are multiplicative*)
 
-lemma(in padic_integers) ord_mult:
+lemma(in padic_integers) ord_mult[simp]:
   assumes "x \<in> nonzero Q\<^sub>p"
   assumes "y \<in> nonzero Q\<^sub>p"
   shows "(ord (x \<otimes>\<^bsub>Q\<^sub>p\<^esub> y)) = (ord x) + (ord y)"
@@ -2732,7 +2954,7 @@ proof-
     by (simp add: An Bn C Fx Fy ord_of_frac)
 qed
 
-lemma(in padic_integers) val_mult0:
+lemma(in padic_integers) val_mult0[simp]:
   assumes "x \<in> nonzero Q\<^sub>p"
   assumes "y \<in> nonzero Q\<^sub>p"
   shows "(val (x \<otimes>\<^bsub>Q\<^sub>p\<^esub> y)) = (val x) \<oplus>\<^bsub>G\<^esub> (val y)"
@@ -2755,7 +2977,7 @@ qed
 
 (*val is multiplicative everywhere*)
 
-lemma(in padic_integers) val_mult:
+lemma(in padic_integers) val_mult[simp]:
   assumes "x \<in> carrier Q\<^sub>p"
   assumes "y \<in> carrier Q\<^sub>p"
   shows "(val (x \<otimes>\<^bsub>Q\<^sub>p\<^esub> y)) = (val x) \<otimes>\<^bsub>G\<^esub> (val y)"
@@ -2771,7 +2993,7 @@ next
   have Py: "y \<in> nonzero Q\<^sub>p" 
     using False assms(2) nonzero_def by force
   then show ?thesis 
-    by (simp add: Px val_mult0)
+    by (simp add: Px)
 qed
 
 (*val and ord are compatible with \<iota>*)
@@ -2974,7 +3196,88 @@ qed
 
 lemma(in padic_integers) val_p:
 "(val \<pp>) = (1\<^sub>v)"
-  by (simp add: ord_p p_nonzero val_of_def val_ord)
+  by (simp add: ord_p  val_of_def)
+
+lemma(in padic_integers) eq_res_mod:
+  assumes "f \<in> carrier Z\<^sub>p"
+  assumes "g \<in> carrier Z\<^sub>p"
+  assumes "f k = g k"
+  obtains h where  "h \<in> carrier Z\<^sub>p \<and> f = g \<oplus> (\<p>[^]k)\<otimes>h"
+proof-
+  have 0: "(f \<ominus> g) k = 0"
+    using assms 
+    by (metis Z\<^sub>p_def Zp_is_domain a_minus_def cring.cring_simprules(17) domain.axioms(1) padic_add_def ring.simps(2) zero_vals)
+  show ?thesis 
+  proof(cases "f \<ominus>g = \<zero>")
+    case True
+    then show ?thesis 
+      by (metis Zp_is_domain Zp_nat_inc_closed Zp_nat_inc_zero assms(1) assms(2)  
+          cring.cring_simprules(16) cring.cring_simprules(27) cring_def domain.axioms(1)
+          p_pow_rep0 ring.r_right_minus_eq that)
+  next
+    case False
+    then have F0: "ord_Zp (f \<ominus> g) \<ge> k"
+      using assms 
+      by (simp add: "0" Zp_is_domain cring.cring_simprules(4) domain.axioms(1) ord_Zp_geq)
+    then obtain m where m_def: "m = ord_Zp (f \<ominus> g) - k"
+      by simp
+    then have m_prop: "m \<ge>0 \<and> (nat m) + k = ord_Zp (f \<ominus> g)"
+      using F0 by auto 
+    have F1: "(f \<ominus> g) = (ac ((f \<ominus> g))) \<otimes> \<p>[^] (ord_Zp (f \<ominus> g))"
+      by (metis False Z\<^sub>p_def Zp_is_domain ac_factors_x assms(1) assms(2) cring.cring_simprules(14) 
+          cring.cring_simprules(4) domain.axioms(1) int_pow_int ord_nat ord_pos 
+          p_pow_car padic_integers.ac_in_Zp padic_integers_axioms)
+    have F2: "\<p>[^] (ord_Zp (f \<ominus> g)) = (\<p>[^]k) \<otimes> (\<p>[^] (nat m))"
+    proof-
+      have F00: "\<p>[^] (ord_Zp (f \<ominus> g)) = \<p>[^] (k + (nat m))"
+        using m_prop  
+        by (metis add.commute int_pow_int)
+      have F01: "Group.monoid Z\<^sub>p"
+        using Zp_is_domain domain.nonzero_is_submonoid submonoid.axioms(1) by auto
+      then show ?thesis using 
+       monoid.nat_pow_mult[of Z\<^sub>p "\<p>" k "nat m"] F00 F01 
+        by (simp add: Zp_nat_inc_closed)
+    qed
+    have F3: "(f \<ominus> g) = (ac ((f \<ominus> g))) \<otimes>  (\<p>[^]k) \<otimes> (\<p>[^] (nat m))"
+      using F1 F2 
+      by (metis False Z\<^sub>p_def Zp_is_domain assms(1) assms(2) cring.cring_simprules(11) 
+          cring.cring_simprules(4) domain.axioms(1) p_pow_car_nat padic_integers.ac_in_Zp padic_integers_axioms)
+    have F4: "(f \<ominus> g) = (ac ((f \<ominus> g))) \<otimes>  ((\<p>[^]k) \<otimes> (\<p>[^] (nat m)))"
+      using F1 F2 by auto
+    have F5: "(f \<ominus> g) = (ac ((f \<ominus> g))) \<otimes>  ((\<p>[^](nat m)) \<otimes> (\<p>[^] k))"
+      using F4 Zp_is_domain cring.cring_simprules(14) domain.axioms(1) by fastforce
+    have F6: "(f \<ominus> g) = (((ac ((f \<ominus> g))) \<otimes>  (\<p>[^](nat m))) \<otimes> (\<p>[^] k))"
+      by (metis F5 False Zp_is_domain ac_in_Zp assms(1) assms(2) 
+          cring.cring_simprules(11) cring.cring_simprules(4) domain.axioms(1) p_pow_car_nat)
+    have F7:  "f = (((ac ((f \<ominus> g))) \<otimes>  (\<p>[^](nat m))) \<otimes> (\<p>[^] k)) \<oplus> g"
+      using F6 False Zp_is_domain ac_in_Zp assms(1) assms(2) 
+          cring.cring_simprules(4) domain.axioms(1) p_pow_car_nat 
+      by (metis (no_types, lifting) a_minus_def cring.cring_simprules(10) cring.cring_simprules(16) 
+          cring.cring_simprules(17) cring.cring_simprules(23) cring.cring_simprules(3))
+    have F8:  "f = g \<oplus>(((ac ((f \<ominus> g))) \<otimes>  (\<p>[^](nat m))) \<otimes> (\<p>[^] k))"
+      using F7 False Zp_is_domain ac_in_Zp assms(1) assms(2) 
+          cring.cring_simprules(4) domain.axioms(1) p_pow_car_nat 
+      by (metis cring.cring_simprules(10) cring.cring_simprules(5))
+    obtain h where h_def: "h = ((ac ((f \<ominus> g))) \<otimes>  (\<p>[^](nat m)))"
+      by simp
+    then have "f = g \<oplus> h \<otimes>(\<p>[^] k)"
+      using F8 h_def 
+      by blast
+    then show ?thesis using h_def 
+      by (metis False Z\<^sub>p_def Zp_is_domain assms(1) assms(2) cring.cring_simprules(14) 
+          cring.cring_simprules(4) cring.cring_simprules(5) domain.axioms(1) 
+          p_pow_car_nat padic_integers.ac_in_Zp padic_integers_axioms that)
+  qed
+qed
+
+lemma(in padic_integers) res_uminus:
+  assumes "k > 0"
+  assumes "f \<in> carrier Z\<^sub>p"
+  assumes "c \<in> carrier (R k)"
+  assumes "c = \<ominus>\<^bsub>R k\<^esub> (f k)"
+  shows "c = ((\<ominus> f) k)"
+  using Z\<^sub>p_def assms(2) assms(4) padic_integers.Res_def padic_integers_axioms padic_inv prime by auto
+
 
 (*
 lemma(in padic_integers) val_p_pow_nat:

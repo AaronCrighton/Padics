@@ -841,17 +841,33 @@ lemma is_subseqI:
   unfolding is_subseq_of_def 
   by auto 
 
-(*Given a sequence and a predicate, returns the funciton nat\<Rightarrow>nat which represents the increasing
+(*Given a sequence and a predicate, returns the function nat\<Rightarrow>nat which represents the increasing
 sequences of indices n on which P (s n) holds.*)
 
 fun filtering_function :: "(nat \<Rightarrow>'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> nat" where
 "filtering_function s P (0::nat) = (LEAST k::nat. P (s k))"|
 "filtering_function s P (Suc n) = (LEAST k:: nat. (P (s k)) \<and> k > (filtering_function s P n))"   
 
+lemma filtering_func_increasing:
+  shows "is_increasing (filtering_function s P)" 
+  sorry
+proof-
+  
+  fix n::nat
+  assume "n > 0"
+  obtain h where "filtering_function s P n = h" by simp
+  have A1: "filtering_function s P (Suc n) = (LEAST k:: nat. (P (s k)) \<and> k > (filtering_function s P n))" by simp
+  obtain k where "filtering_function s P (Suc n) = k" by simp
+  have "k > h" sledgehammer
+  then have "\<And>m. m > n ==> filtering_function s P m > h" using A1 
+    have "\<And>n. filtering_function s P (Suc n) > filtering_function s P n"
+   
+qed
+
 definition filtered_sequence :: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> (nat \<Rightarrow> 'a)" where
 "filtered_sequence s P = take_subseq s (filtering_function s P)"
 
-definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<Rightarrow> bool)" ("Pr _  _")where
+definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<Rightarrow> bool)" ("Pr _  _") where
 "kth_res_equals k n a = (a k = n)"
 
 (*The characteristic function of the underlying set of a sequence*)
@@ -859,24 +875,63 @@ definition indicator:: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a  \<Rightarrow> 
 "indicator s a = (\<exists>n::nat. s n = a)"
 
 (*Every subsequence is obtains by the "filtered_sequence" function*)
-lemma subseq_is_filtered:
+(*lemma subseq_is_filtered:
   assumes "is_subseq_of s s'"
-  shows "s' = filtered_sequence s (indicator s')"
-  sorry
+  shows "s' = filtered_sequence s (indicator s')"*)
 
-(*Every filtering function is the indicator of the sequence that it filters*)
+lemma filtering_subseq_changes_subseq:
+  assumes "is_subseq_of s s'"
+  assumes "s' 0 = b"
+  assumes "s' 1 = a"
+  assumes "s 0 = a"
+  assumes "s 1 = b"
+  assumes "s 2 = a"
+  assumes "a \<noteq> b"
+  shows "s' \<noteq> filtered_sequence s (indicator s')"
+proof-
+  have "(LEAST k. (indicator s') (s k)) = 0" using assms(4)
+    by (metis Least_eq_0 assms(3) indicator_def)
+  then have "filtering_function s (indicator s') 0 = 0" 
+    by simp
+  hence P1: "filtered_sequence s (indicator s') 0 = s 0" 
+    by (metis assms(4) filtered_sequence_def padic_integers.take_subseq_def padic_integers_axioms)
+  have "s 0 \<noteq> s' 0" 
+    by (simp add: assms(2) assms(4) assms(7))
+  thus "s' \<noteq> filtered_sequence s (indicator s')" 
+    using P1 by auto
+qed
+
+(*Every filtering function is the indicator of the sequence that it filters
 lemma filtering_function_is_indicator:
   assumes "s' = filtered_sequence s P"
   assumes "is_subseq s s'"
   shows "P = indicator s'"
-  sorry
+  sorry*)
 
 (*For every closed sequence, and every n, there is a subsequence for which all elements have the 
 same nth residue*)
 lemma subseq_equal_res:
   assumes "is_closed_seq s"
   shows "\<exists>s' n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n)) "
-  sorry
+proof-
+  fix n
+  have "\<exists>s' n. s' = filtered_sequence s (Pr k n)"
+    by auto
+  obtain s'' where "s'' = filtered_sequence s (Pr k n)" by simp
+  have "is_subseq_of s s''"
+  proof-
+    have "\<And>m. indicator s (filtered_sequence s (Pr k n) m)" 
+      by (metis (mono_tags, hide_lams) filtered_sequence_def indicator_def take_subseq_def)
+    have "is_increasing (filtering_function s (Pr k n))" 
+      by (simp add: filtering_func_increasing)
+      thus "is_subseq_of s s''"
+        using \<open>s'' = filtered_sequence s Pr k n\<close> filtered_sequence_def is_subseq_of_def by blast
+    qed
+    hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
+      using \<open>s'' = filtered_sequence s Pr k n\<close> by blast
+    thus "\<exists>s' n. is_subseq_of s s' \<and> s' = filtered_sequence s (Pr k n)" 
+      by blast
+qed
 
 (*choice function for a subsequence with constant kth residue. Could be made constructive by 
 choosing the LEAST n if we wanted.*)

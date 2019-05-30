@@ -881,11 +881,8 @@ definition indicator:: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a  \<Rightarrow> 
 
 lemma filtering_subseq_changes_subseq:
   assumes "is_subseq_of s s'"
-  assumes "s' 0 = b"
-  assumes "s' 1 = a"
-  assumes "s 0 = a"
-  assumes "s 1 = b"
-  assumes "s 2 = a"
+  assumes "s' 0 = b" "s' 1 = a"
+  assumes "s 0 = a"  "s 1 = b" "s 2 = a"
   assumes "a \<noteq> b"
   shows "s' \<noteq> filtered_sequence s (indicator s')"
 proof-
@@ -945,23 +942,35 @@ definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow
 (*The subsequence chosen by equal_res_choice is actually a subsequence*)
 lemma res_choice_subseq: 
   assumes "is_closed_seq s"
-  shows "is_subseq_of s (Cseq k s)"
-  sorry
+  shows "is_subseq_of s (Cseq k s)"  by (metis (mono_tags, lifting) equal_res_choice_def exE_some filtered_sequence_def filtering_func_increasing is_subseqI)
+
 
 (*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
 lemma res_choice_res: 
   assumes "is_closed_seq s"
   shows "(Cseq k s) m k = (Cres k s)"
-  sorry
+proof
+  show "(Cseq k s) m k \<in> UNIV" 
+    by simp
+  show "Cres k s \<in> UNIV" 
+    by simp
+  show "(Cseq k s) m k \<le> Cres k s" 
+  proof 
+     have "equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" using equal_res_choice_def by simp
+     then have "\<exists>n s'::(padic_int_seq). (equal_res_choice k s = s' \<and> s' = (filtered_sequence s (Pr k n)))"
+       by (smt equal_res_choice_def filtered_sequence_def filtering_func_increasing padic_integers.is_subseq_of_def padic_integers_axioms someI_ex)
+     then obtain s' where sdef: "s' = equal_res_choice k s" by simp
+     have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
+       using \<open>\<exists>n s'. Cseq k s = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
 
+     have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
 "acc_point s k =(if k=0 then 0 else (Cres k (Cseq (k-1) s)))"
 
 lemma acc_point_closed:
   assumes "is_closed_seq s"
-  shows "acc_point s \<in> carrier Z\<^sub>p"
-  sorry
+  shows "acc_point s \<in> carrier Z\<^sub>p" using acc_point_def equal_res_choice_def 
 
 (*Choice function for a subsequence of s which converges to a, if it exists*)
 fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> (nat \<Rightarrow> nat)" where

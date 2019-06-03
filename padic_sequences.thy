@@ -964,13 +964,19 @@ proof
        using \<open>\<exists>n s'. Cseq k s = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
 
      have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 
+
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
-"acc_point s k =(if k=0 then 0 else (Cres k (Cseq (k-1) s)))"
+"acc_point s k = (if k=0 then 0 else (Cres k (Cseq (k-1) s)))"
 
 lemma acc_point_closed:
   assumes "is_closed_seq s"
-  shows "acc_point s \<in> carrier Z\<^sub>p" using acc_point_def equal_res_choice_def 
+  shows "acc_point s \<in> carrier Z\<^sub>p" using is_closed_seq_def acc_point_def
+  unfolding acc_point_def
+  
+proof-
+  
+  
 
 (*Choice function for a subsequence of s which converges to a, if it exists*)
 fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> (nat \<Rightarrow> nat)" where

@@ -848,21 +848,33 @@ fun filtering_function :: "(nat \<Rightarrow>'a) \<Rightarrow> ('a \<Rightarrow>
 "filtering_function s P (0::nat) = (LEAST k::nat. P (s k))"|
 "filtering_function s P (Suc n) = (LEAST k:: nat. (P (s k)) \<and> k > (filtering_function s P n))"   
 
-lemma filtering_func_increasing:
-  shows "is_increasing (filtering_function s P)" 
-  sorry
-proof-
-  
-  fix n::nat
-  assume "n > 0"
-  obtain h where "filtering_function s P n = h" by simp
-  have A1: "filtering_function s P (Suc n) = (LEAST k:: nat. (P (s k)) \<and> k > (filtering_function s P n))" by simp
-  obtain k where "filtering_function s P (Suc n) = k" by simp
-  have "k > h" sledgehammer
-  then have "\<And>m. m > n ==> filtering_function s P m > h" using A1 
-    have "\<And>n. filtering_function s P (Suc n) > filtering_function s P n"
-   
+lemma filtering_func_pre_increasing:
+  assumes "\<forall>n::nat. \<exists>m. m > n \<and> P (s m)"
+  shows "filtering_function s P n < filtering_function s P (Suc n)" 
+  apply(auto)
+proof(induction n)
+  case 0
+  have "\<exists>k. P (s k)" using assms(1) by blast
+  then have "\<exists>k::nat. (LEAST k::nat. (P (s k))) \<ge> 0" 
+    by blast
+  obtain k where "(LEAST k::nat. (P (s k))) = k" by simp
+  have "\<exists>l. l = (LEAST l::nat. (P (s l) \<and> l > k))" sledgehammer
+    by simp
+  thus ?case
+    by (metis (no_types, lifting) LeastI assms)
+next
+  case (Suc n)
+  then show ?case
+    by (metis (no_types, lifting) LeastI assms)
 qed
+
+
+
+lemma filtering_func_increasing:
+  assumes "\<forall>n::nat. \<exists>m. m > n \<and> P (s m)"
+  shows "is_increasing (filtering_function s P)" 
+  by (metis assms filtering_func_pre_increasing is_increasingI lift_Suc_mono_less) 
+
 
 definition filtered_sequence :: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> (nat \<Rightarrow> 'a)" where
 "filtered_sequence s P = take_subseq s (filtering_function s P)"
@@ -905,6 +917,8 @@ lemma filtering_function_is_indicator:
   shows "P = indicator s'"
   sorry*)
 
+lemma pre_increasing_filter:
+  
 (*For every closed sequence, and every n, there is a subsequence for which all elements have the 
 same nth residue*)
 lemma subseq_equal_res:
@@ -942,7 +956,8 @@ definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow
 (*The subsequence chosen by equal_res_choice is actually a subsequence*)
 lemma res_choice_subseq: 
   assumes "is_closed_seq s"
-  shows "is_subseq_of s (Cseq k s)"  by (metis (mono_tags, lifting) equal_res_choice_def exE_some filtered_sequence_def filtering_func_increasing is_subseqI)
+  shows "is_subseq_of s (Cseq k s)" 
+  by (metis (mono_tags, lifting) assms equal_res_choice_def exE_some subseq_equal_res)
 
 
 (*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
@@ -958,12 +973,12 @@ proof
   proof 
      have "equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" using equal_res_choice_def by simp
      then have "\<exists>n s'::(padic_int_seq). (equal_res_choice k s = s' \<and> s' = (filtered_sequence s (Pr k n)))"
-       by (smt equal_res_choice_def filtered_sequence_def filtering_func_increasing padic_integers.is_subseq_of_def padic_integers_axioms someI_ex)
-     then obtain s' where sdef: "s' = equal_res_choice k s" by simp
+       by (smt assms someI_ex subseq_equal_res)
+       then obtain s' where sdef: "s' = equal_res_choice k s" by simp
      have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
        using \<open>\<exists>n s'. Cseq k s = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
 
-     have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 
+     then have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 sledgehammer
 
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where

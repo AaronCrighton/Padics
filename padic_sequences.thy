@@ -709,9 +709,11 @@ proof(rule is_cauchyI)
     show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> seq_sum s t n0 n = seq_sum s t n1 n"
     proof-
       obtain N1 where N1_def: "\<forall>n0 n1. N1 < n0 \<and> N1 < n1 \<longrightarrow> s n0 n = s n1 n" 
-        using assms(1) padic_integers.is_cauchy_imp_eventually_const_0 padic_integers_axioms by blast
+        using assms(1) padic_integers.is_cauchy_imp_eventually_const_0 padic_integers_axioms 
+          by blast
       obtain N2 where N2_def: "\<forall>n0 n1. N2 < n0 \<and> N2 < n1 \<longrightarrow> t n0 n = t n1 n" 
-        using assms(2) padic_integers.is_cauchy_imp_eventually_const_0 padic_integers_axioms by blast
+        using assms(2) padic_integers.is_cauchy_imp_eventually_const_0 padic_integers_axioms 
+          by blast
       obtain M where M_def: "M = max N1 N2"
         by simp
       have "\<forall>n0 n1. M < n0 \<and> M < n1 \<longrightarrow> seq_sum s t n0 n = seq_sum s t n1 n"
@@ -858,7 +860,7 @@ proof(induction n)
   then have "\<exists>k::nat. (LEAST k::nat. (P (s k))) \<ge> 0" 
     by blast
   obtain k where "(LEAST k::nat. (P (s k))) = k" by simp
-  have "\<exists>l. l = (LEAST l::nat. (P (s l) \<and> l > k))" sledgehammer
+  have "\<exists>l. l = (LEAST l::nat. (P (s l) \<and> l > k))" 
     by simp
   thus ?case
     by (metis (no_types, lifting) LeastI assms)
@@ -867,8 +869,6 @@ next
   then show ?case
     by (metis (no_types, lifting) LeastI assms)
 qed
-
-
 
 lemma filtering_func_increasing:
   assumes "\<forall>n::nat. \<exists>m. m > n \<and> P (s m)"
@@ -886,29 +886,6 @@ definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<
 definition indicator:: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a  \<Rightarrow> bool)" where
 "indicator s a = (\<exists>n::nat. s n = a)"
 
-(*Every subsequence is obtains by the "filtered_sequence" function*)
-(*lemma subseq_is_filtered:
-  assumes "is_subseq_of s s'"
-  shows "s' = filtered_sequence s (indicator s')"*)
-
-lemma filtering_subseq_changes_subseq:
-  assumes "is_subseq_of s s'"
-  assumes "s' 0 = b" "s' 1 = a"
-  assumes "s 0 = a"  "s 1 = b" "s 2 = a"
-  assumes "a \<noteq> b"
-  shows "s' \<noteq> filtered_sequence s (indicator s')"
-proof-
-  have "(LEAST k. (indicator s') (s k)) = 0" using assms(4)
-    by (metis Least_eq_0 assms(3) indicator_def)
-  then have "filtering_function s (indicator s') 0 = 0" 
-    by simp
-  hence P1: "filtered_sequence s (indicator s') 0 = s 0" 
-    by (metis assms(4) filtered_sequence_def padic_integers.take_subseq_def padic_integers_axioms)
-  have "s 0 \<noteq> s' 0" 
-    by (simp add: assms(2) assms(4) assms(7))
-  thus "s' \<noteq> filtered_sequence s (indicator s')" 
-    using P1 by auto
-qed
 
 (*Every filtering function is the indicator of the sequence that it filters
 lemma filtering_function_is_indicator:
@@ -917,8 +894,25 @@ lemma filtering_function_is_indicator:
   shows "P = indicator s'"
   sorry*)
 
-lemma pre_increasing_filter:
-  
+(*choice function for a subsequence with constant kth residue. Could be made constructive by 
+choosing the LEAST n if we wanted.*)
+definition equal_res_choice :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" ("Cseq _ _") where
+"equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' 
+  = (filtered_sequence s (Pr k n))))" 
+
+(*The constant kth residue value for the sequence obtained by the previous function*)
+definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> int" ("Cres") where
+"equal_res_choice_res k s = (THE n. (\<forall> m. (Cseq k s) m k = n))" 
+
+lemma increasing_pr:
+  shows "\<exists>n. is_increasing (filering_function s (Pr k n))"
+
+
+lemma inf_seq_fin_domain_imp_inf_val:
+  assumes "maps_to_n"
+  shows "\<exists>k. \<forall>m::nat. \<exists>n. m > n \<and> f n = l"
+
+
 (*For every closed sequence, and every n, there is a subsequence for which all elements have the 
 same nth residue*)
 lemma subseq_equal_res:
@@ -933,10 +927,10 @@ proof-
   proof-
     have "\<And>m. indicator s (filtered_sequence s (Pr k n) m)" 
       by (metis (mono_tags, hide_lams) filtered_sequence_def indicator_def take_subseq_def)
-    have "is_increasing (filtering_function s (Pr k n))" 
-      by (simp add: filtering_func_increasing)
+    have "is_increasing (filtering_function s (Pr k n))" sorry
       thus "is_subseq_of s s''"
-        using \<open>s'' = filtered_sequence s Pr k n\<close> filtered_sequence_def is_subseq_of_def by blast
+        using \<open>s'' = filtered_sequence s Pr k n\<close> filtered_sequence_def is_subseq_of_def 
+        by blast
     qed
     hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
       using \<open>s'' = filtered_sequence s Pr k n\<close> by blast
@@ -944,14 +938,114 @@ proof-
       by blast
 qed
 
-(*choice function for a subsequence with constant kth residue. Could be made constructive by 
-choosing the LEAST n if we wanted.*)
-definition equal_res_choice :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> padic_int_seq" ("Cseq _ _") where
-"equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" 
+definition maps_to_n:: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> bool" where
+"maps_to_n n f = (\<forall>(k::nat). f k \<in> {0..n})"
+ 
+ 
+ 
+definition drop :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow> nat)" where
+"drop k f n = (if (f n)=k then 0 else f n)"
+ 
+lemma maps_to_nE:
+  assumes "maps_to_n n f"
+  shows "(f k) \<in> {0..n}"
+  using assms
+  unfolding maps_to_n_def
+  by blast
+ 
+lemma maps_to_nI:
+  assumes "\<And>n. f n \<in>{0 .. k}"
+  shows "maps_to_n k f"
+  using assms maps_to_n_def by auto
+ 
+ 
+lemma maps_to_n_drop:
+  assumes "maps_to_n (Suc n) f"
+  shows "maps_to_n n (drop (Suc n) f)"
+proof(rule maps_to_nI)
+  fix k
+  show "drop (Suc n) f k \<in> {0..n}"
+  proof(cases "f k = Suc n")
+    case True
+    then have "drop (Suc n) f k = 0"
+      unfolding drop_def by auto
+    then show ?thesis by auto
+  next
+    case False
+    then show ?thesis
+      using assms atLeast0_atMost_Suc maps_to_n_def drop_def
+      by auto
+qed
+qed
+ 
+lemma drop_eq_f:
+  assumes "maps_to_n (Suc n) f"
+  assumes "\<not> (\<forall>m. \<exists>n. n>m \<and> (f n = (Suc k)))"
+  shows "\<exists>N. \<forall>n. n>N \<longrightarrow> f n = drop (Suc k) f n"
+proof-
+  have "\<exists>m. \<forall>n. n \<le> m \<or> (f n) \<noteq> (Suc k)"
+    using assms
+    by (meson Suc_le_eq nat_le_linear)
+  then have "\<exists>m. \<forall>n. n \<le> m \<or> (f n)  = drop (Suc k) f n"
+    using drop_def by auto
+  then show ?thesis
+    by (meson less_Suc_eq_le order.asym)
+qed
+ 
+lemma maps_to_n_infinite_seq:
+  shows "\<And>f. maps_to_n k f \<Longrightarrow> \<exists>l. \<forall>m. \<exists>n. n>m \<and> (f n = l)"
+proof(induction k)
+  case 0  
+  then have "\<And>n. f n \<in> {0}"
+    using maps_to_nE[of 0 f] by auto
+  then show " \<exists>l. \<forall>m. \<exists>n. m < n \<and> f n = l"
+    by blast
+next
+  case (Suc k)
+  assume IH: "\<And>f. maps_to_n k f \<Longrightarrow> \<exists>l. \<forall>m. \<exists>n. m < n \<and> f n = l"
+  fix f
+  assume A: "maps_to_n (Suc k) f"
+  show "\<exists>l. \<forall>m. \<exists>n. n>m \<and> (f n = l)"
+  proof(cases " \<forall>m. \<exists>n. n>m \<and> (f n = (Suc k))")
+    case True
+    then show ?thesis by blast
+  next
+    case False
+    then obtain N where N_def: "\<forall>n. n>N \<longrightarrow> f n = drop (Suc k) f n"
+      using drop_eq_f drop_def
+      by fastforce
+    have " maps_to_n k (drop (Suc k) f) "
+      by (simp add: A maps_to_n_drop)
+    then have " \<exists>l. \<forall>m. \<exists>n. m < n \<and> (drop (Suc k) f) n = l"
+      using IH by blast
+    then obtain l where l_def: "\<forall>m. \<exists>n. m < n \<and> (drop (Suc k) f) n = l"
+      by blast
+    have "\<forall>m. \<exists>n. n>m \<and> (f n = l)"
+      apply auto
+    proof-
+      fix m
+      show "\<exists>n>m. f n = l"
+      proof-
+        obtain n where N'_def: "(max m N) < n \<and> (drop (Suc k) f) n = l"
+          using l_def by blast
+        have "f n =  (drop (Suc k) f) n"
+          using N'_def N_def
+          by simp
+        then show ?thesis
+          using N'_def by auto
+      qed
+    qed
+    then show ?thesis
+      by blast
+  qed
+qed
 
-(*The constant kth residue value for the sequence obtained by the previous function*)
-definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> int" ("Cres") where
-"equal_res_choice_res k s = (THE n. (\<forall> m. (Cseq k s) m k = n))" 
+lemma pre_increasing_filter:
+  assumes "is_closed_seq s"
+  assumes "Cres k s = h"
+  shows "\<forall>n::nat. \<exists>m. (m > n) \<and> ((Pr k h) (s m))"
+proof
+  have "h = (THE n. (\<forall> m. (Cseq k s) m k = n))" using equal_res_choice_res_def 
 
 (*The subsequence chosen by equal_res_choice is actually a subsequence*)
 lemma res_choice_subseq: 
@@ -978,7 +1072,7 @@ proof
      have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
        using \<open>\<exists>n s'. Cseq k s = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
 
-     then have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 sledgehammer
+     then have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 
 
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
@@ -988,7 +1082,6 @@ lemma acc_point_closed:
   assumes "is_closed_seq s"
   shows "acc_point s \<in> carrier Z\<^sub>p" using is_closed_seq_def acc_point_def
   unfolding acc_point_def
-  
 proof-
   
   

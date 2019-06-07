@@ -885,7 +885,7 @@ definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<
 (*The characteristic function of the underlying set of a sequence*)
 definition indicator:: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a  \<Rightarrow> bool)" where
 "indicator s a = (\<exists>n::nat. s n = a)"
-
+  
 
 (*Every filtering function is the indicator of the sequence that it filters
 lemma filtering_function_is_indicator:
@@ -904,46 +904,12 @@ definition equal_res_choice :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> pa
 definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow> int" ("Cres") where
 "equal_res_choice_res k s = (THE n. (\<forall> m. (Cseq k s) m k = n))" 
 
-lemma increasing_pr:
-  shows "\<exists>n. is_increasing (filering_function s (Pr k n))"
-
-
-lemma inf_seq_fin_domain_imp_inf_val:
-  assumes "maps_to_n"
-  shows "\<exists>k. \<forall>m::nat. \<exists>n. m > n \<and> f n = l"
-
-
-(*For every closed sequence, and every n, there is a subsequence for which all elements have the 
-same nth residue*)
-lemma subseq_equal_res:
-  assumes "is_closed_seq s"
-  shows "\<exists>s' n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n)) "
-proof-
-  fix n
-  have "\<exists>s' n. s' = filtered_sequence s (Pr k n)"
-    by auto
-  obtain s'' where "s'' = filtered_sequence s (Pr k n)" by simp
-  have "is_subseq_of s s''"
-  proof-
-    have "\<And>m. indicator s (filtered_sequence s (Pr k n) m)" 
-      by (metis (mono_tags, hide_lams) filtered_sequence_def indicator_def take_subseq_def)
-    have "is_increasing (filtering_function s (Pr k n))" sorry
-      thus "is_subseq_of s s''"
-        using \<open>s'' = filtered_sequence s Pr k n\<close> filtered_sequence_def is_subseq_of_def 
-        by blast
-    qed
-    hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
-      using \<open>s'' = filtered_sequence s Pr k n\<close> by blast
-    thus "\<exists>s' n. is_subseq_of s s' \<and> s' = filtered_sequence s (Pr k n)" 
-      by blast
-qed
-
-definition maps_to_n:: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> bool" where
+definition maps_to_n:: "nat \<Rightarrow> (nat \<Rightarrow> int) \<Rightarrow> bool" where
 "maps_to_n n f = (\<forall>(k::nat). f k \<in> {0..n})"
  
+
  
- 
-definition drop :: "nat \<Rightarrow> (nat \<Rightarrow> nat) \<Rightarrow> (nat \<Rightarrow> nat)" where
+definition drop :: "nat \<Rightarrow> (nat \<Rightarrow> int) \<Rightarrow> (nat \<Rightarrow> int)" where
 "drop k f n = (if (f n)=k then 0 else f n)"
  
 lemma maps_to_nE:
@@ -962,21 +928,27 @@ lemma maps_to_nI:
 lemma maps_to_n_drop:
   assumes "maps_to_n (Suc n) f"
   shows "maps_to_n n (drop (Suc n) f)"
-proof(rule maps_to_nI)
+(*proof(rule maps_to_nI)*)
+proof-
   fix k
-  show "drop (Suc n) f k \<in> {0..n}"
+  have "drop (Suc n) f k \<in> {0..n}"
   proof(cases "f k = Suc n")
     case True
     then have "drop (Suc n) f k = 0"
       unfolding drop_def by auto
-    then show ?thesis by auto
+    then show ?thesis 
+      using assms local.drop_def maps_to_n_def by auto
   next
     case False
     then show ?thesis
       using assms atLeast0_atMost_Suc maps_to_n_def drop_def
       by auto
-qed
-qed
+  qed
+  then have "\<And>k. drop (Suc n) f k \<in> {0..n}" 
+    using assms local.drop_def maps_to_n_def by auto
+    then show "maps_to_n n (drop (Suc n) f)" using maps_to_nI
+      using maps_to_n_def by blast
+  qed
  
 lemma drop_eq_f:
   assumes "maps_to_n (Suc n) f"
@@ -1040,12 +1012,77 @@ next
   qed
 qed
 
-lemma pre_increasing_filter:
+definition index_to_residue :: "padic_int_seq \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> int" where
+"index_to_residue s k m = ((s m) k)"
+
+
+lemma(in padic_integers) seq_maps_to_n:
   assumes "is_closed_seq s"
-  assumes "Cres k s = h"
-  shows "\<forall>n::nat. \<exists>m. (m > n) \<and> ((Pr k h) (s m))"
-proof
-  have "h = (THE n. (\<forall> m. (Cseq k s) m k = n))" using equal_res_choice_res_def 
+  shows "\<And>m. maps_to_n ((p^k)-1) (index_to_residue s k)"
+proof-
+  have A1: "\<And>m. (s m) \<in> carrier Z\<^sub>p" 
+    using assms is_closed_seq_def by auto
+  have "\<And>m. (s m k) \<in> {0..(p^k -1)}" 
+    by (metis A1 le_refl r_Zp r_range)
+  have "\<And>m. index_to_residue s k m = s m k" using index_to_residue_def 
+    using \<open>\<And>m. s m k \<in> {0..int (p ^ k - 1)}\<close> by auto
+  thus "\<And>m. maps_to_n ((p^k)-1) (index_to_residue s k)" 
+    by (metis \<open>\<And>m. s m k \<in> {0..int (p ^ k - 1)}\<close> atLeastAtMost_iff  
+        padic_integers.maps_to_n_def padic_integers_axioms)
+qed
+
+lemma(in padic_integers) seq_pr_inc:
+  assumes "is_closed_seq s"
+  shows "\<exists>l. \<forall>m. \<exists>n > m. (Pr k l) (s n)"
+proof-
+  fix k
+  fix l
+  fix m
+  have "(Pr k l) (s m) \<Longrightarrow> (s m) k = l" 
+    by (simp add: kth_res_equals_def)
+  have "\<And>k. s m k = index_to_residue s k m" 
+    by (simp add: index_to_residue_def)
+  have A1: "maps_to_n (p^k - 1) (index_to_residue s k)" using seq_maps_to_n assms by blast
+  then have "\<And>m. s m k \<in> {0..(p^k - 1)}" 
+    by (metis index_to_residue_def maps_to_nE)
+  have "maps_to_n (p^k - 1) (index_to_residue s k) \<Longrightarrow>  \<exists>l. \<forall>m. \<exists>n. n>m \<and> (index_to_residue s k n = l)" 
+    by (simp add: maps_to_n_infinite_seq)
+  hence "\<exists>l. \<forall>m. \<exists>n. n > m \<and>  (index_to_residue s k n = l)" using A1 by simp
+  hence "\<exists>l. \<forall>m. \<exists>n. n > m \<and>  (s n k = l)" 
+    by (simp add: index_to_residue_def)
+  thus "\<exists>l. \<forall>m. \<exists>n > m. (Pr k l) (s n)" 
+    using kth_res_equals_def by auto
+qed
+
+lemma increasing_filter_fun:
+  assumes "is_closed_seq s"
+  shows "\<exists>l. is_increasing (filtering_function s (Pr k l))" unfolding is_increasing_def 
+  by (metis (full_types) assms filtering_func_increasing  is_increasing_def seq_pr_inc)
+
+(*For every closed sequence, and every n, there is a subsequence for which all elements have the 
+same nth residue*)
+lemma subseq_equal_res:
+  assumes "is_closed_seq s"
+  shows "\<exists>s' n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n)) "
+proof-
+  have "\<exists>s' n. s' = filtered_sequence s (Pr k n)"
+    by auto
+  obtain s'' n where subseqdef: " is_increasing (filtering_function s (Pr k n)) \<and> s'' = filtered_sequence s (Pr k n)" using increasing_filter_fun 
+    using assms by blast
+  have "is_subseq_of s s''"
+  proof-
+    have "\<And>m. indicator s (filtered_sequence s (Pr k n) m)" 
+      by (metis (mono_tags, hide_lams) filtered_sequence_def indicator_def take_subseq_def)
+    have "is_increasing (filtering_function s (Pr k n))" 
+      by (simp add: subseqdef)
+      thus "is_subseq_of s s''"
+        using filtered_sequence_def is_subseqI subseqdef by blast
+  qed
+  hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
+    using subseqdef by blast
+  thus "\<exists>s' n. is_subseq_of s s' \<and> s' = filtered_sequence s (Pr k n)" 
+      by blast
+  qed
 
 (*The subsequence chosen by equal_res_choice is actually a subsequence*)
 lemma res_choice_subseq: 
@@ -1068,11 +1105,14 @@ proof
      have "equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" using equal_res_choice_def by simp
      then have "\<exists>n s'::(padic_int_seq). (equal_res_choice k s = s' \<and> s' = (filtered_sequence s (Pr k n)))"
        by (smt assms someI_ex subseq_equal_res)
-       then obtain s' where sdef: "s' = equal_res_choice k s" by simp
+     then obtain s' where sdef: "s' = equal_res_choice k s" by simp
+     then have "is_closed_seq s'" 
+       by (metis \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> assms filtered_sequence_def is_closedI is_closed_simp take_subseq_def)
      have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
-       using \<open>\<exists>n s'. Cseq k s = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
+       using \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
 
-     then have "\<exists>n. \<forall>m. (Pr k n) (s' m)" using fil1 
+     then have "\<exists>l. \<forall>m. \<exists>n > m. (Pr k l) (s' n)"  by (simp add: \<open>is_closed_seq s'\<close> seq_pr_inc)
+     have "\<And>m. \<And>k. s' m k = l" sledgehammer
 
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where

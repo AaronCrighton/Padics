@@ -879,6 +879,45 @@ lemma filtering_func_increasing:
 definition filtered_sequence :: "(nat \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> (nat \<Rightarrow> 'a)" where
 "filtered_sequence s P = take_subseq s (filtering_function s P)"
 
+lemma filter_exist:
+  assumes "is_closed_seq s"
+  assumes "\<forall>n::nat. \<exists>m. m > n \<and> P (s m)"
+  shows "\<And>m. n\<le>m \<Longrightarrow> P (s (filtering_function s P n))"
+proof(induct n)
+  case 0
+  then show ?case 
+    using LeastI assms(2) by force
+next
+  case (Suc n)
+  then show ?case 
+    by (smt LeastI assms(2) filtering_function.simps(2))
+qed
+(* In a filtered sequence, every element satisfies the given predicate *)
+
+lemma fil_seq_pred:
+  assumes "is_closed_seq s"
+  assumes "s' = filtered_sequence s P"
+  assumes "\<forall>n::nat. \<exists>m. m > n \<and> P (s m)"
+  shows "\<And>m::nat. P (s' m)"
+proof-
+  have "\<exists>k. P (s k)" using assms(3) 
+    by blast
+  fix m
+  obtain k where kdef: "k = filtering_function s P m" by auto 
+  have "\<exists>k. P (s k)" 
+    using assms(3) by auto
+  then have "P (s k)" 
+    using  kdef 
+    by (metis assms(1) assms(3) le_refl padic_integers.filter_exist padic_integers_axioms)
+  then have "s' m = s k"
+    by (simp add: assms(2) filtered_sequence_def kdef take_subseq_def)
+  hence "P (s' m)" 
+    by (simp add: \<open>P (s k)\<close>)
+  thus "\<And>m. P (s' m)" 
+    by (metis assms(1) assms(2) assms(3) filtered_sequence_def le_refl padic_integers.filter_exist padic_integers_axioms take_subseq_def)
+qed
+
+
 definition kth_res_equals :: "nat \<Rightarrow> int \<Rightarrow> (padic_int  \<Rightarrow> bool)" ("Pr _  _") where
 "kth_res_equals k n a = (a k = n)"
 
@@ -906,7 +945,6 @@ definition equal_res_choice_res :: "nat \<Rightarrow> padic_int_seq \<Rightarrow
 
 definition maps_to_n:: "nat \<Rightarrow> (nat \<Rightarrow> int) \<Rightarrow> bool" where
 "maps_to_n n f = (\<forall>(k::nat). f k \<in> {0..n})"
- 
 
  
 definition drop :: "nat \<Rightarrow> (nat \<Rightarrow> int) \<Rightarrow> (nat \<Rightarrow> int)" where
@@ -1091,17 +1129,12 @@ lemma res_choice_subseq:
   by (metis (mono_tags, lifting) assms equal_res_choice_def exE_some subseq_equal_res)
 
 
+
 (*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
 lemma res_choice_res: 
   assumes "is_closed_seq s"
   shows "(Cseq k s) m k = (Cres k s)"
-proof
-  show "(Cseq k s) m k \<in> UNIV" 
-    by simp
-  show "Cres k s \<in> UNIV" 
-    by simp
-  show "(Cseq k s) m k \<le> Cres k s" 
-  proof 
+proof-
      have "equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" using equal_res_choice_def by simp
      then have "\<exists>n s'::(padic_int_seq). (equal_res_choice k s = s' \<and> s' = (filtered_sequence s (Pr k n)))"
        by (smt assms someI_ex subseq_equal_res)
@@ -1110,9 +1143,12 @@ proof
        by (metis \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> assms filtered_sequence_def is_closedI is_closed_simp take_subseq_def)
      have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
        using \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
-
-     then have "\<exists>l. \<forall>m. \<exists>n > m. (Pr k l) (s' n)"  by (simp add: \<open>is_closed_seq s'\<close> seq_pr_inc)
-     have "\<And>m. \<And>k. s' m k = l" sledgehammer
+     then obtain n where "s' = (Cseq k s)"
+       by (simp add: sdef)
+     then have "\<forall>m. (s' m k = n)" 
+     proof-
+       have "\<And>m. ((Pr k n) (s' m))" sledgehammer
+     have "\<And>m. \<And>k. s' m k = l" 
 
 (*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where

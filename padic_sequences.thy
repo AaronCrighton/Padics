@@ -1115,12 +1115,33 @@ proof-
       by (simp add: subseqdef)
       thus "is_subseq_of s s''"
         using filtered_sequence_def is_subseqI subseqdef by blast
-qed
+   qed
   hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
     using subseqdef by blast
   thus "\<exists>s' n. is_subseq_of s s' \<and> s' = filtered_sequence s (Pr k n)" 
       by blast
   qed
+
+
+lemma increasing_impl_nat:
+  assumes "is_increasing f"
+  shows "\<forall>l::nat. \<exists>h. (f h) > l" 
+proof-
+ {assume "\<not> (\<forall>l. \<exists>h. l < f h)"
+  then have "\<exists>l. \<forall>h. l \<ge> f h" 
+    by (meson less_le_not_le linear)
+  then obtain l where "\<forall>h. l \<ge> f h" 
+    by blast
+  then obtain g where "(l \<ge> f g) \<and> (\<forall>h. h \<noteq> g \<longrightarrow> (f g \<ge> f h))" sorry
+  then have "f (Suc g) > f g" 
+    by (simp add: assms is_increasingE)
+  then have "f (Suc g) > l" 
+    by (metis \<open>f g \<le> l \<and> (\<forall>h. h \<noteq> g \<longrightarrow> f h \<le> f g)\<close> leD n_not_Suc_n)
+  hence False 
+    using \<open>\<forall>h. f h \<le> l\<close> leD by blast}
+  thus "\<forall>l. \<exists>h. (f h) > l" 
+    by blast
+qed
 
 (*The subsequence chosen by equal_res_choice is actually a subsequence*)
 lemma res_choice_subseq: 
@@ -1131,7 +1152,7 @@ lemma res_choice_subseq:
 lemma(in padic_integers) cseq_eq_n:
   assumes "is_closed_seq s"
   assumes "(Cseq k s) = s'"
-  shows "\<exists>n. \<forall>m. (Cseq k s) m k = n"  sorry
+  shows "\<exists>n. \<forall>m. (Cseq k s) m k = n"  unfolding equal_res_choice_def 
 proof
   have "\<exists>n. \<forall>m. (Pr k n) ((Cseq k s) m)"
   proof
@@ -1144,18 +1165,17 @@ proof
       by (metis (mono_tags, lifting) \<open>\<exists>n. Cseq k s = filtered_sequence s Pr k n\<close> \<open>s' = (SOME s'. \<exists>l. is_subseq_of s s' \<and> s' = filtered_sequence s Pr k l)\<close> assms(1) exE_some res_choice_subseq)
     obtain l where "s' = filtered_sequence s (Pr k l)" 
       by (smt \<open>\<exists>n. Cseq k s = filtered_sequence s Pr k n\<close> \<open>s' = (SOME s'. \<exists>l. is_subseq_of s s' \<and> s' = filtered_sequence s Pr k l)\<close> assms(1) res_choice_subseq tfl_some)
-    then have "\<forall>n::nat. \<exists>m. m > n \<and> (Pr k l) (s m)"  
+    obtain f where "is_increasing f \<and> s' = take_subseq s f" 
+      using \<open>is_subseq_of s s'\<close> is_subseq_of_def by blast
+    have "\<forall>n. \<exists>m > n. \<exists>l. s' l = s m" 
+      by (metis \<open>is_increasing f \<and> s' = take_subseq s f\<close> gt_ex increasing_impl_nat is_increasing_def take_subseq_def)
     proof-
-      have "\<forall>m::nat. \<exists>n. s n = s' m"
-        by (metis \<open>is_subseq_of s s'\<close> is_subseq_of_def padic_integers.take_subseq_def padic_integers_axioms)
-        have "\<forall>n. \<exists>m>n. (Pr k l) (s m)"
-   have "\<And>m. (Pr k l) (s' m)" 
-      using \<open>\<forall>n. \<exists>m>n. Pr k l (s m)\<close> \<open>s' = filtered_sequence s Pr k l\<close> assms(1) fil_seq_pred by blast
-    have "\<And>m. (Pr k l) ((Cseq k s) m) \<Longrightarrow> (Cseq k s) m k = l"
-      by (simp add: kth_res_equals_def)
-    have "s' = Cseq k s"
-      sorry
-
+      fix n
+      have "\<exists>m h. m > n \<and> s' h = s m"
+      proof
+        have "\<exists>h. s n = h" 
+          by simp
+     
 (*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
 lemma(in padic_integers) res_choice_res: 
   assumes "is_closed_seq s"

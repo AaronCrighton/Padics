@@ -1115,7 +1115,7 @@ proof-
       by (simp add: subseqdef)
       thus "is_subseq_of s s''"
         using filtered_sequence_def is_subseqI subseqdef by blast
-  qed
+qed
   hence "\<exists>s'. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))"
     using subseqdef by blast
   thus "\<exists>s' n. is_subseq_of s s' \<and> s' = filtered_sequence s (Pr k n)" 
@@ -1128,29 +1128,41 @@ lemma res_choice_subseq:
   shows "is_subseq_of s (Cseq k s)" 
   by (metis (mono_tags, lifting) assms equal_res_choice_def exE_some subseq_equal_res)
 
+lemma(in padic_integers) cseq_eq_n:
+  assumes "is_closed_seq s"
+  assumes "(Cseq k s) = s'"
+  shows "\<exists>n. \<forall>m. (Cseq k s) m k = n"  sorry
+proof
+  have "\<exists>n. \<forall>m. (Pr k n) ((Cseq k s) m)"
+  proof
+    have "\<exists>n. (Cseq k s) =  (filtered_sequence s (Pr k n))" using equal_res_choice_def assms someI_ex subseq_equal_res
+      by smt
 
+    obtain s' where "s' = (SOME s'. \<exists>l. is_subseq_of s s' \<and> s' = filtered_sequence s Pr k l)"
+      by simp
+    have "is_subseq_of s s'"
+      by (metis (mono_tags, lifting) \<open>\<exists>n. Cseq k s = filtered_sequence s Pr k n\<close> \<open>s' = (SOME s'. \<exists>l. is_subseq_of s s' \<and> s' = filtered_sequence s Pr k l)\<close> assms(1) exE_some res_choice_subseq)
+    obtain l where "s' = filtered_sequence s (Pr k l)" 
+      by (smt \<open>\<exists>n. Cseq k s = filtered_sequence s Pr k n\<close> \<open>s' = (SOME s'. \<exists>l. is_subseq_of s s' \<and> s' = filtered_sequence s Pr k l)\<close> assms(1) res_choice_subseq tfl_some)
+    then have "\<forall>n::nat. \<exists>m. m > n \<and> (Pr k l) (s m)"  
+    proof-
+      have "\<forall>m::nat. \<exists>n. s n = s' m"
+        by (metis \<open>is_subseq_of s s'\<close> is_subseq_of_def padic_integers.take_subseq_def padic_integers_axioms)
+        have "\<forall>n. \<exists>m>n. (Pr k l) (s m)"
+   have "\<And>m. (Pr k l) (s' m)" 
+      using \<open>\<forall>n. \<exists>m>n. Pr k l (s m)\<close> \<open>s' = filtered_sequence s Pr k l\<close> assms(1) fil_seq_pred by blast
+    have "\<And>m. (Pr k l) ((Cseq k s) m) \<Longrightarrow> (Cseq k s) m k = l"
+      by (simp add: kth_res_equals_def)
+    have "s' = Cseq k s"
+      sorry
 
 (*equal_res_choice_res really is the constant residue of elements in equal_res_choice*)
-lemma res_choice_res: 
+lemma(in padic_integers) res_choice_res: 
   assumes "is_closed_seq s"
   shows "(Cseq k s) m k = (Cres k s)"
-proof-
-     have "equal_res_choice k s = (SOME s'::(padic_int_seq). (\<exists> n. is_subseq_of s s' \<and> s' = (filtered_sequence s (Pr k n))))" using equal_res_choice_def by simp
-     then have "\<exists>n s'::(padic_int_seq). (equal_res_choice k s = s' \<and> s' = (filtered_sequence s (Pr k n)))"
-       by (smt assms someI_ex subseq_equal_res)
-     then obtain s' where sdef: "s' = equal_res_choice k s" by simp
-     then have "is_closed_seq s'" 
-       by (metis \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> assms filtered_sequence_def is_closedI is_closed_simp take_subseq_def)
-     have fil1: "\<exists>n. s' =  (filtered_sequence s (Pr k n))" 
-       using \<open>\<exists>n s'. (Cseq k s) = s' \<and> s' = filtered_sequence s Pr k n\<close> using sdef by blast
-     then obtain n where "s' = (Cseq k s)"
-       by (simp add: sdef)
-     then have "\<forall>m. (s' m k = n)" 
-     proof-
-       have "\<And>m. ((Pr k n) (s' m))" sledgehammer
-     have "\<And>m. \<And>k. s' m k = l" 
+  unfolding equal_res_choice_res_def 
+  by (smt assms cseq_eq_n padic_integers.cseq_eq_n the_equality)
 
-(*Using the constant residue sequences to construct an accumulation point for a closed sequence s*)
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
 "acc_point s k = (if k=0 then 0 else (Cres k (Cseq (k-1) s)))"
 

@@ -17,10 +17,10 @@ definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) 
 definition lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
   "lc R p = p (deg R p)"
 
-lemma(in UP_domain) multc_simp[simp]:
+(*lemma(in UP_domain) multc_simp:
   assumes "p \<in> carrier P"
   shows "multc R p n = [n]\<cdot>(p n)" 
-  by (simp add: multc_def)
+  by (simp add: multc_def)*)
 
 lemma(in UP_ring) shift_in_up_ring:
   assumes "b \<in> up R"
@@ -175,7 +175,7 @@ proof-
   hence "deg R (trunc R p) \<noteq> n" using deg_def Least_def LeastI B1 
     by (smt P_def UP_def UP_ring.trunc_is_poly UP_ring_axioms \<open>deg R p = n\<close> \<open>trunc R p n = \<zero>\<close> assms(1) assms(2) lcoeff_nonzero_deg 
         neq0_conv partial_object.select_convs(1) restrict_apply up_ring.simps(2))
-  hence "deg R (trunc R p) < n" using deg_def LeastI sledgehammer
+  hence "deg R (trunc R p) < n" using deg_def LeastI 
     by (smt A1 UP_def UP_ring.deg_zero UP_ring.lcoeff_nonzero2 UP_ring.trunc_is_poly UP_ring_axioms assms(1) assms(2) linorder_neqE_nat ndef 
         partial_object.select_convs(1) restrict_apply up_ring.simps(2))
   thus ?thesis using ndef by simp
@@ -192,7 +192,7 @@ qed
 
 lemma(in UP_ring) monom_deriv:
   assumes "p \<in> up R"
-  shows "deriv R (monom (UP R) a p) = shift (multc R (monom (UP R) a p))" sledgehammer
+  shows "deriv R (monom (UP R) a p) = shift (multc R (monom (UP R) a p))" 
 
 (* deriv also returns a polynomial *)
 lemma(in UP_ring) deriv_in_up_ring:
@@ -501,8 +501,16 @@ proof(induction n)
 next
   case (Suc n)
   assume "p \<in> carrier P \<and> deg R p = n \<Longrightarrow> p = (\<Oplus>\<^bsub>P\<^esub>i\<in>{..n}. monom P (p i) i)" 
-  then show ?case sledgehammer
-    by (metis P_def Suc.prems UP_def UP_ring.coeff_simp UP_ring_axioms deg_def partial_object.select_convs(1) up_repr)
+  then show ?case 
+   
+  proof -
+    have "carrier P = up R"
+      by (simp add: P_def UP_def)
+    then have "coeff P p = p"
+      using P_def Suc.prems UP_ring.coeff_simp UP_ring_axioms by auto
+    then show ?thesis
+      using Suc.prems up_repr by fastforce
+  qed
 qed
 
 lemma(in UP_cring) product_rule_deg_0:
@@ -607,12 +615,18 @@ proof(induct "card A")
   case C1: 0
   show ?case
     apply(rule ccontr)
-  proof-
+  proof(rule ccontr)
     assume "deriv R (\<Oplus>\<^bsub>P\<^esub>p\<in>A. p) \<noteq> finsum P (deriv R) A"
     have "card A = 0" using C1 by simp
-    have "card A \<noteq> 0" using assms(2) assms(1) sledgehammer
+    have "finite A \<and> A \<noteq> {}" using assms(1) assms(2) by simp
+    have "card A \<noteq> 0" using assms(2) assms(1) card_gt_0_iff 
+      by simp
+    thus False
+    by (simp add: C1.hyps)
 next
   case (Suc x)
+  assume "x = card A \<Longrightarrow> deriv R (\<Oplus>\<^bsub>P\<^esub>p\<in>A. p) = finsum P (deriv R) A"
+  assume "Suc x = card A"
   then show ?case sorry
 qed
 

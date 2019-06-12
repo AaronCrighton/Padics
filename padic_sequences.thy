@@ -1090,7 +1090,7 @@ proof-
     using kth_res_equals_def by auto
 qed
 
-lemma subseq_pred:
+(*lemma subseq_pred:
   assumes "is_closed_seq s"
   assumes "is_subseq_of s s'"
   assumes "s' = filtered_sequence s P"
@@ -1106,7 +1106,7 @@ proof-
     next
       case (Suc n)
       then show ?case sorry
-    qed
+    qed*)
 
 
 lemma increasing_filter_fun:

@@ -17,10 +17,10 @@ definition deriv :: "('a, 'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a ) 
 definition lc :: "('a,'b) ring_scheme \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> 'a" where
   "lc R p = p (deg R p)"
 
-lemma(in UP_domain) multc_simp[simp]:
+(*lemma(in UP_domain) multc_simp:
   assumes "p \<in> carrier P"
   shows "multc R p n = [n]\<cdot>(p n)" 
-  by (simp add: multc_def)
+  by (simp add: multc_def)*)
 
 lemma(in UP_ring) shift_in_up_ring:
   assumes "b \<in> up R"
@@ -192,7 +192,7 @@ qed
 
 lemma(in UP_ring) monom_deriv:
   assumes "p \<in> up R"
-  shows "deriv R (monom (UP R) a p) = shift (multc R (monom (UP R) a p))" sledgehammer
+  shows "deriv R (monom (UP R) a p) = shift (multc R (monom (UP R) a p))" 
 
 (* deriv also returns a polynomial *)
 lemma(in UP_ring) deriv_in_up_ring:

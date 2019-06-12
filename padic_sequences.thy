@@ -1166,12 +1166,39 @@ fun res_seq ::"padic_int_seq \<Rightarrow> nat \<Rightarrow>  padic_int_seq" whe
 "res_seq s 0 = s"|
 "res_seq s (Suc k) = Cseq (Suc k) (res_seq s k)"
 
+lemma res_seq_res:
+  assumes "is_closed_seq s"
+  shows "is_closed_seq (res_seq s k)"
+  apply(induction k)
+  apply (simp add: assms)
+  by (smt is_subseq_of_def padic_integers.Cseq_prop_0 padic_integers.is_closed_seq_def 
+      padic_integers_axioms res_seq.simps(2) take_subseq_def)
+
+lemma res_seq_res':
+  assumes "is_closed_seq s"
+  shows "\<And>n. res_seq s (Suc k) n (Suc k) = Cres (Suc k) (res_seq s k)"
+  using assms res_seq_res[of s k] Cseq_prop_1[of "(res_seq s k)" "Suc k" ] 
+  by simp
+
+lemma res_seq_subseq: 
+  assumes "is_closed_seq s"
+  shows "is_subseq_of (res_seq s k) (res_seq s (Suc k))"
+  by (metis assms  padic_integers.Cseq_prop_0 padic_integers.res_seq_res padic_integers_axioms res_seq.simps(2))
+
+lemma res_seq_res':
+  assumes "is_closed_seq s"
+  shows "res_seq s (Suc k) 0 k = res_seq s k 0 k "
+
+
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
 "acc_point s k = (if (k = 0) then (0::int) else ((res_seq s k) 0 k))"
 
 lemma res_seq_res: 
   assumes "is_closed_seq s"
   shows "res_seq s (Suc k) 0 k = res_seq s k 0 k"
+proof-
+  obtain n where  n_def: "res_seq s (Suc k) 0 = res_seq s k n"
+    
 
 
 lemma acc_point_res:

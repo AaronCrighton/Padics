@@ -1,18 +1,13 @@
 theory padic_construction
-imports "HOL-Number_Theory.Residues" "HOL-Algebra.RingHom" "HOL-Algebra.IntRing"
+imports Main "HOL-Number_Theory.Residues" "HOL-Algebra.RingHom" "HOL-Algebra.IntRing"
 begin
 
 type_synonym padic_int = "nat \<Rightarrow> int"
 
-
-section  \<open>Inverse Limit construction of p-adics"\<close>
-
-text{* res is used to define canonical maps between residue rings  *}
+(*Inverse Limit construction of p-adics*)
 
 definition res :: "int \<Rightarrow> int \<Rightarrow> int" where 
 "res n m = m mod n"
-
-text{* (res n) is a ring homomorphism from the integers to Z/nZ *}
 
 lemma res_hom_0:
   assumes "n > 1"
@@ -32,8 +27,6 @@ proof(rule ring_hom_memI)
   show "res n \<one>\<^bsub>\<Z>\<^esub> = \<one>\<^bsub>residue_ring n\<^esub>" 
     by (simp add: R res_def residues.res_to_cong_simps(4)) 
 qed
-
-text{* (res n) is a ring homomorphism from  Z/mZ --> Z/nZ when n divides m*}
 
 lemma res_hom_1:
   assumes "n > 1"
@@ -59,8 +52,6 @@ proof(rule ring_hom_memI)
     by (simp add: assms(1) res_def residue_ring_def) 
 qed
 
-text{* (res n) is the identity map on Z/nZ*}
-
 lemma res_id:
   assumes "x \<in> carrier (residue_ring n)"
   assumes "n \<ge>0"
@@ -81,8 +72,6 @@ next
     using res_def by auto
 qed
 
-text{* (res p^m) is a ring homomoprhism from Z/p^nZ --> Z/p^mZ when n > m*}
-
 lemma res_hom_p:
   assumes "(n::nat) \<ge> m"
   assumes "m >0"
@@ -97,19 +86,18 @@ proof(rule res_hom_1)
     by (simp add: dvd_power_le) 
 qed
 
-text{*Defining the set of padic integers as the inverse limit of the rings Z/p^nZ along
-      the maps (res p^n): Z/p^mZ --> Z/p^nZ *}
 
 definition padic_set :: "nat \<Rightarrow> padic_int set" where
 "padic_set p = {(f::padic_int) .(\<forall>(m::nat). (f m) \<in> (carrier (residue_ring (p^m))))
                                     \<and>(\<forall>(n::nat) (m::nat). (n > m \<longrightarrow> (res (p^m) (f n) = (f m)))) }"
 
-text{*Rules for deducing basic properties of elements of padic_set p*}
+
 
 lemma padic_set_simp0:
   assumes "f \<in> padic_set p"
   shows "(f m) \<in> (carrier (residue_ring (p^m)))" 
   using assms padic_set_def by auto  
+
 
 lemma padic_set_simp1:
   assumes "f \<in> padic_set p"
@@ -142,8 +130,6 @@ proof-
     using residue_ring_def  by simp 
 qed
 
-text{*Rule for proving membership in (padic_set p)*}
-
 lemma padic_set_mem:
   fixes f :: "padic_int"
   assumes "\<And>m. (f m) \<in> (carrier (residue_ring (p^m)))"
@@ -152,9 +138,6 @@ lemma padic_set_mem:
   by (simp add: assms(1) assms(2) padic_set_def) 
 
 
-section  \<open>Defining the standard operations on the padic integers"\<close>
-
-text{*Addition and multiplication are defined componentwise on residue rings*}
 
 definition padic_add :: "nat \<Rightarrow> padic_int \<Rightarrow> padic_int \<Rightarrow> padic_int " 
   where "padic_add p f g \<equiv> (\<lambda> n. (f n) \<oplus>\<^bsub>(residue_ring (p^n))\<^esub> (g n))"
@@ -163,6 +146,7 @@ lemma padic_add_simp:
 "(padic_add p f g) n = (f n) \<oplus>\<^bsub>(residue_ring (p^n))\<^esub> (g n)"
   by (simp add: padic_add_def) 
 
+
 definition padic_mult :: "nat \<Rightarrow> padic_int \<Rightarrow> padic_int \<Rightarrow> padic_int" 
   where "padic_mult p f g \<equiv> (\<lambda> n. (f n) \<otimes>\<^bsub>(residue_ring (p^n))\<^esub> (g n))"
 
@@ -170,7 +154,8 @@ lemma padic_mult_simp:
 "(padic_mult p f g) n = (f n) \<otimes>\<^bsub>(residue_ring (p^n))\<^esub> (g n)"
   by (simp add: padic_mult_def) 
 
-text{*definition of the padic multiplicative unit*}
+
+(*padic multiplicative unit*)
 
 definition padic_one :: "nat \<Rightarrow> padic_int" where
 "padic_one p \<equiv> (\<lambda>n.(if n=0 then 0 else 1))"
@@ -180,7 +165,7 @@ lemma padic_one_simp:
   shows "padic_one p n =  \<one>\<^bsub>residue_ring (p^n)\<^esub>"
   by (simp add: assms padic_one_def residue_ring_def) 
 
-text{*definition of the padic additive unit*}
+(*padic additive unit*)
 
 definition padic_zero :: "nat \<Rightarrow> padic_int" where
 "padic_zero p \<equiv> (\<lambda>n. 0)"
@@ -189,7 +174,9 @@ lemma padic_zero_simp:
 "padic_zero p n = \<zero>\<^bsub>residue_ring (p^n)\<^esub>" 
   by (simp add: padic_zero_def residue_ring_def) 
 
-text{*padic unary minus*}
+
+
+(*padic unary minus*)
 
 definition padic_uminus :: "nat \<Rightarrow>  padic_int \<Rightarrow>  padic_int" where
 "padic_uminus p f \<equiv> \<lambda> n. \<ominus>\<^bsub>residue_ring (p^n)\<^esub> (f n)"
@@ -197,21 +184,6 @@ definition padic_uminus :: "nat \<Rightarrow>  padic_int \<Rightarrow>  padic_in
 lemma padic_uminus_simp:
 "padic_uminus p f n\<equiv> \<ominus>\<^bsub>residue_ring (p^n)\<^esub> (f n)"
    by (simp add: padic_uminus_def) 
-
-lemma padic_uminus_simp':
-  assumes "prime p"
-  assumes "f \<in> padic_set p"
-  assumes "n >0"
-shows "padic_uminus p f n = (if n=0 then 0 else (- (f n)) mod (p^n))"
-proof-
-  have "residues (p^n)"
-  by (metis (mono_tags, hide_lams) assms(1) assms(3) le_numeral_extra(1) 
-      nat_int nat_less_eq_zless nat_one_as_int one_less_power 
-      prime_gt_1_nat residues.intro) 
-  then show ?thesis 
-    using residue_ring_def padic_uminus_def residues.res_neg_eq
-    by auto 
-qed
 
 (*padic simp rules bundled together*)
 
@@ -227,7 +199,7 @@ lemma padic_simps:
   apply (simp add: padic_add_simp)  
   using padic_one_simp by auto
 
-text{*padic_one is an element of the padics*}
+(*padic_one is an element of the padics:*)
 
 lemma padic_one_mem:
   assumes "prime p"
@@ -264,22 +236,19 @@ proof(rule padic_set_mem)
     qed
   qed
 qed
-
-text{*padic_zero is an element of the padics *}
+(*padic_zero is an element of the padics *)
 
 lemma padic_zero_mem:
   assumes "p \<noteq>0"
   shows "padic_zero p \<in> padic_set p" 
-proof (rule padic_set_mem)
-  show "\<And>m. padic_zero p m \<in> carrier (residue_ring (int p ^ m))" 
-    using assms padic_zero_def residue_ring_def by auto 
-  show "\<And>m n. m < n \<Longrightarrow> res (int p ^ m) (padic_zero p n) = padic_zero p m"         
-    using \<open>\<And>m. padic_zero p m \<in> carrier (residue_ring (int p ^ m))\<close>
-      padic_zero_def res_id 
-    by auto 
-qed
-
-text{*padic_set is closed under padic_uminus*}
+      proof (rule padic_set_mem)
+        show "\<And>m. padic_zero p m \<in> carrier (residue_ring (int p ^ m))" 
+          using assms padic_zero_def residue_ring_def by auto 
+        show "\<And>m n. m < n \<Longrightarrow> res (int p ^ m) (padic_zero p n) = padic_zero p m"         
+          using \<open>\<And>m. padic_zero p m \<in> carrier (residue_ring (int p ^ m))\<close>
+            padic_zero_def res_id by auto 
+      qed
+(*padic uminus maps to residue_ring*)
 
 lemma res_1_prop:
 "\<ominus>\<^bsub>residue_ring 1\<^esub> \<zero>\<^bsub>residue_ring 1\<^esub> =  \<zero>\<^bsub>residue_ring 1\<^esub>"
@@ -377,9 +346,9 @@ proof(rule padic_set_mem)
           by (metis \<open>m < n\<close> assms(1) assms(2) less_imp_le of_nat_power padic_set_simp1) 
       qed
     qed
-qed
+  qed
 
-text{*padic set is closed under multiplication*}
+(*padic set is closed under multiplication*)
 
 lemma res_1_mult:
   assumes "x \<in> carrier (residue_ring 1)"
@@ -447,12 +416,12 @@ proof(rule padic_set_mem)
 qed
 
 
-text{*padic valuation. Maps 0 to -1 for now, otherwise is correct*}
+(*padic valuation. Maps 0 to -1 for now, otherwise is correct*)
 
 definition padic_val :: "nat \<Rightarrow>  padic_int \<Rightarrow> int"  where
 "padic_val p f \<equiv> if (f = padic_zero p) then -1 else int (LEAST k::nat. (f (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc k))\<^esub>)"
 
-text{*characterization of padic_val on nonzero elements*}
+(*characterization of padic_val on nonzero elements*)
 
 lemma val_of_nonzero:
   assumes "f \<in> padic_set p"
@@ -460,8 +429,6 @@ lemma val_of_nonzero:
   assumes "prime p"
   shows "f (nat (padic_val p f) + 1) \<noteq>  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f) + 1)))\<^esub>"
         "f (nat (padic_val p f)) =  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f))))\<^esub>"
-        "f (nat (padic_val p f) + 1) \<noteq> 0"
-        "f (nat (padic_val p f)) =  0"
 proof-
   let ?vf = "padic_val p f"
   have 0: "?vf =int (LEAST k::nat. (f (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc k))\<^esub>)"
@@ -487,9 +454,9 @@ proof-
   qed
   then have "(f (Suc (nat ?vf))) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc (nat ?vf)))\<^esub>" 
     using 0 by (metis (mono_tags, lifting) LeastI_ex nat_int) 
-  then show C0: "f (nat (padic_val p f) + 1) \<noteq>  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f) + 1)))\<^esub>" 
+  then show "f (nat (padic_val p f) + 1) \<noteq>  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f) + 1)))\<^esub>" 
     using 0 1 by simp
-  show C1: "f (nat (padic_val p f)) =  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f))))\<^esub>"
+  show "f (nat (padic_val p f)) =  \<zero>\<^bsub>residue_ring (p^((nat (padic_val p f))))\<^esub>"
   proof(cases "(padic_val p f) = 0")
     case True
     then show ?thesis 
@@ -509,11 +476,6 @@ proof-
     qed    
     then show "f (nat (padic_val p f)) = \<zero>\<^bsub>residue_ring (int (p ^ nat (padic_val p f)))\<^esub>" by auto
   qed
-  show  "f (nat (padic_val p f) + 1) \<noteq> 0"
-    using C0  residue_ring_def 
-    by auto 
-  show  "f (nat (padic_val p f)) =  0"
-    by (simp add: C1 residue_ring_def) 
 qed
 
 lemma below_val_zero:
@@ -538,10 +500,7 @@ lemma  zero_below_val:
   assumes "x \<in> padic_set p"
   assumes "n \<le> padic_val p x"
   shows  "x n =  \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
-         "x n = 0"
-proof-
- show "x n = \<zero>\<^bsub>residue_ring (int p ^ n)\<^esub>"
- proof(cases "n=0")
+proof(cases "n=0")
   case True
   then have  "x 0 \<in>carrier (residue_ring (p^0))" 
     using assms(2) padic_set_simp0  by blast
@@ -554,33 +513,29 @@ proof-
       case True 
       then show ?thesis 
         by (simp add: padic_zero_simp)
-    next
-      case F: False
-      then have A: "padic_val p x = int (LEAST k::nat. (x (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc k))\<^esub>)" 
-        using padic_val_def by auto
-      have "\<not> (x n) \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
-      proof
-        assume "(x n) \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
-        obtain k where "n = Suc k" 
-          using False old.nat.exhaust by auto
-        then have "k \<ge> padic_val p x" using A 
-          by (metis (mono_tags, lifting) Least_le
-              \<open>x n \<noteq> \<zero>\<^bsub>residue_ring (int (p ^ n))\<^esub>\<close> int_eq_iff 
-              nat_le_iff)
-        then have "n > padic_val p x" 
-          using \<open>n = Suc k\<close> by linarith
-        then show False using assms(3) 
-          by linarith
+      next
+        case F: False
+        then have A: "padic_val p x = int (LEAST k::nat. (x (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc k))\<^esub>)" 
+          using padic_val_def by auto
+        have "\<not> (x n) \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
+        proof
+          assume "(x n) \<noteq> \<zero>\<^bsub>residue_ring (p^n)\<^esub>"
+          obtain k where "n = Suc k" 
+            using False old.nat.exhaust by auto
+          then have "k \<ge> padic_val p x" using A 
+            by (metis (mono_tags, lifting) Least_le
+                \<open>x n \<noteq> \<zero>\<^bsub>residue_ring (int (p ^ n))\<^esub>\<close> int_eq_iff 
+                nat_le_iff)
+          then have "n > padic_val p x" 
+            using \<open>n = Suc k\<close> by linarith
+          then show False using assms(3) 
+            by linarith
+        qed
+        then show ?thesis 
+          by simp
       qed
-      then show ?thesis 
-        by simp
-    qed
-  qed
-  show "x n = 0"
-    by (simp add: \<open>x n = \<zero>\<^bsub>residue_ring (int p ^ n)\<^esub>\<close> residue_ring_def) 
 qed
-
-text{*zero is the only element with valuation equal to -1*}
+(*zero is the only element with valuation equal to -1*)
 
 lemma val_zero:
  assumes P: "f \<in> (padic_set p)"   
@@ -621,7 +576,7 @@ proof
   using padic_val_def by simp 
 qed
 
-text{*val turns multiplication into integer addition on nonzero elements*}
+(*val turns multiplication into integer addition on nonzero elements*)
 
 lemma val_prod:
   assumes  "prime p"
@@ -629,7 +584,7 @@ lemma val_prod:
   assumes "g \<in> (padic_set p)"
   assumes "f \<noteq> padic_zero p"
   assumes "g \<noteq> padic_zero p"
-  shows "padic_val p (padic_mult p f g) = padic_val p f + padic_val p g"
+  shows "padic_val p (padic_mult p f g) = padic_val p f + padic_val p  g"
 proof-
   let ?vp = "padic_val p (padic_mult p f g)"
   let ?vf = "padic_val p f"
@@ -917,13 +872,14 @@ qed
 
 qed
 
-text{*abbreviation for the ring of p_adic integers*}
+(*abbreviation for the ring of p_adic integers*)
 
 abbreviation padic_int :: "nat \<Rightarrow> padic_int ring"
   where "padic_int (p::nat) \<equiv> \<lparr>carrier = (padic_set p),
          Group.monoid.mult = (padic_mult p), one = (padic_one p), 
           zero = (padic_zero p), add = (padic_add p)\<rparr>"
 
+(*padic multiplication is associative*)
 
 lemma residues_n:
   assumes "n \<noteq> 0"
@@ -935,8 +891,6 @@ proof
   then show " 1 < int p ^ n "  
     using assms(1) by auto
 qed
-
-text{*padic multiplication is associative*}
 
 lemma padic_mult_assoc:
 assumes "prime p"
@@ -970,84 +924,83 @@ proof-
   qed
 qed
 
-text{*The padics are closed under addition*}
+
+(*The padics are closed under addition*)
 
 lemma padic_add_closed:
   assumes "prime p"
-  shows  "\<And>x y.
-         x \<in> carrier (padic_int p) \<Longrightarrow>
-         y \<in> carrier (padic_int p) \<Longrightarrow>
-         x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
-proof
-  fix x::"padic_int"
-  fix y::"padic_int"
-  assume Px: "x \<in>carrier (padic_int p) "
-  assume Py: "y \<in>carrier (padic_int p)"
-  show "x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
-  proof-
-    let ?f = "x \<oplus>\<^bsub>(padic_int p)\<^esub> y"       
-    have 0: "(\<forall>(m::nat). (?f m) \<in> (carrier (residue_ring (p^m))))"
-    proof fix m
-      have A1 : "?f m = (x m) \<oplus>\<^bsub>(residue_ring (p^m))\<^esub> (y m)"
-        by (simp add: padic_add_def)  
-      have A2: "(x m) \<in>(carrier (residue_ring (p^m)))" 
-        using Px by (simp add: padic_set_def) 
-      have A3: "(y m) \<in>(carrier (residue_ring (p^m)))" 
-        using Py by (simp add: padic_set_def) 
-      then show "(?f m) \<in> (carrier (residue_ring (p^m)))" 
-        using A1 assms of_nat_0_less_iff prime_gt_0_nat residue_ring_def by force  
-    qed
-    have 1: "(\<forall>(n::nat) (m::nat). (n > m \<longrightarrow> (res (p^m) (?f n) = (?f m))))" 
-    proof 
-      fix n::nat
-      show "(\<forall>(m::nat). (n > m \<longrightarrow> (res (p^m) (?f n) = (?f m))))" 
-      proof
-        fix m::nat
-        show "(n > m \<longrightarrow> (res (p^m) (?f n) = (?f m)))"
-        proof
-          assume A: "m < n"
-          show "(res (p^m) (?f n) = (?f m))"
-          proof(cases "m = 0")
-            case True 
-            then have A0: "(res (p^m) (?f n)) = 0" 
-              by (simp add: res_1_zero) 
-            have A1: "?f m = 0" using True 
-              by (metis (mono_tags, lifting) "0" atLeastAtMost_singleton
-                  cancel_comm_monoid_add_class.diff_cancel empty_iff 
-                  insert_iff of_nat_1 partial_object.select_convs(1) 
-                  power.simps(1) residue_ring_def ring_record_simps(12)) 
-            then show ?thesis 
-              using A0 by linarith 
-          next
-            case False
-            then have  "m \<noteq>0" using A by linarith
-            have D: "p^n mod p^m = 0" using A 
-              using assms divides_primepow_nat dvd_imp_mod_0 less_imp_le by blast 
-            let ?LHS = "res (p ^ m) ((x \<oplus>\<^bsub>padic_int p\<^esub> y) n)"
-            have A0: "?LHS = res (p ^ m) ((x n)\<oplus>\<^bsub>residue_ring (p^n)\<^esub>( y n))" 
-              by (simp add: padic_add_def)  
-            have "res (p^m) \<in> ring_hom (residue_ring (int (p^n))) (residue_ring (int (p^m)))"
-              using A False assms res_hom_p by auto 
-            then have "res (p ^ m) ((x n)\<oplus>\<^bsub>residue_ring (p^n)\<^esub>( y n)) = (res (p ^ m) (x n))\<oplus>\<^bsub>residue_ring (p^m)\<^esub>((res (p ^ m) (y n)))"  
-              by (metis (no_types, lifting) Px Py mem_Collect_eq padic_set_def partial_object.select_convs(1) ring_hom_add) 
-            then have "?LHS =(res (p ^ m) (x n))\<oplus>\<^bsub>residue_ring (p^m)\<^esub>((res (p ^ m) (y n)))" 
-              using A0 by force 
-            then show ?thesis
-              using A Px Py padic_set_def by (simp add: padic_add_def) 
-          qed
+  shows  "\<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow> y \<in> carrier (padic_int p) \<Longrightarrow> x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
+ proof
+      fix x::"padic_int"
+      fix y::"padic_int"
+      assume Px: "x \<in>carrier (padic_int p) "
+      assume Py: "y \<in>carrier (padic_int p)"
+      show "x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
+      proof-
+        let ?f = "x \<oplus>\<^bsub>(padic_int p)\<^esub> y"
+        have 0: "(\<forall>(m::nat). (?f m) \<in> (carrier (residue_ring (p^m))))"
+        proof fix m
+          have A1 : "?f m = (x m) \<oplus>\<^bsub>(residue_ring (p^m))\<^esub> (y m)"
+             by (simp add: padic_add_def)  
+          have A2: "(x m) \<in>(carrier (residue_ring (p^m)))" 
+            using Px by (simp add: padic_set_def) 
+          have A3: "(y m) \<in>(carrier (residue_ring (p^m)))" 
+            using Py by (simp add: padic_set_def) 
+          then show "(?f m) \<in> (carrier (residue_ring (p^m)))" 
+            using A1 assms of_nat_0_less_iff prime_gt_0_nat residue_ring_def by force  
         qed
-      qed
+        have 1: "(\<forall>(n::nat) (m::nat). (n > m \<longrightarrow> (res (p^m) (?f n) = (?f m))))" 
+        proof 
+          fix n::nat
+          show "(\<forall>(m::nat). (n > m \<longrightarrow> (res (p^m) (?f n) = (?f m))))" 
+          proof
+            fix m::nat
+            show "(n > m \<longrightarrow> (res (p^m) (?f n) = (?f m)))"
+              proof
+                assume A: "m < n"
+                show "(res (p^m) (?f n) = (?f m))"
+                proof(cases "m = 0")
+                  case True 
+                  then have A0: "(res (p^m) (?f n)) = 0" 
+                    by (simp add: res_1_zero) 
+                  have A1: "?f m = 0" using True 
+                    by (metis (mono_tags, lifting) "0" atLeastAtMost_singleton
+                        cancel_comm_monoid_add_class.diff_cancel empty_iff 
+                        insert_iff of_nat_1 partial_object.select_convs(1) 
+                        power.simps(1) residue_ring_def ring_record_simps(12)) 
+                  then show ?thesis 
+                    using A0 by linarith 
+             
+                next
+                  case False
+                  then have  "m \<noteq>0" using A by linarith
+                  have D: "p^n mod p^m = 0" using A 
+                    using assms divides_primepow_nat dvd_imp_mod_0 less_imp_le by blast 
+                  let ?LHS = "res (p ^ m) ((x \<oplus>\<^bsub>padic_int p\<^esub> y) n)"
+                  have A0: "?LHS = res (p ^ m) ((x n)\<oplus>\<^bsub>residue_ring (p^n)\<^esub>( y n))" 
+                    by (simp add: padic_add_def)  
+                  have "res (p^m) \<in> ring_hom (residue_ring (int (p^n))) (residue_ring (int (p^m)))"
+                    using A False assms res_hom_p by auto 
+                  then have "res (p ^ m) ((x n)\<oplus>\<^bsub>residue_ring (p^n)\<^esub>( y n)) = (res (p ^ m) (x n))\<oplus>\<^bsub>residue_ring (p^m)\<^esub>((res (p ^ m) (y n)))"  
+                    by (metis (no_types, lifting) Px Py mem_Collect_eq padic_set_def partial_object.select_convs(1) ring_hom_add) 
+                  then have "?LHS =(res (p ^ m) (x n))\<oplus>\<^bsub>residue_ring (p^m)\<^esub>((res (p ^ m) (y n)))" 
+                    using A0 by force 
+                  then show ?thesis
+                    using A Px Py padic_set_def by (simp add: padic_add_def) 
+                qed
+              qed
+            qed
+          qed
+          then show ?thesis
+            using "0" padic_set_mem by auto 
+        qed
+        then have "  x \<oplus>\<^bsub>padic_int p\<^esub> y \<in> (padic_set p)" 
+        by simp
+      then show "carrier (padic_int p) \<subseteq> carrier (padic_int p)" 
+        by blast  
     qed
-    then show ?thesis
-      using "0" padic_set_mem by auto 
-  qed
-  then have "  x \<oplus>\<^bsub>padic_int p\<^esub> y \<in> (padic_set p)" 
-    by simp
-  then show "carrier (padic_int p) \<subseteq> carrier (padic_int p)" 
-    by blast  
-qed
 
-text{*padic addition is associative*}
+(*padic addition is associative*)
 
 lemma padic_add_assoc:
 assumes "prime p"
@@ -1061,88 +1014,83 @@ proof-
   assume Ay: "y \<in> carrier (padic_int p)"
   assume Az: "z \<in> carrier (padic_int p)"
   show " (x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z = x \<oplus>\<^bsub>padic_int p\<^esub> (y \<oplus>\<^bsub>padic_int p\<^esub> z)"
-  proof
-    fix n
-    show "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = (x \<oplus>\<^bsub>padic_int p\<^esub> (y \<oplus>\<^bsub>padic_int p\<^esub> z)) n "
-    proof-
-      have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
-        using Ax padic_set_def by auto 
-      have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
-        using Ay padic_set_def by auto 
-      have Ez: "(z n) \<in> carrier (residue_ring (p^n))" 
-        using Az padic_set_def by auto 
-      let ?x = "(x n)"
-      let ?y = "(y n)"
-      let ?z = "(z n)"
-      have P1: "(?x \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?y) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?z = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
-      proof(cases "n = 0")
-        case True
-        then show ?thesis 
-          by (simp add: residue_ring_def)
-      next
-        case False
-        then have "residues (int p^n)" 
-          by (simp add: assms residues_n)
-        then show ?thesis 
-          using Ex Ey Ez cring.cring_simprules(7) padic_add_simp residues.cring by fastforce
+    proof
+      fix n
+      show "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = (x \<oplus>\<^bsub>padic_int p\<^esub> (y \<oplus>\<^bsub>padic_int p\<^esub> z)) n "
+      proof-
+        have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
+          using Ax padic_set_def by auto 
+        have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
+          using Ay padic_set_def by auto 
+        have Ez: "(z n) \<in> carrier (residue_ring (p^n))" 
+          using Az padic_set_def by auto 
+        let ?x = "(x n)"
+        let ?y = "(y n)"
+        let ?z = "(z n)"
+        have P1: "(?x \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?y) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ?z = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
+        proof(cases "n = 0")
+          case True
+          then show ?thesis 
+            by (simp add: residue_ring_def)
+        next
+          case False
+          then have "residues (int p^n)" 
+            by (simp add: assms residues_n)
+          then show ?thesis 
+            using Ex Ey Ez cring.cring_simprules(7) padic_add_simp residues.cring by fastforce
+        qed
+        have " ((y n)) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n =((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
+          using padic_add_def by simp 
+        then have P0: "(x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n) = ((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n))"
+          using padic_add_def by simp 
+        have "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = ((x  \<oplus>\<^bsub>padic_int p\<^esub> y) n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n"
+          using padic_add_def  by simp
+        then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n =((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (y n)) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n"
+          using padic_add_def  by simp 
+        then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n =((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n))"
+          using Ex Ey Ez P1 P0   by linarith 
+        then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
+          using P0 by linarith 
+        then show ?thesis by (simp add: padic_add_def) 
       qed
-      have " ((y n)) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n =((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
-        using padic_add_def by simp 
-      then have P0: "(x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n) = ((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n))"
-        using padic_add_def by simp 
-      have "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = ((x  \<oplus>\<^bsub>padic_int p\<^esub> y) n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n"
-        using padic_add_def  by simp
-      then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n =((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (y n)) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n"
-        using padic_add_def  by simp 
-      then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n =((x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> z n))"
-        using Ex Ey Ez P1 P0   by linarith 
-      then have  "((x \<oplus>\<^bsub>padic_int p\<^esub> y) \<oplus>\<^bsub>padic_int p\<^esub> z) n = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> ((y \<oplus>\<^bsub>padic_int p\<^esub> z) n)"
-        using P0 by linarith 
-      then show ?thesis by (simp add: padic_add_def) 
     qed
-  qed
-qed
+   qed
 
-text{*padic addition is commutative*}
-
+(*padic addition is commutative*)
 lemma padic_add_comm:
   assumes "prime p"
-  shows " \<And>x y. 
-          x \<in> carrier (padic_int p) \<Longrightarrow> 
-          y \<in> carrier (padic_int p) \<Longrightarrow> 
-          x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
-proof-
-  fix x y
-  assume Ax: "x \<in> carrier (padic_int p)" assume Ay:"y \<in> carrier (padic_int p)"
-  show "x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
-  proof fix n
-    show "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = (y \<oplus>\<^bsub>padic_int p\<^esub> x) n " 
-    proof(cases "n=0")
-      case True
-      then show ?thesis 
-        by (metis Ax Ay assms padic_add_def padic_set_simp2   
-            partial_object.select_convs(1) ring_record_simps(12)) 
-    next
-      case False
-      have LHS0: "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (y n)" 
-        by (simp add: padic_add_simp) 
-      have RHS0: "(y \<oplus>\<^bsub>padic_int p\<^esub> x) n = (y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (x n)" 
-        by (simp add: padic_add_simp) 
-      have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
-        using Ax padic_set_simp0 by auto 
-      have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
-        using Ay padic_set_simp0 by auto 
-      have LHS1: "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = ((x n) +(y n)) mod (p^n)"
-        using LHS0 residue_ring_def by simp
-      have RHS1: "(y \<oplus>\<^bsub>padic_int p\<^esub> x) n = ((y n) +(x n)) mod (p^n)"
-        using RHS0 residue_ring_def by simp
-      then show ?thesis using LHS1 RHS1 by presburger 
+  shows " \<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow> y \<in> carrier (padic_int p) \<Longrightarrow> x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
+    proof-
+      fix x y
+      assume Ax: "x \<in> carrier (padic_int p)" assume Ay:"y \<in> carrier (padic_int p)"
+      show "x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
+      proof fix n
+        show "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = (y \<oplus>\<^bsub>padic_int p\<^esub> x) n " 
+        proof(cases "n=0")
+          case True
+          then show ?thesis 
+            by (metis Ax Ay assms padic_add_def padic_set_simp2   
+                partial_object.select_convs(1) ring_record_simps(12)) 
+        next
+          case False
+          have LHS0: "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = (x n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (y n)" 
+            by (simp add: padic_add_simp) 
+          have RHS0: "(y \<oplus>\<^bsub>padic_int p\<^esub> x) n = (y n) \<oplus>\<^bsub>residue_ring (p^n)\<^esub> (x n)" 
+            by (simp add: padic_add_simp) 
+          have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
+            using Ax padic_set_simp0 by auto 
+          have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
+            using Ay padic_set_simp0 by auto 
+          have LHS1: "(x \<oplus>\<^bsub>padic_int p\<^esub> y) n = ((x n) +(y n)) mod (p^n)"
+            using LHS0 residue_ring_def by simp
+          have RHS1: "(y \<oplus>\<^bsub>padic_int p\<^esub> x) n = ((y n) +(x n)) mod (p^n)"
+            using RHS0 residue_ring_def by simp
+          then show ?thesis using LHS1 RHS1 by presburger 
+        qed
+      qed
     qed
-  qed
-qed
 
-text{*padic_zero is an additive identity*}
-
+(*padic_zero is an additive identity*)
 lemma padic_add_zero:
 assumes "prime p"
 shows "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> \<zero>\<^bsub>padic_int p\<^esub> \<oplus>\<^bsub>padic_int p\<^esub> x = x"
@@ -1176,12 +1124,10 @@ proof-
   qed
 qed
 
-text{*padic_zero is closed under additive inverses*}
-
+(*padic_zero is closed under additive inverses*)
 lemma padic_add_inv:
-assumes "prime p"
-shows "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow>
-           \<exists>y\<in>carrier (padic_int p). y \<oplus>\<^bsub>padic_int p\<^esub> x = \<zero>\<^bsub>padic_int p\<^esub>"
+  assumes "prime p"
+  shows "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> \<exists>y\<in>carrier (padic_int p). y \<oplus>\<^bsub>padic_int p\<^esub> x = \<zero>\<^bsub>padic_int p\<^esub>"
 proof-
   fix x
   assume Ax: " x \<in> carrier (padic_int p)"
@@ -1195,8 +1141,7 @@ proof-
         proof(cases "n=0")
           case True
           then show ?thesis 
-            using Ax assms padic_add_closed padic_set_simp2 
-              padic_uminus_closed padic_zero_def by auto 
+            using Ax assms padic_add_closed padic_set_simp2 padic_uminus_closed padic_zero_def by auto 
         next
           case False 
           have C: "(x n) \<in> carrier (residue_ring (p^n))" 
@@ -1211,46 +1156,38 @@ proof-
           then show ?thesis 
             by (simp add: padic_zero_def)
         qed
-      qed
+    qed
     then show "padic_uminus p x \<in> carrier (padic_int p)" 
       using padic_uminus_closed
-            Ax assms prime_gt_0_nat by auto 
+        Ax assms prime_gt_0_nat by auto 
   qed
 qed
 
-text{*The ring of padic integers forms an abelian group under addition*}
+(*The ring of padic integers forms an abelian group under addition*)
 
 lemma padic_is_abelian_group:
 assumes "prime p"
 shows "abelian_group (padic_int p)"
   proof (rule abelian_groupI)
-    show "\<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow>
-                y \<in> carrier (padic_int p) \<Longrightarrow> 
-                x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
+    show "\<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow> y \<in> carrier (padic_int p) \<Longrightarrow> x \<oplus>\<^bsub>(padic_int p)\<^esub> y \<in> carrier (padic_int p)"
       using padic_add_closed  by (simp add: assms)
     show zero: "\<zero>\<^bsub>padic_int p\<^esub> \<in> carrier (padic_int p)" 
       by (metis assms not_prime_0 padic_zero_mem
           partial_object.select_convs(1) ring_record_simps(11))
     show add_assoc: " \<And>x y z.
-                      x \<in> carrier (padic_int p) \<Longrightarrow>
-                      y \<in> carrier (padic_int p) \<Longrightarrow> 
-                      z \<in> carrier (padic_int p) \<Longrightarrow> 
-                             x \<oplus>\<^bsub>padic_int p\<^esub> y \<oplus>\<^bsub>padic_int p\<^esub> z 
-                           = x \<oplus>\<^bsub>padic_int p\<^esub> (y \<oplus>\<^bsub>padic_int p\<^esub> z)"
+       x \<in> carrier (padic_int p) \<Longrightarrow>
+       y \<in> carrier (padic_int p) \<Longrightarrow> z \<in> carrier (padic_int p)
+       \<Longrightarrow> x \<oplus>\<^bsub>padic_int p\<^esub> y \<oplus>\<^bsub>padic_int p\<^esub> z = x \<oplus>\<^bsub>padic_int p\<^esub> (y \<oplus>\<^bsub>padic_int p\<^esub> z)"
       using assms padic_add_assoc by auto
-    show comm: " \<And>x y. 
-                      x \<in> carrier (padic_int p) \<Longrightarrow>
-                      y \<in> carrier (padic_int p) \<Longrightarrow> 
-                      x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
+    show comm: " \<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow> y \<in> carrier (padic_int p) \<Longrightarrow> x \<oplus>\<^bsub>padic_int p\<^esub> y = y \<oplus>\<^bsub>padic_int p\<^esub> x"
       using assms padic_add_comm by blast
     show "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> \<zero>\<^bsub>padic_int p\<^esub> \<oplus>\<^bsub>padic_int p\<^esub> x = x"
       using assms padic_add_zero by blast
-    show "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> 
-          \<exists>y\<in>carrier (padic_int p). y \<oplus>\<^bsub>padic_int p\<^esub> x = \<zero>\<^bsub>padic_int p\<^esub>"
+    show "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> \<exists>y\<in>carrier (padic_int p). y \<oplus>\<^bsub>padic_int p\<^esub> x = \<zero>\<^bsub>padic_int p\<^esub>"
       using assms padic_add_inv by blast
   qed
 
-text{*padic_one is a multiplicative identity*}
+(*padic_one is a multiplicative identity*)
 
 lemma padic_one_id:
 assumes "prime p"
@@ -1274,7 +1211,7 @@ proof
   qed
 qed
 
-text{*padic multiplication is commutative*}
+(*padic multiplication is commutative*)
 
 lemma padic_mult_comm:
 assumes "prime p"
@@ -1288,59 +1225,55 @@ proof
   have Ay: "(y n) \<in>carrier (residue_ring (p^n))"
     using padic_set_def assms(3) padic_set_simp0 by auto
   show "(x \<otimes>\<^bsub>padic_int p\<^esub> y) n = (y \<otimes>\<^bsub>padic_int p\<^esub> x) n"
-  proof(cases "n=0")
-    case True
-    then show ?thesis 
-      by (metis assms(1) assms(2) assms(3) monoid.select_convs(1) padic_set_simp2 padic_simps(3) partial_object.select_convs(1)) 
-  next
-    case False
-    have LHS0: "(x \<otimes>\<^bsub>padic_int p\<^esub> y) n = (x n) \<otimes>\<^bsub>residue_ring (p^n)\<^esub> (y n)" 
-      by (simp add: padic_mult_simp)       
-    have RHS0: "(y \<otimes>\<^bsub>padic_int p\<^esub> x) n = (y n) \<otimes>\<^bsub>residue_ring (p^n)\<^esub> (x n)" 
-      by (simp add: padic_mult_simp) 
-    have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
-      using Ax padic_set_simp0 by auto 
-    have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
-      using Ay padic_set_simp0 by auto 
-    have LHS1: "(x \<otimes>\<^bsub>padic_int p\<^esub> y) n = ((x n) *(y n)) mod (p^n)"
-      using LHS0 
-      by (simp add: residue_ring_def) 
-    have RHS1: "(y \<otimes>\<^bsub>padic_int p\<^esub> x) n = ((y n) *(x n)) mod (p^n)"
-      using RHS0 
-      by (simp add: residue_ring_def) 
-    then show ?thesis using LHS1 RHS1 
-      by (simp add: mult.commute) 
-  qed
-qed
+     proof(cases "n=0")
+          case True
+          then show ?thesis 
+            by (metis assms(1) assms(2) assms(3) monoid.select_convs(1) padic_set_simp2 padic_simps(3) partial_object.select_convs(1)) 
+        next
+          case False
+          have LHS0: "(x \<otimes>\<^bsub>padic_int p\<^esub> y) n = (x n) \<otimes>\<^bsub>residue_ring (p^n)\<^esub> (y n)" 
+            by (simp add: padic_mult_simp)       
+          have RHS0: "(y \<otimes>\<^bsub>padic_int p\<^esub> x) n = (y n) \<otimes>\<^bsub>residue_ring (p^n)\<^esub> (x n)" 
+            by (simp add: padic_mult_simp) 
+          have Ex: "(x n) \<in> carrier (residue_ring (p^n))" 
+            using Ax padic_set_simp0 by auto 
+          have Ey: "(y n) \<in> carrier (residue_ring (p^n))" 
+            using Ay padic_set_simp0 by auto 
+          have LHS1: "(x \<otimes>\<^bsub>padic_int p\<^esub> y) n = ((x n) *(y n)) mod (p^n)"
+            using LHS0 
+            by (simp add: residue_ring_def) 
+          have RHS1: "(y \<otimes>\<^bsub>padic_int p\<^esub> x) n = ((y n) *(x n)) mod (p^n)"
+            using RHS0 
+            by (simp add: residue_ring_def) 
+          then show ?thesis using LHS1 RHS1 
+            by (simp add: mult.commute) 
+        qed
+      qed
 
 lemma padic_is_comm_monoid:
 assumes "prime p"
 shows "Group.comm_monoid (padic_int p)"
 proof(rule comm_monoidI)
-  show  "\<And>x y. 
-            x \<in> carrier (padic_int p) \<Longrightarrow> 
-            y \<in> carrier (padic_int p) \<Longrightarrow> 
-            x \<otimes>\<^bsub>padic_int p\<^esub> y \<in> carrier (padic_int p)"
+  show  "\<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow> y \<in> carrier (padic_int p) \<Longrightarrow> x \<otimes>\<^bsub>padic_int p\<^esub> y \<in> carrier (padic_int p)"
     by (simp add: assms padic_mult_closed) 
   show "\<one>\<^bsub>padic_int p\<^esub> \<in> carrier (padic_int p)" 
     by (metis assms monoid.select_convs(2) 
         padic_one_mem partial_object.select_convs(1))
-  show "\<And>x y z. 
-            x \<in> carrier (padic_int p) \<Longrightarrow>
-            y \<in> carrier (padic_int p) \<Longrightarrow> 
-            z \<in> carrier (padic_int p) \<Longrightarrow>
-            x \<otimes>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z = x \<otimes>\<^bsub>padic_int p\<^esub> (y \<otimes>\<^bsub>padic_int p\<^esub> z)"
+  show "\<And>x y z. x \<in> carrier (padic_int p) \<Longrightarrow>
+                y \<in> carrier (padic_int p) \<Longrightarrow> 
+                z \<in> carrier (padic_int p) \<Longrightarrow>
+                x \<otimes>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z = x \<otimes>\<^bsub>padic_int p\<^esub> (y \<otimes>\<^bsub>padic_int p\<^esub> z)"
     using assms padic_mult_assoc by auto
   show "\<And>x. x \<in> carrier (padic_int p) \<Longrightarrow> \<one>\<^bsub>padic_int p\<^esub> \<otimes>\<^bsub>padic_int p\<^esub> x = x"
     using assms  padic_one_id by blast 
-  show "\<And>x y. 
-          x \<in> carrier (padic_int p) \<Longrightarrow>
-          y \<in> carrier (padic_int p) \<Longrightarrow>
-          x \<otimes>\<^bsub>padic_int p\<^esub> y = y \<otimes>\<^bsub>padic_int p\<^esub> x"
+
+  show "\<And>x y. x \<in> carrier (padic_int p) \<Longrightarrow>
+              y \<in> carrier (padic_int p) \<Longrightarrow>
+              x \<otimes>\<^bsub>padic_int p\<^esub> y = y \<otimes>\<^bsub>padic_int p\<^esub> x"
     using padic_mult_comm  by (simp add: assms)
 qed
 
-text{*The padic integers form a commutative ring when p is prime*}
+(*The padic integers form a commutative ring when p is prime*)
 
 lemma padic_int_is_cring:
   assumes "prime (p::nat)"
@@ -1354,15 +1287,13 @@ proof (rule cringI)
        x \<in> carrier (padic_int p) \<Longrightarrow>
        y \<in> carrier (padic_int p) \<Longrightarrow>
        z \<in> carrier (padic_int p) \<Longrightarrow>
-       (x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z =
-         x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z "
+       (x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z = x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z "
   proof-
     fix x y z
     assume Ax: " x \<in> carrier (padic_int p)"
     assume Ay: " y \<in> carrier (padic_int p)"
     assume Az: " z \<in> carrier (padic_int p)"
-    show "(x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z 
-          = x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z"
+    show "(x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z = x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z"
     proof
       fix n
       have Ex: " (x n) \<in> carrier (residue_ring (p^n))" 
@@ -1371,8 +1302,7 @@ proof (rule cringI)
         using Ay padic_set_def by auto
       have Ez: " (z n) \<in> carrier (residue_ring (p^n))" 
         using Az padic_set_def by auto
-      show "( (x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z) n 
-            = (x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z) n "
+      show "( (x \<oplus>\<^bsub>padic_int p\<^esub> y) \<otimes>\<^bsub>padic_int p\<^esub> z) n = (x \<otimes>\<^bsub>padic_int p\<^esub> z \<oplus>\<^bsub>padic_int p\<^esub> y \<otimes>\<^bsub>padic_int p\<^esub> z) n "
       proof(cases "n=0")
         case True
         then show ?thesis 
@@ -1390,7 +1320,7 @@ proof (rule cringI)
   qed
 qed
 
-text{*The padic ring has no nontrivial zero divisors*}
+(*The padic ring has no nontrivial zero divisors*)
 
 lemma padic_no_zero_divisors:
 assumes "prime p"
@@ -1427,7 +1357,7 @@ proof
   qed
 qed
 
-text{*padic integers form an integral domain*} 
+(*padic integers form an integral domain*)
 
 lemma padic_int_is_domain:
   assumes "prime (p::nat)"
@@ -1440,17 +1370,12 @@ proof(rule domainI)
     assume "\<one>\<^bsub>padic_int p\<^esub> = \<zero>\<^bsub>padic_int p\<^esub> "
     then have "(\<one>\<^bsub>padic_int p\<^esub>) (1::nat) = \<zero>\<^bsub>padic_int p\<^esub> 1" by auto
     show False using assms(1) padic_simps[simp] 
-      by (metis (mono_tags, hide_lams) \<open>\<one>\<^bsub>padic_int p\<^esub> = \<zero>\<^bsub>padic_int p\<^esub>\<close> monoid.simps(2) 
-          of_nat_0_eq_iff of_nat_1 padic_one_def  padic_zero_def ring_record_simps(11) zero_neq_one)
+      by (metis (mono_tags, hide_lams) \<open>\<one>\<^bsub>padic_int p\<^esub> = \<zero>\<^bsub>padic_int p\<^esub>\<close>  monoid.simps(2) 
+          of_nat_0_eq_iff of_nat_1 padic_one_def  padic_zero_def ring_record_simps(11)  zero_neq_one)
   qed
-  show "\<And>a b. a \<otimes>\<^bsub>padic_int p\<^esub> b = \<zero>\<^bsub>padic_int p\<^esub>   \<Longrightarrow>
-              a \<in> carrier (padic_int p) \<Longrightarrow> 
-              b \<in> carrier (padic_int p) \<Longrightarrow> 
-              a = \<zero>\<^bsub>padic_int p\<^esub> \<or> b = \<zero>\<^bsub>padic_int p\<^esub>"
+  show "\<And>a b. a \<otimes>\<^bsub>padic_int p\<^esub> b = \<zero>\<^bsub>padic_int p\<^esub> \<Longrightarrow> a \<in> carrier (padic_int p) \<Longrightarrow> b \<in> carrier (padic_int p)  \<Longrightarrow> a = \<zero>\<^bsub>padic_int p\<^esub> \<or> b = \<zero>\<^bsub>padic_int p\<^esub>"
     using assms padic_no_zero_divisors by blast
 qed     
-
-text{*The ultrametric inequality*}
 
 lemma ultrametric:
   assumes "prime p"
@@ -1509,6 +1434,7 @@ lemma padic_inv:
   assumes "prime p"
   assumes "a \<in> carrier (padic_int p)"
   shows "\<ominus>\<^bsub>padic_int p\<^esub> a = (\<lambda> n. \<ominus>\<^bsub>residue_ring (p^n)\<^esub> (a n))"
+
 proof
   fix n
   show "(\<ominus>\<^bsub>padic_int p\<^esub> a) n = \<ominus>\<^bsub>residue_ring (int (p ^ n))\<^esub> a n" 
@@ -1516,8 +1442,7 @@ proof
     case True
     then show ?thesis 
       by (metis (no_types, lifting) assms(1) assms(2) cring.sum_zero_eq_neg of_nat_1 padic_add_inv 
-        padic_int_is_cring padic_set_simp2 partial_object.select_convs(1) power_0 
-        res_1_prop residue_ring_def ring_record_simps(11)) 
+        padic_int_is_cring padic_set_simp2 partial_object.select_convs(1) power_0 res_1_prop residue_ring_def ring_record_simps(11)) 
   next
     case False
     then have R: "residues (p^n)" 

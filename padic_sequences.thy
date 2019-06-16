@@ -1096,15 +1096,8 @@ proof-
   thus "\<exists>l. \<forall>m. \<exists>n > m. (Pr k l) (s n)" 
     using kth_res_equals_def by auto
 qed
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(***************************Aaron's Changes        begin        **********************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
+
+
 lemma Pr_subseq:
   assumes "is_closed_seq s"
   shows "\<exists>n. is_subseq_of s (filtered_sequence s (Pr k n)) \<and> (\<forall>m. (filtered_sequence s (Pr k n)) m k = n)"
@@ -1185,21 +1178,40 @@ lemma res_seq_subseq:
   shows "is_subseq_of (res_seq s k) (res_seq s (Suc k))"
   by (metis assms  padic_integers.Cseq_prop_0 padic_integers.res_seq_res padic_integers_axioms res_seq.simps(2))
 
-lemma res_seq_res':
-  assumes "is_closed_seq s"
-  shows "res_seq s (Suc k) 0 k = res_seq s k 0 k "
-
 
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
 "acc_point s k = (if (k = 0) then (0::int) else ((res_seq s k) 0 k))"
 
-lemma res_seq_res: 
+lemma res_seq_res_1:
   assumes "is_closed_seq s"
   shows "res_seq s (Suc k) 0 k = res_seq s k 0 k"
 proof-
-  obtain n where  n_def: "res_seq s (Suc k) 0 = res_seq s k n"
-    
+  obtain n where  n_def: "res_seq s (Suc k) 0 = res_seq s k n" 
+    by (metis assms is_subseq_of_def res_seq_subseq take_subseq_def)
+  have "res_seq s (Suc k) 0 k = res_seq s k n k"
+    using n_def by auto
+  thus ?thesis 
+    by (metis (no_types, hide_lams)  Cseq_prop_1 Zp_is_cring  assms 
+        cring_def  is_closed_simp monoid.nat_pow_0 
+        monoid.r_one n_def of_nat_0 of_nat_le_0_iff p_pow_factor 
+         res_seq.elims res_seq_res ring_def)
+qed
 
+lemma acc_point_cres:
+  assumes "is_closed_seq s"
+  shows "(acc_point s (Suc k)) = (Cres (Suc k) (res_seq s k))" 
+proof-
+  have "Suc k > 0" by simp
+  have "(res_seq s (Suc k)) = Cseq (Suc k) (res_seq s k)" (*(Cseq k s) m k = (Cres k s) )"*)
+    by simp
+  then have "(Cseq (Suc k) (res_seq s k)) 0 (Suc k) = Cres (Suc k)  (res_seq s k)" 
+    using assms padic_integers.res_seq_res' padic_integers_axioms by auto
+  have "acc_point s (Suc k) = res_seq s (Suc k) 0 (Suc k)" using acc_point_def by simp
+  then have "acc_point s (Suc k) = (Cseq (Suc k) (res_seq s k)) 0 (Suc k)"
+    by simp
+  thus ?thesis 
+    by (simp add: \<open>Cseq Suc k res_seq s k 0 (Suc k) = Cres (Suc k) (res_seq s k)\<close>)
+qed
 
 lemma acc_point_res:
   assumes "is_closed_seq s"
@@ -1211,14 +1223,11 @@ proof(cases "k = 0")
 next
   case False
   assume "k \<noteq> 0"
-  show "res (int p ^ k) (acc_point s (Suc k)) = acc_point s k"
-  proof-
-    have "(acc_point s (Suc k)) =  (Cres (Suc k) (Cseq k s))"
-      unfolding acc_point_def 
-      by simp
-    then have "(acc_point s (Suc k)) = (Cseq k (Cseq k s)) 0 (Suc k)"
-      using Cseq_prop_1[of "(Cseq k s)"] sledgehamme
+  show "res (int p ^ k) (acc_point s (Suc k)) = acc_point s k" 
+    by (metis False acc_point_def assms is_closed_simp lessI less_imp_le nat.distinct(1) 
+        of_nat_power padic_integers.res_seq_res_1 padic_integers_axioms r_Zp res_seq_res)
 qed
+
 lemma acc_point_closed:
   assumes "is_closed_seq s"
   shows "acc_point s \<in>  carrier Z\<^sub>p" 
@@ -1235,9 +1244,12 @@ proof-
           by (simp add: acc_point_def residue_ring_def)
       next
         case False
-        then show ?thesis  using Cres_range[of "(Cseq (m-1) s)" m] acc_point_def[of s m]
-          by (smt assms is_subseq_of_def neq0_conv of_nat_power padic_integers.Cseq_prop_0
-              padic_integers.is_closed_seq_def padic_integers_axioms take_subseq_def)
+        assume "m \<noteq> 0" 
+        then have "acc_point s m = res_seq s m 0 m" (*"res_seq s (Suc k) = Cseq (Suc k) (res_seq s k)"*)
+          by (simp add: acc_point_def)
+        (*then have "res_seq s m 0 m = Cres 0 (Cseq m (res_seq s (m-1)))" sledgehammer*)
+        then show ?thesis  using Cres_range[of "(Cseq (m-1) s)" m] acc_point_def[of s m] 
+          by (metis acc_point_res assms of_nat_power r_range')
       qed
     qed
     show "\<And>m n. m < n \<Longrightarrow> res (int p ^ m) (acc_point s n) = acc_point s m"
@@ -1251,20 +1263,23 @@ proof-
         have "res (int p ^ m) (acc_point s (Suc (m + l))) = acc_point s m"
         proof(induction l)
           case 0
-          then show ?case sledgehammer
+          then show ?case 
+            by (simp add: acc_point_res assms)
         next
           case (Suc l)
-          then show ?case sorry
+          then show ?case 
+            by (metis acc_point_def add_Suc_right assms is_closed_simp le_add1 nat.distinct(1) 
+                of_nat_power padic_integers.res_seq_res_1 padic_integers_axioms r_Zp res_seq_res)
         qed
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(***************************Aaron's Changes        end          **********************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)
-(*************************************************************************************************)  
+        then show ?thesis 
+          by (metis A Suc_diff_Suc Suc_eq_plus1 add_Suc_right add_diff_inverse_nat diff_diff_left 
+              l_def le_less_trans less_not_refl order_less_imp_le)
+      qed
+    qed
+  qed
+  then show ?thesis 
+    by (simp add: Z\<^sub>p_def)
+qed
 
 (*Choice function for a subsequence of s which converges to a, if it exists*)
 fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> (nat \<Rightarrow> nat)" where

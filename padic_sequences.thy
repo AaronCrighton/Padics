@@ -1176,7 +1176,8 @@ lemma res_seq_res':
 lemma res_seq_subseq: 
   assumes "is_closed_seq s"
   shows "is_subseq_of (res_seq s k) (res_seq s (Suc k))"
-  by (metis assms  padic_integers.Cseq_prop_0 padic_integers.res_seq_res padic_integers_axioms res_seq.simps(2))
+  by (metis assms  padic_integers.Cseq_prop_0 padic_integers.res_seq_res padic_integers_axioms 
+      res_seq.simps(2))
 
 
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
@@ -1191,10 +1192,9 @@ proof-
   have "res_seq s (Suc k) 0 k = res_seq s k n k"
     using n_def by auto
   thus ?thesis 
-    by (metis (no_types, hide_lams)  Cseq_prop_1 Zp_is_cring  assms 
-        cring_def  is_closed_simp monoid.nat_pow_0 
-        monoid.r_one n_def of_nat_0 of_nat_le_0_iff p_pow_factor 
-         res_seq.elims res_seq_res ring_def)
+    by (metis (no_types, hide_lams)  Cseq_prop_1 Zp_is_cring  assms cring_def  is_closed_simp 
+        monoid.nat_pow_0 monoid.r_one n_def of_nat_0 of_nat_le_0_iff p_pow_factor res_seq.elims 
+        res_seq_res ring_def)
 qed
 
 lemma acc_point_cres:
@@ -1285,20 +1285,81 @@ qed
 fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow> (nat \<Rightarrow> nat)" where
 "convergent_subseq_fun s a 0 = 0"|
 "convergent_subseq_fun s a (Suc n) = (SOME k. k > (convergent_subseq_fun s a n)
-                                                \<and> (s k k) = a k)"
+                                                \<and> (s k (Suc n)) = a (Suc n))"
 
 definition convergent_subseq :: "padic_int_seq \<Rightarrow> padic_int_seq" where
 "convergent_subseq s = take_subseq s (convergent_subseq_fun s (acc_point s))"
 
+lemma increasing_conv_subseq_fun_0:
+  assumes "is_closed_seq s"
+  assumes "\<exists>s'. s' = convergent_subseq s"
+  assumes "a = acc_point s"
+  shows "convergent_subseq_fun s a (Suc n) > convergent_subseq_fun s a n"
+  apply(auto)
+  sorry
+proof(induction n)
+  case 0
+  have "convergent_subseq_fun s a 0 = 0" by simp
+  have "\<exists>k. k > 0 \<and> (s k k) = a k"
+  proof-
+    obtain k::nat where "k > 0" by blast
+    have "(s k) \<in> carrier Z\<^sub>p" 
+      by (simp add: assms(1))
+    have "a k = res_seq s k 0 k" using acc_point_def
+      using \<open>0 < k\<close> assms(3) by auto
+    have "\<And>n. res_seq s k n k = Cres k (res_seq s (k-1))" using res_seq_res' 
+      by (metis One_nat_def Suc_pred \<open>0 < k\<close> assms(1))
+    then have "res_seq s k 0 k = Cres k (res_seq s (k-1))" 
+      by blast
+    then have "s k n = a n" sledgehammer
+    thus ?thesis 
+      using \<open>0 < k\<close> by blast
+    qed
+    thus ?case 
+      by (metis (mono_tags, lifting) convergent_subseq_fun.simps(1) someI2_ex)
+next
+  case (Suc k)
+  then show ?case 
+  qed
+
+lemma increasing_conv_subseq_fun:
+  assumes "is_closed_seq s"
+  assumes "a = acc_point s"
+  assumes "\<exists>s'. s' = convergent_subseq s"
+  shows "is_increasing (convergent_subseq_fun s a)"
+    by (metis assms(1) assms(2) increasing_conv_subseq_fun_0 is_increasingI lift_Suc_mono_less)
+
 lemma convergent_subseq_is_subseq:
   assumes "is_closed_seq s"
-  shows "is_subseq_of s (convergent_subsequent s)"
-  sorry
+  shows "is_subseq_of s (convergent_subseq s)" 
+  using assms convergent_subseq_def increasing_conv_subseq_fun is_subseqI by blast
+
+lemma is_closed_seq_conv_subseq:
+  assumes "is_closed_seq s"
+  shows "is_closed_seq (convergent_subseq s)"  
+  by (simp add: assms convergent_subseq_def take_subseq_def)
 
 lemma convergent_subsequence_is_convergent:
   assumes "is_closed_seq s"
-  shows "converges_to (convergent_subsequence s) (acc_point s)"
-  sorry
+  shows "converges_to (convergent_subseq s) (acc_point s)" (*\<And>n. \<exists>N. \<forall>k > N. s k n = a n"*)
+proof(rule converges_toI)
+  show "acc_point s \<in> carrier Z\<^sub>p"
+    using acc_point_closed assms  by blast
+  show "is_closed_seq (convergent_subseq s)" using is_closed_seq_conv_subseq assms by simp
+  show "\<And>n. \<exists>N. \<forall>k>N. convergent_subseq s k n = acc_point s n" 
+  proof
+    have "\<exists>k. (k > (convergent_subseq_fun s (acc_point s) n) \<and> (s k (Suc n)) = (acc_point s) (Suc n))" 
+    proof(induct n)
+      case 0
+      have "\<exists>k. (k > 0) \<and> (s k 1) = (acc_point s) 1" 
+       then show ?case
+    next
+        case (Suc n)
+        then show ?case sorry
+    qed
+    
+    
+
 
 lemma Zp_is_compact:
   assumes "is_closed_seq s"

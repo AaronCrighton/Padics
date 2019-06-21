@@ -1179,6 +1179,99 @@ lemma res_seq_subseq:
   by (metis assms  padic_integers.Cseq_prop_0 padic_integers.res_seq_res padic_integers_axioms 
       res_seq.simps(2))
 
+(**)
+lemma is_increasing_id[simp]:
+"is_increasing (\<lambda> n. n)"
+  by (simp add: is_increasingI)
+
+lemma is_increasing_comp:
+  assumes "is_increasing f"
+  assumes "is_increasing g"
+  shows "is_increasing (f \<circ> g)"
+  using assms(1) assms(2) is_increasing_def 
+  by auto
+
+lemma is_increasing_imp_geq_id[simp]:
+  assumes  "is_increasing f"
+  shows "f n \<ge>n"
+  apply(induction n)
+  apply simp
+  by (metis (mono_tags, lifting) assms is_increasing_def
+      leD lessI not_less_eq_eq order_less_le_subst2)
+
+lemma is_subseq_ofE:
+  assumes "is_closed_seq s"
+  assumes "is_subseq_of s s'"
+  shows "\<exists>k. k \<ge> n \<and> s' n = s k"
+proof-
+  obtain f where "is_increasing f \<and> s' = take_subseq s f"
+    using assms(2) is_subseq_of_def by blast
+  then have  " f n \<ge> n \<and> s' n = s (f n)"
+    unfolding take_subseq_def 
+    by simp
+  then show ?thesis by blast 
+qed
+
+
+lemma is_subseq_of_id:
+  assumes "is_closed_seq s"
+  shows "is_subseq_of s s"
+proof-
+  have "s = take_subseq s (\<lambda>n. n)"
+    unfolding take_subseq_def 
+    by auto 
+  then show ?thesis using is_increasing_id
+    using is_subseqI 
+    by blast
+qed
+
+lemma is_subseq_of_trans:
+  assumes "is_closed_seq s"
+  assumes "is_subseq_of s s'"
+  assumes "is_subseq_of s' s''"
+  shows "is_subseq_of s s''"
+proof-
+  obtain f where f_def: "is_increasing f \<and> s' = take_subseq s f"
+    using assms(2) is_subseq_of_def 
+    by blast
+  obtain g where g_def: "is_increasing g \<and> s'' = take_subseq s' g"
+    using assms(3) is_subseq_of_def 
+    by blast
+  have "s'' = take_subseq s (f \<circ> g)"
+  proof
+    fix x
+    show "s'' x = take_subseq s (f \<circ> g) x"
+      using f_def g_def unfolding take_subseq_def
+      by auto
+  qed
+  then show ?thesis 
+    using f_def g_def is_increasing_comp is_subseq_of_def 
+    by blast
+qed
+
+lemma res_seq_subseq':
+  assumes "is_closed_seq s"
+  shows "is_subseq_of s (res_seq s k)"
+proof(induction k)
+  case 0
+  then show ?case using is_subseq_of_id 
+    by (simp add: assms)
+next
+  case (Suc k)
+  fix k
+  assume "is_subseq_of s (res_seq s k)"
+  then show "is_subseq_of s (res_seq s (Suc k)) "
+    using assms is_subseq_of_trans res_seq_subseq 
+    by blast
+qed
+
+lemma res_seq_subseq'':
+  assumes "is_closed_seq s"
+  shows "is_subseq_of (res_seq s n) (res_seq s (n + k))"
+  apply(induction k)
+  apply (simp add: assms is_subseq_of_id res_seq_res)
+  using add_Suc_right assms is_subseq_of_trans res_seq_res res_seq_subseq by presburger
+(**)
 
 definition acc_point :: "padic_int_seq \<Rightarrow> padic_int" where
 "acc_point s k = (if (k = 0) then (0::int) else ((res_seq s k) 0 k))"
@@ -1296,27 +1389,25 @@ lemma increasing_conv_subseq_fun_0:
   assumes "a = acc_point s"
   shows "convergent_subseq_fun s a (Suc n) > convergent_subseq_fun s a n"
   apply(auto)
-  sorry
 proof(induction n)
   case 0
   have "convergent_subseq_fun s a 0 = 0" by simp
-  have "\<exists>k. k > 0 \<and> (s k k) = a k"
+  have "\<exists>k. k > 0 \<and> (s k n) = a n" 
   proof-
     obtain k::nat where "k > 0" by blast
-    have "(s k) \<in> carrier Z\<^sub>p" 
-      by (simp add: assms(1))
-    have "a k = res_seq s k 0 k" using acc_point_def
-      using \<open>0 < k\<close> assms(3) by auto
-    have "\<And>n. res_seq s k n k = Cres k (res_seq s (k-1))" using res_seq_res' 
-      by (metis One_nat_def Suc_pred \<open>0 < k\<close> assms(1))
-    then have "res_seq s k 0 k = Cres k (res_seq s (k-1))" 
-      by blast
-    then have "s k n = a n" sledgehammer
-    thus ?thesis 
-      using \<open>0 < k\<close> by blast
-    qed
-    thus ?case 
-      by (metis (mono_tags, lifting) convergent_subseq_fun.simps(1) someI2_ex)
+    have "s k n = res (p ^ n) (s k n)" 
+      using assms(1) r_Zp by auto
+    have "\<exists>k > 0. res (p ^ n) (s k n) = res (p ^ n) (a n)" sledgehammer
+    have "\<exists>k n. s k n = a n" 
+      by (metis assms(1) assms(3) padic_integers.acc_point_cres 
+          padic_integers.is_subseq_ofE padic_integers.res_seq_res' padic_integers.res_seq_subseq' 
+          padic_integers_axioms)
+    have "a 0 = acc_point s 0" unfolding acc_point_def 
+      by (simp add: acc_point_def assms(3))
+    then show ?thesis sledgehammer
+  qed
+    then show ?case sledgehammer
+      using acc_point_def assms(3) by blast
 next
   case (Suc k)
   then show ?case 
@@ -1342,6 +1433,7 @@ lemma is_closed_seq_conv_subseq:
 lemma convergent_subsequence_is_convergent:
   assumes "is_closed_seq s"
   shows "converges_to (convergent_subseq s) (acc_point s)" (*\<And>n. \<exists>N. \<forall>k > N. s k n = a n"*)
+  sorry
 proof(rule converges_toI)
   show "acc_point s \<in> carrier Z\<^sub>p"
     using acc_point_closed assms  by blast
@@ -1364,7 +1456,7 @@ proof(rule converges_toI)
 lemma Zp_is_compact:
   assumes "is_closed_seq s"
   shows "\<exists>s'. is_subseq_of s s' \<and> (converges_to s' (acc_point s))" 
-  sorry
+  using assms convergent_subseq_is_subseq convergent_subsequence_is_convergent by blast
 
 
 

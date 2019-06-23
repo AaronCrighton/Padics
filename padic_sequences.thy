@@ -1383,34 +1383,45 @@ fun convergent_subseq_fun :: "padic_int_seq \<Rightarrow> padic_int \<Rightarrow
 definition convergent_subseq :: "padic_int_seq \<Rightarrow> padic_int_seq" where
 "convergent_subseq s = take_subseq s (convergent_subseq_fun s (acc_point s))"
 
+lemma increasing_conv_induction_0_pre:
+  assumes "is_closed_seq s"
+  assumes "a = acc_point s"
+  shows "\<exists>k > convergent_subseq_fun s a n. (s k (Suc n)) = a (Suc n)"
+proof-
+  obtain l::nat where "l > 0 " by blast
+  have "is_subseq_of s (res_seq s (Suc n))" 
+    using assms(1) res_seq_subseq' by blast
+  then obtain m where "s m = res_seq s (Suc n) l \<and> m \<ge> l" 
+    by (metis is_increasing_imp_geq_id is_subseq_of_def padic_integers.take_subseq_def padic_integers_axioms)
+    
+  have "a (Suc n) = res_seq s (Suc n) 0 (Suc n)" 
+    by (simp add: acc_point_def assms(2))
+  have "s m (Suc n) = a (Suc n)" 
+    by (metis \<open>a (Suc n) = res_seq s (Suc n) 0 (Suc n)\<close> \<open>s m = res_seq s (Suc n) l \<and> l \<le> m\<close> assms(1) res_seq_res')
+  
+  thus ?thesis 
+    using \<open>0 < l\<close> \<open>s m = res_seq s (Suc n) l \<and> l \<le> m\<close> less_le_trans  \<open>s m (Suc n) = a (Suc n)\<close> 
+    by (metis \<open>a (Suc n) = res_seq s (Suc n) 0 (Suc n)\<close> \<open>is_subseq_of s (res_seq s (Suc n))\<close>
+        assms(1) lessI padic_integers.is_subseq_ofE padic_integers.res_seq_res' padic_integers_axioms)
+qed
+
+  
+
 lemma increasing_conv_subseq_fun_0:
   assumes "is_closed_seq s"
   assumes "\<exists>s'. s' = convergent_subseq s"
   assumes "a = acc_point s"
   shows "convergent_subseq_fun s a (Suc n) > convergent_subseq_fun s a n"
-  apply(auto)
+  apply(auto) 
 proof(induction n)
   case 0
   have "convergent_subseq_fun s a 0 = 0" by simp
-  have "\<exists>k. k > 0 \<and> (s k n) = a n" 
-  proof-
-    obtain k::nat where "k > 0" by blast
-    have "s k n = res (p ^ n) (s k n)" 
-      using assms(1) r_Zp by auto
-    have "\<exists>k > 0. res (p ^ n) (s k n) = res (p ^ n) (a n)" sledgehammer
-    have "\<exists>k n. s k n = a n" 
-      by (metis assms(1) assms(3) padic_integers.acc_point_cres 
-          padic_integers.is_subseq_ofE padic_integers.res_seq_res' padic_integers.res_seq_subseq' 
-          padic_integers_axioms)
-    have "a 0 = acc_point s 0" unfolding acc_point_def 
-      by (simp add: acc_point_def assms(3))
-    then show ?thesis sledgehammer
-  qed
-    then show ?case sledgehammer
-      using acc_point_def assms(3) by blast
+  then show ?case 
+    by (smt assms(1) assms(3) less_Suc_eq less_Suc_eq_0_disj padic_integers.increasing_conv_induction_0_pre padic_integers_axioms someI_ex)
 next
   case (Suc k)
   then show ?case 
+    by (metis (mono_tags, lifting) assms(1) assms(3) padic_integers.increasing_conv_induction_0_pre padic_integers_axioms someI_ex) 
   qed
 
 lemma increasing_conv_subseq_fun:
@@ -1430,30 +1441,87 @@ lemma is_closed_seq_conv_subseq:
   shows "is_closed_seq (convergent_subseq s)"  
   by (simp add: assms convergent_subseq_def take_subseq_def)
 
+lemma convergent_sequence_res:
+  assumes "is_closed_seq s"
+  assumes "a = acc_point s"
+  shows "convergent_subseq s l l = res (p ^ l) (acc_point s l)"
+proof-
+  have "\<exists>k. convergent_subseq s l =  s k \<and> s k l = a l" 
+  proof-
+    have "convergent_subseq s l = s (convergent_subseq_fun s a l)" 
+      by (simp add: assms(2) convergent_subseq_def take_subseq_def)
+    obtain k where kdef: "(convergent_subseq_fun s a l) = k" 
+      by simp
+    have "convergent_subseq s l = s k" 
+      by (simp add: \<open>convergent_subseq s l = s (convergent_subseq_fun s a l)\<close> kdef)
+    have "s k l = a l"
+    proof(cases "l = 0")
+      case True
+      then show ?thesis 
+        by (metis acc_point_def assms(1) assms(2) is_closed_simp of_nat_0 ord_pos zero_below_ord zero_vals)
+    next
+      case False
+      have "0 < l"
+        using False by blast
+      then have "k > convergent_subseq_fun s a (l-1)" 
+        by (metis One_nat_def Suc_pred assms(1) assms(2) increasing_conv_subseq_fun_0 kdef)
+      then have "s k l = a l" using kdef 
+        assms(1) assms(2) convergent_subseq_fun.simps(2) padic_integers.increasing_conv_induction_0_pre 
+        padic_integers_axioms someI_ex One_nat_def  \<open>0 < l\<close> increasing_conv_induction_0_pre 
+        by (smt Suc_diff_1)
+   
+      then show ?thesis
+        by simp
+    qed
+    then have "convergent_subseq s l =  s k \<and> s k l = a l" 
+      using \<open>convergent_subseq s l = s k\<close> by blast
+    thus ?thesis 
+      by blast
+  qed
+  thus ?thesis 
+    using acc_point_closed assms(1) assms(2) r_Zp by auto
+qed
+
 lemma convergent_subsequence_is_convergent:
   assumes "is_closed_seq s"
-  shows "converges_to (convergent_subseq s) (acc_point s)" (*\<And>n. \<exists>N. \<forall>k > N. s k n = a n"*)
-  sorry
+  assumes "a = acc_point s"
+  shows "converges_to (convergent_subseq s) (acc_point s)" (*\<And>n. \<exists>N. \<forall>k > N. s k n = a n"*) 
 proof(rule converges_toI)
   show "acc_point s \<in> carrier Z\<^sub>p"
     using acc_point_closed assms  by blast
   show "is_closed_seq (convergent_subseq s)" using is_closed_seq_conv_subseq assms by simp
   show "\<And>n. \<exists>N. \<forall>k>N. convergent_subseq s k n = acc_point s n" 
-  proof
-    have "\<exists>k. (k > (convergent_subseq_fun s (acc_point s) n) \<and> (s k (Suc n)) = (acc_point s) (Suc n))" 
-    proof(induct n)
+  proof-
+    fix n
+    show "\<exists>N. \<forall>k>N. convergent_subseq s k n = acc_point s n"
+    proof(induction n)
       case 0
-      have "\<exists>k. (k > 0) \<and> (s k 1) = (acc_point s) 1" 
-       then show ?case
+      then show ?case  by (metis (mono_tags, hide_lams) acc_point_def assms convergent_subseq_def is_closed_seq_def of_nat_0 ord_pos take_subseq_def zero_below_ord zero_vals)
     next
-        case (Suc n)
-        then show ?case sorry
+      case (Suc n)
+      have "acc_point s (Suc n) = res_seq s (Suc n) 0 (Suc n)"
+        by (simp add: acc_point_def)
+      obtain k where kdef: "convergent_subseq_fun s a (Suc n) = k" by simp
+      have "Suc n > 0" by simp
+      then have "k > (convergent_subseq_fun s a n)" 
+        using assms(1) assms(2) increasing_conv_subseq_fun_0 kdef by blast 
+      then have " k > (convergent_subseq_fun s a n) \<and> (s k (Suc n)) = a (Suc n)" using kdef 
+        by (metis (mono_tags, lifting) assms(1) assms(2) convergent_subseq_fun.simps(2) padic_integers.increasing_conv_induction_0_pre padic_integers_axioms someI_ex)
+      have "s k (Suc n) = a (Suc n)" 
+        using \<open>convergent_subseq_fun s a n < k \<and> s k (Suc n) = a (Suc n)\<close> by blast
+      then have "convergent_subseq s (Suc n) (Suc n) = a (Suc n)" 
+        by (metis assms(2) convergent_subseq_def kdef take_subseq_def)
+      then have "\<forall>l > n.  convergent_subseq s l (Suc n) = a (Suc n)" 
+        by (metis Suc_leI \<open>is_closed_seq (convergent_subseq s)\<close> acc_point_closed assms(1) assms(2) convergent_sequence_res is_closed_simp le_refl r_Zp)
+      then show ?case 
+        using assms(2) by blast
     qed
-    
+  qed
+qed
     
 
 
-lemma Zp_is_compact:
+theorem Zp_is_compact:
   assumes "is_closed_seq s"
   shows "\<exists>s'. is_subseq_of s s' \<and> (converges_to s' (acc_point s))" 
   using assms convergent_subseq_is_subseq convergent_subsequence_is_convergent by blast

@@ -36,6 +36,74 @@ proof-
         Zp_nat_mult_zero assms tfl_some to_Zp_def)
 qed
 
+lemma (in padic_integers) to_Zp_closed: 
+  assumes "a \<in> carrier Q\<^sub>p"
+  shows "to_Zp a \<in> carrier Z\<^sub>p"
+  apply(cases "a \<in> \<O>\<^sub>p")
+  using inc_to_Zp apply auto[1]
+  by (metis Zp_nat_inc_closed Zp_nat_mult_zero to_Zp_def)
+
+lemma (in padic_integers) to_Zp_add: 
+  assumes "a \<in> \<O>\<^sub>p"
+  assumes "b \<in> \<O>\<^sub>p"
+  shows "to_Zp (a \<oplus>\<^bsub>Q\<^sub>p\<^esub> b) = to_Zp a \<oplus> (to_Zp b)"
+  by (metis (no_types, lifting) Zp_is_domain assms(1) assms(2)
+      cring.cring_simprules(1) domain.axioms(1) imageE inc_of_sum inc_to_Zp)
+
+lemma (in padic_integers) to_Zp_mult: 
+  assumes "a \<in> \<O>\<^sub>p"
+  assumes "b \<in> \<O>\<^sub>p"
+  shows "to_Zp (a \<otimes>\<^bsub>Q\<^sub>p\<^esub> b) = to_Zp a \<otimes> (to_Zp b)"
+proof-
+  have "(a \<otimes>\<^bsub>Q\<^sub>p\<^esub> b) \<in> \<O>\<^sub>p"
+    by (simp add: Zp_is_subring assms(1) assms(2) subringE(6))
+  then have 
+    "\<iota> ((to_Zp a) \<otimes> (to_Zp) b) =  ((\<iota> (to_Zp a)) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (\<iota> (to_Zp b)))"
+    using assms(1) assms(2) inc_of_prod inc_to_Zp 
+    by auto
+  then have "\<iota> ((to_Zp a) \<otimes> (to_Zp) b) =  a \<otimes>\<^bsub>Q\<^sub>p\<^esub>b"
+    by (simp add: assms(1) assms(2) to_Zp_inc)
+  then have "to_Zp ( \<iota> ((to_Zp a) \<otimes> (to_Zp) b)) = to_Zp (a \<otimes>\<^bsub>Q\<^sub>p\<^esub>b)"
+    by simp
+  then show ?thesis 
+    by (metis (no_types, hide_lams) Zp_is_domain Zp_is_subring assms(1) assms(2) 
+        cring.cring_simprules(5) domain.axioms(1) inc_to_Zp subringE(1) subset_iff to_Zp_closed)
+qed
+
+lemma (in padic_integers) to_Zp_minus:
+  assumes "a \<in> \<O>\<^sub>p"
+  assumes "b \<in> \<O>\<^sub>p"
+  shows "to_Zp (a \<ominus>\<^bsub>Q\<^sub>p\<^esub> b) = to_Zp a \<ominus> (to_Zp b)"
+  by (metis (no_types, lifting) Zp_is_domain assms(1) assms(2) cring_def domain.axioms(1)
+      image_iff inc_of_diff inc_to_Zp ring.ring_simprules(4))
+
+lemma (in padic_integers) to_Zp_one: 
+  shows "to_Zp \<one>\<^bsub>Q\<^sub>p\<^esub> = \<one>"
+  using Z\<^sub>p_def Zp_one_car \<iota>_def inc_of_one padic_integers.inc_to_Zp padic_integers_axioms 
+  by fastforce
+
+lemma (in padic_integers) to_Zp_zero: 
+  shows "to_Zp \<zero>\<^bsub>Q\<^sub>p\<^esub> = \<zero>"
+  using Q\<^sub>p_def Z\<^sub>p_def Zp_is_domain \<iota>_def domain.inc_inj1 padic_integers.inc_to_Zp 
+        padic_integers_axioms to_Zp_def 
+  by fastforce
+
+lemma (in padic_integers) to_Zp_ominus:
+  assumes "a \<in> \<O>\<^sub>p"
+  shows "to_Zp (\<ominus>\<^bsub>Q\<^sub>p\<^esub> a) = \<ominus> (to_Zp a)"
+proof-
+  have "\<ominus>\<^bsub>Q\<^sub>p\<^esub>a \<in> \<O>\<^sub>p"
+    by (simp add: Zp_is_subring assms subringE(5))
+  then show ?thesis 
+    by (metis (no_types, lifting) Zp_is_domain Zp_one_nonzero assms
+        cring.cring_simprules(3) domain.axioms(1) frac_uminus image_iff inc_to_Zp local.inc_def)
+qed
+
+lemma (in padic_integers) to_Zp_val:
+  assumes "a \<in> \<O>\<^sub>p"
+  shows "val_Zp (to_Zp a) = val a"
+  by (metis assms imageE inc_to_Zp val_of_inc)
+
 (**************************************************************************************************)
 (**************************************************************************************************)
 (*******************************Angular Component Maps into ***************************************)
@@ -224,9 +292,9 @@ proof-
     by (simp add: "3" assms(1) assms(2) inc_of_diff)
   have 5: "val (a \<ominus>\<^bsub>Q\<^sub>p\<^esub>b) = *m* \<oplus>\<^bsub>G\<^esub> val (( \<iota> ((angular_component a)
                                           \<ominus>(angular_component b))))"
-    by (metis "4" Z\<^sub>p_def Zp_one_nonzero angular_component_closed assms(1) assms(2)
+    by (metis "4" Zp_one_nonzero angular_component_closed assms(1) assms(2)
         cring.cring_simprules(4) frac_closed local.inc_def ord_p_pow_int p_intpow_closed(1)
-        p_intpow_closed(2) Zp_is_domain domain_def padic_integers_axioms val_mult val_ord)
+        p_intpow_closed(2) Zp_is_domain domain_def val_mult val_ord)
   have 6: "*m* = val a"
     using Q\<^sub>p_def assms(1) m_def by auto
   have 7: "*m* \<oplus>\<^bsub>G\<^esub> val (\<iota> (angular_component a \<ominus> angular_component b)) \<succeq>\<^bsub>G\<^esub> val a \<oplus>\<^bsub>G\<^esub> Some (int n)"
@@ -235,15 +303,16 @@ proof-
     using "6" "7" by presburger
   have 9: "val (\<iota> (angular_component a \<ominus> angular_component b)) \<succeq>\<^bsub>G\<^esub> Some (int n)"
     using assms 8 gord_add_cancel''''[of "*int n*" "*m*"  "val ( \<iota> ((angular_component a)\<ominus>(angular_component b)))" ]
-    by (metis G_mult(1) G_ord(1) G_ord(2) add_le_cancel_left gord_add_cancel''' 
-        gplus_plus of_nat_le_0_iff option.inject rel_simps(93))
+          G_mult(1) G_ord(1) G_ord(2) add_le_cancel_left gord_add_cancel''' 
+        gplus_plus of_nat_le_0_iff rel_simps(93)
+        by (metis G_eq G_mult(3) G_ord_trans)
   have 10: "val_Zp (angular_component a \<ominus> angular_component b) \<succeq>\<^bsub>G\<^esub> Some (int n)"
     using 9 
-    by (metis Z\<^sub>p_def angular_component_closed assms(1) assms(2) cring.cring_simprules(4)
-        Zp_is_domain domain_def padic_integers_axioms val_of_inc)
+    by (metis angular_component_closed assms(1) assms(2) cring.cring_simprules(4)
+        Zp_is_domain domain_def val_of_inc)
   have 11: "(angular_component a \<ominus> angular_component b) n = \<zero>\<^bsub>R n\<^esub>"
     by (metis "9" G_ord(2) Z\<^sub>p_def angular_component_closed assms(1) assms(2) 
-        cring.cring_simprules(4) ord_Zp_def Zp_is_domain domain_def padic_integers_axioms
+        cring.cring_simprules(4) ord_Zp_def Zp_is_domain domain_def
         residue_ring_def ring.simps(1) val_Zp_def val_of_inc zero_below_ord zero_vals)
   have 12: "(angular_component a n) \<ominus>\<^bsub>R n\<^esub> (angular_component b n) = \<zero>\<^bsub>R n\<^esub>"
     using 11 unfolding a_minus_def 
@@ -359,7 +428,7 @@ lemma(in padic_integers) Qnm_one:
 
 (**************************************************************************************************)
 (**************************************************************************************************)
-(*******************************p-adic Cells in One Dimension***************************************)
+(*******************************p-adic Cells in One Dimension**************************************)
 (**************************************************************************************************)
 (**************************************************************************************************)
 
@@ -468,6 +537,13 @@ lemma (in padic_integers) affine_shift_cell':
   shows "one_cell n m \<alpha> \<beta> a c = (affine_shift a c) ` (I[\<alpha> \<beta>] \<inter> Q n m)"
   using assms affine_shift_cell 
   by blast
+
+
+(**************************************************************************************************)
+(**************************************************************************************************)
+(*******************************p-adic Balls in One Dimension**************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 definition (in padic_integers) c_ball :: "int \<Rightarrow> padic_number \<Rightarrow> padic_number set" ("B\<^bsub>_\<^esub>[_]") where
 "c_ball n c = {x \<in> carrier Q\<^sub>p. val (x \<ominus>\<^bsub>Q\<^sub>p\<^esub> c) \<succeq>\<^bsub>G\<^esub> *n*}"
@@ -772,6 +848,7 @@ lemma (in padic_integers) c_ball_center_in[simp]:
   by (metis (no_types, lifting) G_ord(1) Qp_is_domain a_minus_def assms(2) 
       c_ballI cring.cring_simprules(17) domain.axioms(1) local.val_zero)
 
+(*Every point a has a point b of distance exactly n away from it*)
 lemma (in padic_integers)dist_nonempty:
   assumes "a \<in> carrier Q\<^sub>p"
   shows "\<exists>b \<in> carrier Q\<^sub>p. val (b \<ominus>\<^bsub>Q\<^sub>p\<^esub>a) = *n*"
@@ -851,7 +928,7 @@ proof-
     using \<open>B = B\<^bsub>m\<^esub>[c]\<close> by blast
 qed
 
-lemma (in padic_integers) ball_rad'[simp]:
+lemma (in padic_integers) ball_rad':
   assumes "is_ball B"
   assumes "B = B\<^bsub>n\<^esub>[c]"
   assumes "B = B\<^bsub>m\<^esub>[d]"
@@ -968,6 +1045,9 @@ proof(rule ccontr)
     using assms 
     by (smt B'_def Q\<^sub>p_def Z\<^sub>p_def padic_integers.ball_rad_0 padic_integers_axioms)
 qed
+
+(*Generic lemma stating that a predicate which is false on an intial segment of the 
+integers has a minimal element for which it is true.*)
 
 lemma int_prop:
   fixes P:: "int \<Rightarrow> bool"
@@ -1142,7 +1222,7 @@ qed
 definition (in padic_integers) interior where
 "interior U = {a. \<exists>B. is_open B \<and> B \<subseteq> U \<and> a \<in> B}"
 
-lemma (in padic_integers) interior_subset:
+lemma (in padic_integers) interior_subset[simp]:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   shows "interior U \<subseteq> U"
 proof
@@ -1158,7 +1238,8 @@ proof
   qed
 qed
 
-lemma (in padic_integers) interior_open:
+(*The interior is an open set*)
+lemma (in padic_integers) interior_open[simp]:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   shows "is_open (interior U)"
 proof(rule is_openI)
@@ -1186,6 +1267,16 @@ qed
   qed
 qed
 
+(*Elimination rule for interior of U*)
+
+lemma (in padic_integers) interiorI[simp]:
+  assumes "W \<subseteq> U"
+  assumes "is_open W"
+  shows "W \<subseteq> interior U"
+  using assms(1) assms(2) interior_def by blast
+
+
+(*Maximal balls of the interior of U are also maximal balls of U*)
 lemma (in padic_integers) max_ball_interior[simp]:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   assumes "is_max_ball_of (interior U) B"
@@ -1202,7 +1293,8 @@ proof(rule ccontr)
     by blast
 qed
 
-lemma (in padic_integers) open_max_ball':
+(*Every interior point of a set which is not all of Q\<^sub>p is contained in a maximal ball of that set*)
+lemma (in padic_integers) ball_in_max_ball:
   assumes  "U \<subseteq> carrier Q\<^sub>p"
   assumes  "U \<noteq> carrier Q\<^sub>p"
   assumes "c \<in> U"
@@ -1224,6 +1316,24 @@ proof-
     by blast
 qed
 
+(*Every ball in U is contained in a maximal ball (if U \<noteq> carrier Q\<^sub>p)*)
+lemma (in padic_integers) ball_in_max_ball':
+  assumes  "U \<subseteq> carrier Q\<^sub>p"
+  assumes  "U \<noteq> carrier Q\<^sub>p"
+  assumes "B \<subseteq> U \<and> is_ball B"
+  shows "\<exists>B'. is_max_ball_of U B' \<and> B \<subseteq> B'"
+proof-
+  obtain c where c_def: "c \<in> B"
+    by (metis assms(3) c_ball_center_in is_ball_def)
+  obtain B' where B'_def: " is_max_ball_of U B' \<and> c \<in> B'"
+    using assms ball_in_max_ball[of U c] c_def 
+    by blast
+  then show ?thesis 
+    by (meson assms(3) c_def disjoint_iff_not_equal nested_balls' 
+        padic_integers.is_max_ball_of_def padic_integers_axioms)
+qed
+
+(*Distinct maximal balls of U are all disjoint*)
 lemma (in padic_integers) max_balls_disjoint:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   assumes "is_max_ball_of U B"
@@ -1233,9 +1343,11 @@ lemma (in padic_integers) max_balls_disjoint:
   by (meson assms(2) assms(3) assms(4) nested_balls' padic_integers.is_max_ball_of_def 
       padic_integers_axioms subset_antisym)
 
+(*The collection of maximal balls of a set U*)
 definition (in padic_integers) max_balls :: "padic_number set \<Rightarrow> padic_number set set" where
 "max_balls U = {B. is_max_ball_of U B }"
 
+(*The interior of a set is the union of its maximal balls.*)
 lemma (in padic_integers) max_balls_interior:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   assumes "U \<noteq> carrier Q\<^sub>p"
@@ -1267,7 +1379,8 @@ proof
   qed
 qed
 
-lemma (in padic_integers) max_balls_interior':
+(*Every maximal ball is contained in the interior*)
+lemma (in padic_integers) max_balls_interior'[simp]:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   assumes "U \<noteq> carrier Q\<^sub>p"
   assumes "B \<in> max_balls U"
@@ -1276,6 +1389,7 @@ lemma (in padic_integers) max_balls_interior':
         padic_integers.max_balls_def padic_integers_axioms 
   by auto
 
+(*Interior points are contained in maximal balls*)
 lemma (in padic_integers) max_balls_interior'':
   assumes "U \<subseteq> carrier Q\<^sub>p"
   assumes "U \<noteq> carrier Q\<^sub>p"
@@ -1284,17 +1398,26 @@ lemma (in padic_integers) max_balls_interior'':
   using assms(1) assms(2) assms(3) max_balls_interior
   by blast
 
+(*The interior of an open set is the set itself*)
 lemma (in padic_integers) open_interior:
   assumes "is_open U"
   shows "interior U = U"
   unfolding interior_def using assms  
   by blast
 
+(*The interior operator is idempotent*)
 lemma (in padic_integers) interior_idempotent[simp]:
   assumes "U \<subseteq> carrier Q\<^sub>p"
   shows "interior (interior U) = interior U"
   using assms interior_open[of U] open_interior[of "interior U"]
   by auto 
+
+(**************************************************************************************************)
+(**************************************************************************************************)
+(*******************************    Maximal Balls of Cells   **************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+
 
 
 

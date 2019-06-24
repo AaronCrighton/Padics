@@ -36,36 +36,6 @@ proof-
         Zp_nat_mult_zero assms tfl_some to_Zp_def)
 qed
 
-lemma (in padic_integers) to_Zp_add: 
-  assumes "a \<in> \<O>\<^sub>p"
-  assumes "b \<in> \<O>\<^sub>p"
-  shows "to_Zp (a \<oplus>\<^bsub>Q\<^sub>p\<^esub> b) = to_Zp a \<oplus> (to_Zp b)"
-  by (metis (no_types, lifting) Zp_is_domain assms(1) assms(2)
-      cring.cring_simprules(1) domain.axioms(1) imageE inc_of_sum inc_to_Zp)
-
-lemma (in padic_integers) to_Zp_mult: 
-  assumes "a \<in> \<O>\<^sub>p"
-  assumes "b \<in> \<O>\<^sub>p"
-  shows "to_Zp (a \<ominus>\<^bsub>Q\<^sub>p\<^esub> b) = to_Zp a \<ominus> (to_Zp b)"
-  by (metis (no_types, lifting) Zp_is_domain assms(1) assms(2) cring_def domain.axioms(1)
-      imageE inc_of_diff inc_to_Zp ring.ring_simprules(4))
-
-lemma (in padic_integers) to_Zp_one: 
-  shows "to_Zp \<one>\<^bsub>Q\<^sub>p\<^esub> = \<one>"
-  using Z\<^sub>p_def Zp_one_car \<iota>_def inc_of_one padic_integers.inc_to_Zp padic_integers_axioms 
-  by fastforce
-
-lemma (in padic_integers) to_Zp_zero: 
-  shows "to_Zp \<zero>\<^bsub>Q\<^sub>p\<^esub> = \<zero>"
-  using Q\<^sub>p_def Z\<^sub>p_def Zp_is_domain \<iota>_def domain.inc_inj1 padic_integers.inc_to_Zp 
-        padic_integers_axioms to_Zp_def 
-  by fastforce
-
-lemma (in padic_integers) to_Zp_val:
-  assumes "a \<in> \<O>\<^sub>p"
-  shows "val_Zp (to_Zp a) = val a"
-  by (metis assms imageE inc_to_Zp val_of_inc)
-
 (**************************************************************************************************)
 (**************************************************************************************************)
 (*******************************Angular Component Maps into ***************************************)

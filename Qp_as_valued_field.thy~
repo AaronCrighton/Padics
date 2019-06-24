@@ -1,5 +1,5 @@
 theory Qp_as_valued_field
-imports "padic_fields"
+imports "padic_field"
         "Valued_Fields"
 begin
 
@@ -10,17 +10,16 @@ proof(rule valuationI)
     by (simp add: G_def val_def)
   show "(\<forall>x. x \<in> carrier Q\<^sub>p \<longrightarrow> val x \<in> vals G) \<and> 
         (\<forall>x y. x \<in> carrier Q\<^sub>p \<and> y \<in> carrier Q\<^sub>p \<longrightarrow> val (x \<oplus>\<^bsub>Q\<^sub>p\<^esub> y) \<succeq>\<^bsub>G\<^esub> Min\<^bsub>G\<^esub> (val x) (val y))" 
-    using \<open>val \<in> carrier Q\<^sub>p \<rightarrow> vals G\<close> val_ultrametric 
-    by blast
+    using \<open>val \<in> carrier Q\<^sub>p \<rightarrow> vals G\<close> val_ultrametric by auto
   show " \<forall>x y. x \<in> Valued_Fields.nonzero Q\<^sub>p \<and> y \<in> Valued_Fields.nonzero Q\<^sub>p \<longrightarrow> 
           val (x \<otimes>\<^bsub>Q\<^sub>p\<^esub> y) = val x \<oplus>\<^bsub>G\<^esub> val y" 
-    by (metis (no_types, lifting) mem_Collect_eq val_mult)
+    by (simp add: val_mult)
   show "nonzero_to_group Q\<^sub>p G val" 
     by (simp add: G_def val_def)
   show "val \<zero>\<^bsub>Q\<^sub>p\<^esub> = \<infinity>\<^bsub>G\<^esub>" 
     by (simp add: val_def)
   show "val \<one>\<^bsub>Q\<^sub>p\<^esub> = \<zero>\<^bsub>G\<^esub>" 
-    by (simp )
+    by (simp add: val_one)
 qed
 
 definition(in padic_integers) Qp:
@@ -30,7 +29,7 @@ lemma(in padic_integers) Qp_is_valued_ring:
  "valued_ring Qp"
 proof(rule valued_ringI)
   show "domain K\<^bsub>Qp\<^esub>" 
-    by (simp add: Q\<^sub>p_def Qp domain.fraction_field_is_domain)
+    by (simp add: Q\<^sub>p_def Qp Zp_is_domain domain.fraction_field_is_domain)
   show "extended_ordered_abelian_group \<Gamma>\<^bsub>Qp\<^esub>" 
     by (simp add: G_EOAG Qp)
   show "\<nu>\<^bsub>Qp\<^esub> \<in> valuation K\<^bsub>Qp\<^esub> \<Gamma>\<^bsub>Qp\<^esub>"
@@ -59,9 +58,6 @@ proof-
     next
       case False
       then obtain n where "x = *n*"
-        sledgehammer
-
-
       
 qed
   

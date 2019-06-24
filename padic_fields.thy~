@@ -120,17 +120,17 @@ next
     by blast
   assume "\<iota> (a[^]n) = (\<iota> a)[^]\<^bsub>Q\<^sub>p\<^esub> n"
   have "(a[^](Suc n)) = (a\<otimes> (a[^]n))" 
-    by (meson A Zp_is_domain domain.pow_suc)
-  then have "\<iota> (a[^](Suc n)) = (\<iota> (a\<otimes> (a[^]n)))"
+    by (simp add: A  domain.pow_suc)
+  then have "\<iota> (a[^](Suc n)) = (\<iota> (a\<otimes> (a[^]n)))" 
     by simp
   then have "\<iota> (a[^](Suc n)) = (\<iota> a) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (\<iota>(a[^]n))" 
     using inc_of_prod A An by blast
   then have P: "\<iota> (a[^](Suc n)) = (\<iota> a) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (\<iota> a)[^]\<^bsub>Q\<^sub>p\<^esub>n" 
     by (simp add: \<open>\<iota> (a [^] n) = \<iota> a [^]\<^bsub>Q\<^sub>p\<^esub> n\<close>)
   have  "\<iota> a [^]\<^bsub>Q\<^sub>p\<^esub> (Suc n) = (\<iota> a) \<otimes>\<^bsub>Q\<^sub>p\<^esub> (\<iota> a)[^]\<^bsub>Q\<^sub>p\<^esub>n" 
-    by (meson Qp_is_domain domain.pow_suc iA)
+    by (simp add: iA  domain.pow_suc) 
   then show "\<iota> (a[^](Suc n)) = \<iota> a [^]\<^bsub>Q\<^sub>p\<^esub> (Suc n)" 
-    using P by blast
+    by (simp add: P)
 qed
 
 lemma(in padic_integers) inc_of_diff:
@@ -510,7 +510,7 @@ proof-
     by (metis Diff_iff Localization.submonoid.one_closed Q\<^sub>p_def Z\<^sub>p_def
         Zp_is_domain \<iota>_def domain.frac_im domain.inc_inj1 domain.nonzero_is_submonoid
         domain.units_of_fraction_field local.frac_def local.inc_def
-        padic_integers.p_natpow_inc p_pow_nonzero_0(1)
+        padic_integers.p_natpow_inc padic_integers.p_pow_car_nat
         padic_integers.p_pow_nonzero_0(2) padic_integers_axioms singletonD)
   have E0: "(\<pp> e (nat (-n))) = (\<pp> e (-n))" 
     using assms  by (simp add: int_pow_def nat_pow_def)

@@ -1,0 +1,5 @@
+theory domain_multivar_poly
+imports "~/src/HOL/Algebra/Indexed_Polynomials"
+begin
+
+end

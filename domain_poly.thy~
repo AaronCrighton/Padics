@@ -2,8 +2,7 @@ theory domain_poly
 imports "~~/src/HOL/Algebra/UnivPoly" 
 begin
 
-
-text\<open>The composition of two ring homomorphisms is a ring homomorphism\<close>
+(*The composition of two ring homomorphisms is a ring homomorphism*)
 lemma ring_hom_compose:
   assumes "ring R"
   assumes "ring S"
@@ -55,7 +54,7 @@ qed
 context UP_domain
 begin
 
-text\<open>rings are closed under monomial terms\<close>
+(*rings are closed under monomial terms*)
 lemma monom_term_car:
   assumes "c \<in> carrier R"
   assumes "x \<in> carrier R"
@@ -63,18 +62,18 @@ lemma monom_term_car:
   using assms monoid.nat_pow_closed 
   by blast
 
-text\<open>Univariate polynomial ring over R\<close>
+(*Univariate polynomial ring over R*)
 
 lemma P_is_UP_ring[simp]:
 "UP_ring R"
   by (simp add: UP_ring_axioms)
 
-text\<open>Degree function\<close>
+(*Degree function*)
 abbreviation degree  where
 "degree f \<equiv>  deg R f"
 end 
 
-text\<open>Bound on the degree of a sum\<close>
+(*Bound on the degree of a sum*)
 lemma bound_deg_sum_UP_ring[simp]:
   assumes "UP_ring R"
   assumes " f \<in> carrier (UP R)"
@@ -157,11 +156,11 @@ lemma(in UP_domain) equal_deg_sum'[simp]:
 context UP_domain
 begin
 
-text\<open>Coefficient function\<close>
+(*Coefficient function*)
 abbreviation cf  where
 "cf  \<equiv> coeff P "
 
-text\<open>This function is redundant\<close>
+(*This function is redundant*)
 lemma cf_f:
   assumes "f \<in> carrier P"
   shows "cf f = f"
@@ -171,14 +170,14 @@ proof-
   then show ?thesis using assms P_def by (simp add: UP_def) 
 qed
 
-text\<open>So is coeff from UNIVPOLY\<close>
+(*So is coeff from UNIVPOLY*)
 
 lemma coeff_simp1:
   assumes "f \<in> carrier P"
   shows "coeff (UP R)  f = f "
   using cf_f  P_def assms by auto
 
-text\<open>Coefficients are in R\<close>
+(*Coefficients are in R*)
 lemma cfs_closed[simp]:
   assumes "f \<in> carrier P"
   shows "f n \<in> carrier R"
@@ -189,7 +188,7 @@ proof-
     using assms cf_f by auto  
 qed
 
-text\<open>closure under smult\<close>
+(*closure under smult*)
 
 
 lemma cfs_closed_UP_domain[simp]:
@@ -202,7 +201,7 @@ end
 context UP_domain
 begin
 
-text\<open>Coefficients are additive \<close>
+(*Coefficients are additive *)
 lemma cf_add[simp]:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
@@ -224,11 +223,11 @@ definition leading_term where
 context UP_domain 
 begin
 
-text\<open>Leading term function\<close> 
+(*Leading term function*) 
 abbreviation lt  where
 "lt f \<equiv> leading_term R f"
 
-text\<open>leading term is a polynomial\<close>
+(*leading term is a polynomial*)
 lemma lt_closed:
   assumes "f \<in> carrier P"
   shows "lt f \<in> carrier P"
@@ -237,7 +236,7 @@ lemma lt_closed:
     UP_ring.monom_closed P_def P_is_UP_ring assms cf_f 
   by (simp add: UP_ring.monom_closed)
 
-text\<open>Simplified coefficient function description for leading term\<close>
+(*Simplified coefficient function description for leading term*)
 lemma lt_coeffs0:
   assumes "f \<in> carrier P"
   shows "coeff P (lt f) n  = (if (n = degree f) then (f (degree f)) else \<zero>)"
@@ -273,7 +272,7 @@ proof-
     using cf_f assms lt_closed by simp
 qed
 
-text\<open>leading term of f has the same degree as f\<close>
+(*leading term of f has the same degree as f*)
 lemma degree_lt[simp]:
   assumes "f \<in> carrier P"
   shows "degree (lt f) = degree f"
@@ -281,7 +280,7 @@ lemma degree_lt[simp]:
   by (metis UP_ring.deg_zero_impl_monom UP_ring.lcoeff_closed
       UP_ring.lcoeff_nonzero_deg P_def P_is_UP_ring assms cf_f  leading_term_def)
 
-text\<open>f minus its leading term has smaller degree\<close>
+(*f minus its leading term has smaller degree*)
 lemma lt_decomp0:
   assumes "f \<in> carrier P"
   assumes "degree f = Suc n"
@@ -381,7 +380,7 @@ proof-
     using 0 1 2 k_def  that by fastforce
 qed
 
-text\<open>leading term of a sum\<close>
+(*leading term of a sum*)
 lemma coeff_of_sum_diff_degree0:
   assumes "p \<in> carrier P"
   assumes "q \<in> carrier P"
@@ -444,7 +443,7 @@ lemma lt_of_sum_diff_degree:
   using assms(1) assms(2) assms(3) coeff_of_sum_diff_degree1 degree_of_sum_diff_degree 
   by presburger
 
-text\<open>leading term of a monomial\<close>
+(*leading term of a monomial*)
 
 lemma lt_monom:
   assumes "a \<in> carrier R"
@@ -474,7 +473,7 @@ lemma lt_deg_0[simp]:
 
 end 
 
-text\<open>lead coefficient function\<close>
+(*lead coefficient function*)
 
 definition leading_coefficient where 
 "leading_coefficient R p = p (deg R p)"
@@ -497,7 +496,7 @@ lemma(in UP_domain) lc_monom[simp]:
   unfolding leading_coefficient_def 
   by (metis P_def UP_ring.monom_closed UP_ring_axioms assms coeff_monom coeff_simp1 deg_monom)
 
-text\<open>monomial predicate\<close>
+(*monomial predicate*)
 definition is_monom_poly where
 "is_monom_poly R = (\<lambda>f. f \<in> carrier (UP R) \<and> f = leading_term R f)"
 
@@ -533,13 +532,13 @@ proof-
 qed
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 lemma poly_induct:
   assumes "p \<in> carrier P"
@@ -586,12 +585,12 @@ qed
 
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 
 lemma is_monom_prop1:
@@ -628,7 +627,7 @@ qed
 
 end
 
-text\<open>Relation for functions which are equal on the carrier\<close>
+(*Relation for functions which are equal on the carrier*)
 
 definition equal_on_carrier where
 "equal_on_carrier R f g = (\<forall>x. x \<in> carrier R \<longrightarrow> f x = g x)"
@@ -655,7 +654,7 @@ definition function_prod where
 abbreviation(in UP_domain) fun_prod where
 "fun_prod \<equiv> function_prod R"
 
-text\<open>Turning a polynomial into a function on R\<close>
+(*Turning a polynomial into a function on R*)
 definition function_of  where
 "function_of S f  = (\<lambda>s .eval S S (\<lambda>x. x) s f)"
 
@@ -664,7 +663,7 @@ begin
 abbreviation fun_of where
 "fun_of f \<equiv> function_of R f"
 
-text\<open>Explicit formula for evaluating a polynomial function\<close>
+(*Explicit formula for evaluating a polynomial function*)
 
 
 lemma fun_of_formula:
@@ -728,7 +727,7 @@ lemma fun_of_mult[simp]:
   by auto 
 
 
-text\<open>technical lemmas for reasoning about fun_of\<close>
+(*technical lemmas for reasoning about fun_of*)
 lemma id_is_hom:
 "ring_hom_cring R R (\<lambda>x. x)"
 proof(rule ring_hom_cringI)
@@ -771,7 +770,7 @@ lemma fun_of_closed_UP_domain[simp]:
 
 context UP_domain
 begin
-text\<open>P addition commutes with evaluation addition\<close>
+(*P addition commutes with evaluation addition*)
 lemma fun_of_fun_sum:
   assumes "f \<in> carrier P"
   assumes "g \<in> carrier P"
@@ -793,7 +792,7 @@ proof-
   qed
 qed
 
-text\<open>explicit description of monomial functions\<close>
+(*explicit description of monomial functions*)
 lemma fun_of_monom:
   assumes "c \<in> carrier R"
   assumes "c \<noteq>\<zero>"
@@ -961,13 +960,13 @@ qed
 end
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>*********************************    Polynomial Substitution   *********************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**********************************    Polynomial Substitution   **********************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
-text\<open>Inclusion of R into P\<close>
+(*Inclusion of R into P*)
 
 definition to_polynomial where
 "to_polynomial R  =  (\<lambda>a. monom (UP R) a 0)"
@@ -992,7 +991,7 @@ proof-
     using UP_domain.P_is_UP_ring UP_ring.monom_mult_is_smult assms(1) assms(2) assms(3) by fastforce
 qed
 
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
 context UP_domain
 begin 
 
@@ -1052,7 +1051,7 @@ lemma(in UP_domain) to_poly_ominus[simp]:
   by (metis P_def assms monom_a_inv to_polynomial_def)
 
 end
-text\<open>Substitution of one polynomial into another\<close>
+(*Substitution of one polynomial into another*)
 
 
 definition compose where
@@ -1131,7 +1130,7 @@ lemma sub_mult:
   shows "((f \<otimes>\<^bsub>P\<^esub> h) of g) = ((f of g) \<otimes>\<^bsub>P\<^esub> (h of g))"
   by (simp add: assms(1) assms(2) assms(3) rev_sub_mult sub_rev_sub)
 
-text\<open>Subbing into a constant does nothing\<close>
+(*Subbing into a constant does nothing*)
 lemma rev_sub_to_poly:
   assumes "g \<in> carrier P"
   assumes "a \<in> carrier R"
@@ -1161,7 +1160,7 @@ proof-
 qed
 
 end 
-text\<open>Function which truncates a polynomial by removing the leading term\<close>
+(*Function which truncates a polynomial by removing the leading term*)
 definition truncate where
 "truncate R f = f \<ominus>\<^bsub>(UP R)\<^esub> (leading_term R f)"
 
@@ -1200,11 +1199,11 @@ lemma trunc_degree:
   unfolding truncate_def using assms 
   by (metis P.add.inv_solve_right P_def a_minus_def lt_decomp lt_closed)
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>*************************  Alternate Polynomial Induction  *************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************  Alternate Polynomial Induction  **************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 
 lemma poly_induct2:
@@ -1237,14 +1236,14 @@ qed
 
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 
-text\<open>leading term is multiplicative\<close>
+(*leading term is multiplicative*)
 
 lemma lt_id:
   assumes "q \<in> carrier P"
@@ -1418,7 +1417,7 @@ lemma lc_deg_0:
     leading_coefficient_def lcoeff_closed monom_mult_is_smult 
      by (metis cfs_closed cf_f)
 
-text\<open>leading term powers\<close>
+(*leading term powers*)
 
 lemma (in domain) nonzero_pow_nonzero:
   assumes "a \<in> carrier R"
@@ -1604,7 +1603,7 @@ lemma lt_pow:
   shows " lt (f [^]\<^bsub>P\<^esub> (n::nat)) = (lt f) [^]\<^bsub>P\<^esub> n"
   using assms lt_pow0 by blast
 
-text\<open>The coefficients of trunc agree with f for small degree\<close>
+(*The coefficients of trunc agree with f for small degree*)
 lemma trunc_cfs0:
   assumes "p \<in> carrier P"
   assumes "n < degree p"
@@ -1623,7 +1622,7 @@ lemma trunc_cfs[simp]:
   shows " (trunc p) n = p n"
   using P_def assms(1) assms(2) coeff_simp1 trunc_cfs0 trunc_simps(3) by auto
 
-text\<open>Substitution into a monomial\<close>
+(*Substitution into a monomial*)
 
 lemma sub_monom:
   assumes "a \<in> carrier R"
@@ -1642,7 +1641,7 @@ proof-
         assms(4) deg_smult monom_mult_is_smult to_polynomial_def)
 qed
 
-text\<open>Subbing a constant into a polynomial yields a constant\<close>
+(*Subbing a constant into a polynomial yields a constant*)
 lemma sub_in_const:
   assumes "g \<in> carrier P"
   assumes "f \<in> carrier P"
@@ -1806,7 +1805,7 @@ proof-
   qed
 qed
 
-text\<open>lemma on the leading coefficient\<close>
+(*lemma on the leading coefficient*)
 lemma lc_eq:
   assumes "f \<in> carrier P"
   shows "lc f = lc (lt f)"
@@ -2036,7 +2035,7 @@ proof-
         by (simp add: P2 leading_coefficient_def)
 qed
 
-text\<open>formula for the leading term of f \<circ> g \<close>
+(*formula for the leading term of f \<circ> g *)
 lemma lt_of_sub:
   assumes "g \<in> carrier P"
   assumes "f \<in> carrier P"
@@ -2046,7 +2045,7 @@ lemma lt_of_sub:
   shows "lt (f of g) = (lc f) \<odot>\<^bsub>P\<^esub> ((lt g)[^]\<^bsub>P\<^esub>n)"
   using assms lt_sub lt_of_sub_in_lt apply auto 
   done
-text\<open>subtitution is associative\<close>
+(*subtitution is associative*)
 
 lemma sub_assoc_monom:
   assumes "f \<in> carrier P"
@@ -2265,13 +2264,13 @@ qed
 
 
 end
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>**************************  Constructor for monic linear polynomials  **************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(***************************  Constructor for monic linear polynomials  ***************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
-text\<open>The polynomial representing the variable X\<close>
+(*The polynomial representing the variable X*)
 
 definition X_poly where
 "X_poly R= monom (UP R) \<one>\<^bsub>R\<^esub> 1"
@@ -2371,7 +2370,7 @@ proof-
     using assms by blast
 qed
 
-text\<open>representation of monomials as scalar multiples of powers of X\<close>
+(*representation of monomials as scalar multiples of powers of X*)
 lemma monom_rep_X_pow:
   assumes "a \<in> carrier R"
   shows "monom P a n = a\<odot>\<^bsub>P\<^esub>(X[^]\<^bsub>P\<^esub>n)"
@@ -2408,7 +2407,7 @@ lemma fun_of_X_pow[simp]:
   by (simp add: P_def UP_cring.monom_pow UP_cring_axioms UP_domain.fun_of_monom UP_domain_axioms X_poly_def assms)
 
 end
-text\<open>monic linear polynomials\<close>
+(*monic linear polynomials*)
 
 definition X_poly_plus where
 "X_poly_plus R a = (X_poly R) \<oplus>\<^bsub>(UP R)\<^esub> to_polynomial R a"
@@ -2504,7 +2503,7 @@ lemma fun_of_X_minus[simp]:
   using fun_of_X_plus[of "\<ominus> a" b] X_minus_plus[of a] assms 
   by (simp add: R.minus_eq)
 
-text\<open>Linear substituions\<close>
+(*Linear substituions*)
  
 
 definition trans_left where
@@ -2546,7 +2545,7 @@ lemma X_minus_sub_deg:
 
 end
 
-text\<open>Taylor expansions of polynomials\<close>
+(*Taylor expansions of polynomials*)
 
 definition taylor_expansion where
 "taylor_expansion R a p = compose R p (X_poly_plus R a)"
@@ -2623,7 +2622,7 @@ lemma Taylor_eval:
         assms X_plus_closed[of a] by auto
 
 end
-text\<open>derivative function\<close>
+(*derivative function*)
 
 definition derivative where
 "derivative R f a = (taylor_expansion R a f) 1"
@@ -2639,7 +2638,7 @@ lemma(in UP_domain) derivative_closed:
   by (metis P_def UP_domain.cfs_closed UP_domain_axioms 
       X_plus_closed assms(1) assms(2) sub_closed taylor_expansion_def)
 
-text\<open>Constant term  and coefficient function\<close>
+(*Constant term  and coefficient function*)
 
 definition zero_coefficient where
 "zero_coefficient f = (f 0)"
@@ -2722,7 +2721,7 @@ lemma fun_of_ct[simp]:
   by (simp add:  assms(1) assms(2) constant_term_def)
 
 
-text\<open>fun_of simp rule for scalar multiples\<close>
+(*fun_of simp rule for scalar multiples*)
 
 lemma fun_of_smult[simp]:
   assumes "f \<in> carrier P"
@@ -2738,7 +2737,7 @@ proof-
     by (simp add: assms(2) assms(3))
 qed
 
-text\<open>Constant coefficient function is a ring homomorphism\<close>
+(*Constant coefficient function is a ring homomorphism*)
 lemma coeff_0_to_poly[simp]:
   assumes "a \<in> carrier R"
   shows "coeff_0 (to_poly a) = a"
@@ -2911,7 +2910,7 @@ lemma ct_smult[simp]:
   by (metis P_def UP_domain.coeff_simp1 UP_domain_axioms 
       UP_ring.coeff_smult UP_ring_axioms UP_smult_closed cfs_closed monom_mult_smult)
 
-text\<open>if the constant term of f is 0, then f factors by X\<close>
+(*if the constant term of f is 0, then f factors by X*)
 lemma coeff_0_eq_zero:
   assumes "f \<in> carrier P"
   assumes "coeff_0 f = \<zero>"
@@ -2990,7 +2989,7 @@ proof-
     by (metis UP_zero_closed coeff_0_zero deg_zero to_poly_inverse zero_coefficient_def)
 qed
 
-text\<open>The factorization of f by X is unique\<close>
+(*The factorization of f by X is unique*)
 lemma coeff_0_eq_zero_unique:
   assumes "f \<in> carrier P"
   assumes "g \<in> carrier P \<and> (f = X \<otimes>\<^bsub>P\<^esub> g)"
@@ -3296,7 +3295,7 @@ lemma shift_closed_UP_domain[simp]:
   shows "poly_shift_iter R n f \<in> carrier (UP R)"
   by (simp add: UP_domain.shift_closed assms(1) assms(2))
 
-text\<open>A Factor of the derivative operator\<close>
+(*A Factor of the derivative operator*)
 
 definition n_mult where 
 "n_mult R f = (\<lambda>n. [n]\<cdot>\<^bsub>R\<^esub>(f n))"
@@ -3331,7 +3330,7 @@ proof-
     by (simp add: P_def UP_def)
 qed
 
-text\<open>The derivative operator\<close>
+(*The derivative operator*)
 
 definition poly_deriv where
 "poly_deriv R p = polynomial_shift R (n_mult R p)"
@@ -3346,7 +3345,7 @@ lemma(in UP_domain) poly_deriv_closed[simp]:
 abbreviation(in UP_domain) pderiv where
 "pderiv \<equiv> poly_deriv R"
 
-text\<open>Facts about the shift function\<close>
+(*Facts about the shift function*)
 
 lemma(in UP_domain) shift_factor0:
   assumes "f \<in> carrier P"
@@ -3701,7 +3700,7 @@ qed
 qed
 
 
-text\<open>Function which obtains the first n+1 terms of f, in ascending order of degree\<close>
+(*Function which obtains the first n+1 terms of f, in ascending order of degree*)
 
 
 definition degree_n_or_less_terms where
@@ -3856,7 +3855,7 @@ lemma(in UP_domain) lin_part_eq:
   using assms 
   by (metis Suc_1 deg_leq_id' degree_n_or_less_terms_def)
 
-text\<open>Constant term of a substitution\<close>
+(*Constant term of a substitution*)
 
 context UP_domain
 begin
@@ -3938,7 +3937,7 @@ proof(rule poly_induct2[of f])
   qed
 qed
 
-text\<open>Evaluation of linear part\<close>
+(*Evaluation of linear part*)
 
 lemma fun_of_lin_part:
   assumes "f \<in> carrier P"
@@ -3955,7 +3954,7 @@ proof-
   then show ?thesis 
     by (simp add: assms(2))
 qed
-text\<open>Constant term of taylor expansion\<close>
+(*Constant term of taylor expansion*)
 
 lemma Taylor_coeff_0:
   assumes "f \<in> carrier P"
@@ -4082,7 +4081,7 @@ proof-
     by auto   
 qed
 
-text\<open>Basic Properties of deriv and pderiv\<close>
+(*Basic Properties of deriv and pderiv*)
 
 lemma n_mult_degree_bound:
   assumes "f \<in> carrier P"
@@ -4736,7 +4735,6 @@ proof(rule poly_induct2[of f])
 qed
 
 (*
-text\<open>
 fun list_to_poly :: "'a list \<Rightarrow> nat \<Rightarrow> 'a" where
 "list_to_poly [] = (\<lambda>n. \<zero>)"|
 "list_to_poly (a#as) = (\<lambda>n. (if n=0 then a else (list_to_poly as (n-1))))"
@@ -4769,7 +4767,7 @@ lemma poly_to_list_simp_0:
   shows "poly_to_list (\<lambda>a. \<zero>) = []"
   sledgehammer
   by (simp add: poly_to_list_def)
-text\<open>
+(*
 proof-
   have 0: "degree (\<lambda>a. \<zero>) = 0" using deg_0_poly_simp by simp
   have "poly_to_list (\<lambda>a. \<zero>) = list_iter (degree (\<lambda>a. \<zero>)) (\<lambda>a. \<zero>)"
@@ -4781,7 +4779,7 @@ proof-
     by (simp add: \<open>poly_to_list (\<lambda>a. \<zero>) = list_iter 0 (\<lambda>a. \<zero>)\<close>)
 qed
 
-\<close>
+*)
 
 lemma degree_length:
   shows "degree (list_to_poly as) = length as"
@@ -4854,9 +4852,9 @@ next
     qed
   qed
 
-\<close>
+*)
 
-text\<open>
+(*
 context UP_domain
 begin
 definition pr_term where
@@ -4931,7 +4929,6 @@ lemma product_rule:
   shows "pderiv (f \<otimes>\<^bsub>P\<^esub> g) = pr_term f g"
   sorry
 
-\<close>
 *)
 end
 end

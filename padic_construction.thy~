@@ -6,12 +6,12 @@ type_synonym padic_int = "nat \<Rightarrow> int"
 
 section  \<open>Inverse Limit construction of p-adics"\<close>
 
-text\<open> res is used to define canonical maps between residue rings  \<close>
+text{* res is used to define canonical maps between residue rings  *}
 
 definition res :: "int \<Rightarrow> int \<Rightarrow> int" where 
 "res n m = m mod n"
 
-text\<open> (res n) is a ring homomorphism from the integers to Z/nZ \<close>
+text{* (res n) is a ring homomorphism from the integers to Z/nZ *}
 
 lemma res_hom_0:
   assumes "n > 1"
@@ -32,7 +32,7 @@ proof(rule ring_hom_memI)
     by (simp add: R res_def residues.res_to_cong_simps(4)) 
 qed
 
-text\<open> (res n) is a ring homomorphism from  Z/mZ --> Z/nZ when n divides m\<close>
+text{* (res n) is a ring homomorphism from  Z/mZ --> Z/nZ when n divides m*}
 
 lemma res_hom_1:
   assumes "n > 1"
@@ -58,7 +58,7 @@ proof(rule ring_hom_memI)
     by (simp add: assms(1) res_def residue_ring_def) 
 qed
 
-text\<open> (res n) is the identity map on Z/nZ\<close>
+text{* (res n) is the identity map on Z/nZ*}
 
 lemma res_id:
   assumes "x \<in> carrier (residue_ring n)"
@@ -80,7 +80,7 @@ next
     using res_def by auto
 qed
 
-text\<open> (res p^m) is a ring homomoprhism from Z/p^nZ --> Z/p^mZ when n > m\<close>
+text{* (res p^m) is a ring homomoprhism from Z/p^nZ --> Z/p^mZ when n > m*}
 
 lemma res_hom_p:
   assumes "(n::nat) \<ge> m"
@@ -96,14 +96,14 @@ proof(rule res_hom_1)
     by (simp add: dvd_power_le) 
 qed
 
-text\<open>Defining the set of padic integers as the inverse limit of the rings Z/p^nZ along
-      the maps (res p^n): Z/p^mZ --> Z/p^nZ \<close>
+text{*Defining the set of padic integers as the inverse limit of the rings Z/p^nZ along
+      the maps (res p^n): Z/p^mZ --> Z/p^nZ *}
 
 definition padic_set :: "nat \<Rightarrow> padic_int set" where
 "padic_set p = {(f::padic_int) .(\<forall>(m::nat). (f m) \<in> (carrier (residue_ring (p^m))))
                                     \<and>(\<forall>(n::nat) (m::nat). (n > m \<longrightarrow> (res (p^m) (f n) = (f m)))) }"
 
-text\<open>Rules for deducing basic properties of elements of padic_set p\<close>
+text{*Rules for deducing basic properties of elements of padic_set p*}
 
 lemma padic_set_simp0:
   assumes "f \<in> padic_set p"
@@ -141,7 +141,7 @@ proof-
     using residue_ring_def  by simp 
 qed
 
-text\<open>Rule for proving membership in (padic_set p)\<close>
+text{*Rule for proving membership in (padic_set p)*}
 
 lemma padic_set_mem:
   fixes f :: "padic_int"
@@ -153,7 +153,7 @@ lemma padic_set_mem:
 
 section  \<open>Defining the standard operations on the padic integers"\<close>
 
-text\<open>Addition and multiplication are defined componentwise on residue rings\<close>
+text{*Addition and multiplication are defined componentwise on residue rings*}
 
 definition padic_add :: "nat \<Rightarrow> padic_int \<Rightarrow> padic_int \<Rightarrow> padic_int " 
   where "padic_add p f g \<equiv> (\<lambda> n. (f n) \<oplus>\<^bsub>(residue_ring (p^n))\<^esub> (g n))"
@@ -169,7 +169,7 @@ lemma padic_mult_simp:
 "(padic_mult p f g) n = (f n) \<otimes>\<^bsub>(residue_ring (p^n))\<^esub> (g n)"
   by (simp add: padic_mult_def) 
 
-text\<open>definition of the padic multiplicative unit\<close>
+text{*definition of the padic multiplicative unit*}
 
 definition padic_one :: "nat \<Rightarrow> padic_int" where
 "padic_one p \<equiv> (\<lambda>n.(if n=0 then 0 else 1))"
@@ -179,7 +179,7 @@ lemma padic_one_simp:
   shows "padic_one p n =  \<one>\<^bsub>residue_ring (p^n)\<^esub>"
   by (simp add: assms padic_one_def residue_ring_def) 
 
-text\<open>definition of the padic additive unit\<close>
+text{*definition of the padic additive unit*}
 
 definition padic_zero :: "nat \<Rightarrow> padic_int" where
 "padic_zero p \<equiv> (\<lambda>n. 0)"
@@ -188,7 +188,7 @@ lemma padic_zero_simp:
 "padic_zero p n = \<zero>\<^bsub>residue_ring (p^n)\<^esub>" 
   by (simp add: padic_zero_def residue_ring_def) 
 
-text\<open>padic unary minus\<close>
+text{*padic unary minus*}
 
 definition padic_uminus :: "nat \<Rightarrow>  padic_int \<Rightarrow>  padic_int" where
 "padic_uminus p f \<equiv> \<lambda> n. \<ominus>\<^bsub>residue_ring (p^n)\<^esub> (f n)"
@@ -226,7 +226,7 @@ lemma padic_simps:
   apply (simp add: padic_add_simp)  
   using padic_one_simp by auto
 
-text\<open>padic_one is an element of the padics\<close>
+text{*padic_one is an element of the padics*}
 
 lemma padic_one_mem:
   assumes "prime p"
@@ -264,7 +264,7 @@ proof(rule padic_set_mem)
   qed
 qed
 
-text\<open>padic_zero is an element of the padics \<close>
+text{*padic_zero is an element of the padics *}
 
 lemma padic_zero_mem:
   assumes "p \<noteq>0"
@@ -278,7 +278,7 @@ proof (rule padic_set_mem)
     by auto 
 qed
 
-text\<open>padic_set is closed under padic_uminus\<close>
+text{*padic_set is closed under padic_uminus*}
 
 lemma res_1_prop:
 "\<ominus>\<^bsub>residue_ring 1\<^esub> \<zero>\<^bsub>residue_ring 1\<^esub> =  \<zero>\<^bsub>residue_ring 1\<^esub>"
@@ -378,7 +378,7 @@ proof(rule padic_set_mem)
     qed
 qed
 
-text\<open>padic set is closed under multiplication\<close>
+text{*padic set is closed under multiplication*}
 
 lemma res_1_mult:
   assumes "x \<in> carrier (residue_ring 1)"
@@ -446,12 +446,12 @@ proof(rule padic_set_mem)
 qed
 
 
-text\<open>padic valuation. Maps 0 to -1 for now, otherwise is correct\<close>
+text{*padic valuation. Maps 0 to -1 for now, otherwise is correct*}
 
 definition padic_val :: "nat \<Rightarrow>  padic_int \<Rightarrow> int"  where
 "padic_val p f \<equiv> if (f = padic_zero p) then -1 else int (LEAST k::nat. (f (Suc k)) \<noteq> \<zero>\<^bsub>residue_ring (p^(Suc k))\<^esub>)"
 
-text\<open>characterization of padic_val on nonzero elements\<close>
+text{*characterization of padic_val on nonzero elements*}
 
 lemma val_of_nonzero:
   assumes "f \<in> padic_set p"
@@ -579,7 +579,7 @@ proof-
     by (simp add: \<open>x n = \<zero>\<^bsub>residue_ring (int p ^ n)\<^esub>\<close> residue_ring_def) 
 qed
 
-text\<open>zero is the only element with valuation equal to -1\<close>
+text{*zero is the only element with valuation equal to -1*}
 
 lemma val_zero:
  assumes P: "f \<in> (padic_set p)"   
@@ -620,7 +620,7 @@ proof
   using padic_val_def by simp 
 qed
 
-text\<open>val turns multiplication into integer addition on nonzero elements\<close>
+text{*val turns multiplication into integer addition on nonzero elements*}
 
 lemma val_prod:
   assumes  "prime p"
@@ -916,7 +916,7 @@ qed
 
 qed
 
-text\<open>abbreviation for the ring of p_adic integers\<close>
+text{*abbreviation for the ring of p_adic integers*}
 
 abbreviation padic_int :: "nat \<Rightarrow> padic_int ring"
   where "padic_int (p::nat) \<equiv> \<lparr>carrier = (padic_set p),
@@ -935,7 +935,7 @@ proof
     using assms(1) by auto
 qed
 
-text\<open>padic multiplication is associative\<close>
+text{*padic multiplication is associative*}
 
 lemma padic_mult_assoc:
 assumes "prime p"
@@ -969,7 +969,7 @@ proof-
   qed
 qed
 
-text\<open>The padics are closed under addition\<close>
+text{*The padics are closed under addition*}
 
 lemma padic_add_closed:
   assumes "prime p"
@@ -1046,7 +1046,7 @@ proof
     by blast  
 qed
 
-text\<open>padic addition is associative\<close>
+text{*padic addition is associative*}
 
 lemma padic_add_assoc:
 assumes "prime p"
@@ -1102,7 +1102,7 @@ proof-
   qed
 qed
 
-text\<open>padic addition is commutative\<close>
+text{*padic addition is commutative*}
 
 lemma padic_add_comm:
   assumes "prime p"
@@ -1140,7 +1140,7 @@ proof-
   qed
 qed
 
-text\<open>padic_zero is an additive identity\<close>
+text{*padic_zero is an additive identity*}
 
 lemma padic_add_zero:
 assumes "prime p"
@@ -1175,7 +1175,7 @@ proof-
   qed
 qed
 
-text\<open>padic_zero is closed under additive inverses\<close>
+text{*padic_zero is closed under additive inverses*}
 
 lemma padic_add_inv:
 assumes "prime p"
@@ -1217,7 +1217,7 @@ proof-
   qed
 qed
 
-text\<open>The ring of padic integers forms an abelian group under addition\<close>
+text{*The ring of padic integers forms an abelian group under addition*}
 
 lemma padic_is_abelian_group:
 assumes "prime p"
@@ -1249,7 +1249,7 @@ shows "abelian_group (padic_int p)"
       using assms padic_add_inv by blast
   qed
 
-text\<open>padic_one is a multiplicative identity\<close>
+text{*padic_one is a multiplicative identity*}
 
 lemma padic_one_id:
 assumes "prime p"
@@ -1273,7 +1273,7 @@ proof
   qed
 qed
 
-text\<open>padic multiplication is commutative\<close>
+text{*padic multiplication is commutative*}
 
 lemma padic_mult_comm:
 assumes "prime p"
@@ -1339,7 +1339,7 @@ proof(rule comm_monoidI)
     using padic_mult_comm  by (simp add: assms)
 qed
 
-text\<open>The padic integers form a commutative ring when p is prime\<close>
+text{*The padic integers form a commutative ring when p is prime*}
 
 lemma padic_int_is_cring:
   assumes "prime (p::nat)"
@@ -1389,7 +1389,7 @@ proof (rule cringI)
   qed
 qed
 
-text\<open>The padic ring has no nontrivial zero divisors\<close>
+text{*The padic ring has no nontrivial zero divisors*}
 
 lemma padic_no_zero_divisors:
 assumes "prime p"
@@ -1426,7 +1426,7 @@ proof
   qed
 qed
 
-text\<open>padic integers form an integral domain\<close> 
+text{*padic integers form an integral domain*} 
 
 lemma padic_int_is_domain:
   assumes "prime (p::nat)"
@@ -1449,7 +1449,7 @@ proof(rule domainI)
     using assms padic_no_zero_divisors by blast
 qed     
 
-text\<open>The ultrametric inequality\<close>
+text{*The ultrametric inequality*}
 
 lemma ultrametric:
   assumes "prime p"

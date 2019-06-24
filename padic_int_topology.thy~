@@ -6,9 +6,9 @@ type_synonym padic_int_seq = "nat \<Rightarrow> padic_int"
 
 type_synonym padic_int_fun = "padic_int \<Rightarrow> padic_int"
 
-locale padic_int_polynomial= padic_integers
+locale padic_int_poly = padic_integers
 
-context padic_int_polynomial
+context padic_int_poly
 begin
 
 lemma Zp_is_cring[simp]:
@@ -335,7 +335,7 @@ proof-
             have 0: "(s m) \<in> carrier Z\<^sub>p"
               by (simp add: assms(1))
             have 1: "(s k) \<in> carrier Z\<^sub>p" 
-              using Z\<^sub>p_def assms(1) padic_int_polynomial.is_closed_simp padic_int_polynomial_axioms by blast
+              using Z\<^sub>p_def assms(1) padic_int_poly.is_closed_simp padic_int_poly_axioms by blast
             have "int (Suc (nat n)) \<le> ord_Zp_dist (s m) (s k)" 
               using False  E 0 1 ord_Zp_dist_res_eq2[of "(s m)" "(s k)" "Suc (nat n)"] by blast
             then have "int (nat n) < ord_Zp_dist (s m) (s k)" 
@@ -361,12 +361,12 @@ lemma is_cauchy_imp_eventually_const:
   obtains N r where "r \<in> carrier (R n)" and "\<And> m. m > N \<Longrightarrow> (s m) n = r"
 proof-
   obtain N where A0: "\<And> n0 n1. n0 > N \<and> n1 > N \<Longrightarrow> (s n0) n = (s n1) n"
-    using assms padic_int_polynomial.is_cauchy_imp_eventually_const_0 padic_int_polynomial_axioms by blast
+    using assms padic_int_poly.is_cauchy_imp_eventually_const_0 padic_int_poly_axioms by blast
   obtain r where A1: "s (Suc N) n = r" 
     by simp
   have 0: "r \<in> carrier (R n)" 
     using  Z\<^sub>p_def \<open>s (Suc N) n = r\<close> assms is_closed_simp 
-      padic_int_polynomial.is_cauchy_def padic_int_polynomial_axioms padic_set_simp0 by auto
+      padic_int_poly.is_cauchy_def padic_int_poly_axioms padic_set_simp0 by auto
   have 1: "\<And> m. m > N \<Longrightarrow> (s m) n = r"
   proof-
     fix m 
@@ -722,9 +722,9 @@ proof(rule is_cauchyI)
     show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> seq_sum s t n0 n = seq_sum s t n1 n"
     proof-
       obtain N1 where N1_def: "\<forall>n0 n1. N1 < n0 \<and> N1 < n1 \<longrightarrow> s n0 n = s n1 n" 
-        using assms(1) padic_int_polynomial.is_cauchy_imp_eventually_const_0 padic_int_polynomial_axioms  by blast
+        using assms(1) padic_int_poly.is_cauchy_imp_eventually_const_0 padic_int_poly_axioms  by blast
       obtain N2 where N2_def: "\<forall>n0 n1. N2 < n0 \<and> N2 < n1 \<longrightarrow> t n0 n = t n1 n" 
-        using assms(2) padic_int_polynomial.is_cauchy_imp_eventually_const_0 padic_int_polynomial_axioms by blast
+        using assms(2) padic_int_poly.is_cauchy_imp_eventually_const_0 padic_int_poly_axioms by blast
       obtain M where M_def: "M = max N1 N2"
         by simp
       have "\<forall>n0 n1. M < n0 \<and> M < n1 \<longrightarrow> seq_sum s t n0 n = seq_sum s t n1 n"
@@ -762,9 +762,9 @@ proof(rule is_cauchyI)
     show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> seq_prod s t n0 n = seq_prod s t n1 n"
     proof-
       obtain N1 where N1_def: "\<forall>n0 n1. N1 < n0 \<and> N1 < n1 \<longrightarrow> s n0 n = s n1 n" 
-        using assms(1) padic_int_polynomial.is_cauchy_imp_eventually_const_0 padic_int_polynomial_axioms by blast
+        using assms(1) padic_int_poly.is_cauchy_imp_eventually_const_0 padic_int_poly_axioms by blast
       obtain N2 where N2_def: "\<forall>n0 n1. N2 < n0 \<and> N2 < n1 \<longrightarrow> t n0 n = t n1 n" 
-        using assms(2) padic_int_polynomial.is_cauchy_imp_eventually_const_0 padic_int_polynomial_axioms by blast
+        using assms(2) padic_int_poly.is_cauchy_imp_eventually_const_0 padic_int_poly_axioms by blast
       obtain M where M_def: "M = max N1 N2"
         by simp
       have "\<forall>n0 n1. M < n0 \<and> M < n1 \<longrightarrow> seq_prod s t n0 n = seq_prod s t n1 n"
@@ -1037,7 +1037,7 @@ proof
   have "s x \<in> carrier Z\<^sub>p"
     by (simp add: assms(2))
   then show "(f\<^sub>*s) x = (g\<^sub>*s) x" 
-    using assms(1) eq_simp padic_int_polynomial.push_forward_def padic_int_polynomial_axioms by auto
+    using assms(1) eq_simp padic_int_poly.push_forward_def padic_int_poly_axioms by auto
 qed
 
 
@@ -1066,7 +1066,7 @@ lemma push_forward_of_constant_is_constant:
   shows "is_constant_seq (f\<^sub>*s)"
   using assms(1) assms(2) 
   by (metis (full_types) is_closed_simp is_constant_fun_def
-      is_constant_seq_def padic_int_polynomial.push_forward_def padic_int_polynomial_axioms)
+      is_constant_seq_def padic_int_poly.push_forward_def padic_int_poly_axioms)
 
 lemma is_closed_fun_simp:
   assumes "x \<in> carrier Z\<^sub>p"
@@ -1079,7 +1079,7 @@ lemma push_forward_of_closed_is_closed:
   assumes "is_closed_fun f"
   shows "is_closed_seq (f\<^sub>*s)" 
   using is_closed_fun_def is_closed_seq_def assms(1) assms(2)
-    padic_int_polynomial.push_forward_def padic_int_polynomial_axioms by auto
+    padic_int_poly.push_forward_def padic_int_poly_axioms by auto
 
 lemma push_forward_of_sum_0:
 "((fun_sum f g)\<^sub>*s) k = ((f\<^sub>*s) k) \<oplus> ((g\<^sub>*s) k)"
@@ -1165,7 +1165,7 @@ lemma sum_of_cont_is_cont:
 proof(rule is_continuousI)
   show "is_closed_fun (fun_sum f g)" using assms 
     using Z\<^sub>p_def Zp_is_cring cring.cring_simprules(1) is_continuous_def
-      fun_sum_def is_closed_fun_def padic_int_polynomial_axioms by fastforce
+      fun_sum_def is_closed_fun_def padic_int_poly_axioms by fastforce
   show "\<And>s. is_cauchy s \<Longrightarrow> is_cauchy ((fun_sum f g)\<^sub>*s)"
   proof-
     fix s
@@ -1188,7 +1188,7 @@ proof(rule is_continuousI)
   show "is_closed_fun (fun_prod f g)" 
     using Z\<^sub>p_def Zp_is_cring assms(1) assms(2) cring.cring_simprules(5) 
       is_continuous_def fun_prod_def is_closed_fun_def
-      padic_int_polynomial_axioms by fastforce
+      padic_int_poly_axioms by fastforce
   show "\<And>s. is_cauchy s \<Longrightarrow> is_cauchy ((fun_prod f g)\<^sub>*s)"
   proof-
     fix s
@@ -1216,14 +1216,14 @@ proof(rule is_cauchyI)
     unfolding  is_cauchy_def 
     using Z\<^sub>p_def assms is_closedI 
           is_closed_simp
-          padic_int_polynomial_axioms res_lim_in_Zp 
+          padic_int_poly_axioms res_lim_in_Zp 
     by presburger
   fix n
   show "\<exists>N. \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> alt_seq s n0 n = alt_seq s n1 n "
   proof-
     obtain N where N_def: " \<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> s n0 n =  s n1 n "
       using assms is_cauchy_imp_eventually_const_0
-            padic_int_polynomial_axioms 
+            padic_int_poly_axioms 
       by blast
     have "\<forall>n0 n1. N < n0 \<and> N < n1 \<longrightarrow> alt_seq s n0 n = alt_seq s n1 n "
       apply auto 
@@ -1234,7 +1234,7 @@ proof(rule is_cauchyI)
         using N_def 
         unfolding alt_seq_def 
         by (smt A(1) A(2) assms lessI max_less_iff_conj 
-            res_lim_cauchy padic_int_polynomial_axioms)
+            res_lim_cauchy padic_int_poly_axioms)
     qed
     then show ?thesis 
       by blast
@@ -1339,11 +1339,11 @@ proof-
     fix k
     obtain Na where Na_def: "\<And>m. m > Na \<Longrightarrow> (f\<^sub>*s) m k = a k"
       using a_def assms  is_continuous_def 
-            padic_int_polynomial_axioms res_lim_cauchy
+            padic_int_poly_axioms res_lim_cauchy
       by blast
     obtain Nb where Nb_def: "\<And>m. m > Nb \<Longrightarrow> (f\<^sub>*t) m k = b k"
       using b_def assms is_continuous_def 
-            padic_int_polynomial_axioms res_lim_cauchy
+            padic_int_poly_axioms res_lim_cauchy
             alt_seq_cauchy 
       by blast
     obtain M where M_def: "M = 2*(max Na Nb) + 1"
@@ -1395,11 +1395,11 @@ proof-
     by simp
   have 0: "converges_to (f\<^sub>*s) (res_lim (f\<^sub>*s))"
     using assms(1) assms(2) is_continuous_def 
-      is_cauchy_imp_has_limit padic_int_polynomial_axioms by blast
+      is_cauchy_imp_has_limit padic_int_poly_axioms by blast
   have 1: "converges_to (f\<^sub>*s) (res_lim (f\<^sub>*t))"
     using "0" assms(1) assms(2) res_lim_pushforward' t_def by auto
   have 2: "converges_to (f\<^sub>*s) (f (res_lim t))"
-    using "1" assms(1) assms(2) res_lim_pushforward padic_int_polynomial_axioms t_def by auto
+    using "1" assms(1) assms(2) res_lim_pushforward padic_int_poly_axioms t_def by auto
   then show  "converges_to (f\<^sub>*s) (f (res_lim s))"
     by (simp add: alt_seq_limit assms(2) t_def)
 qed
@@ -1418,7 +1418,7 @@ qed
 lemma X_is_continuous:
 "is_continuous X_Zp"
   using is_continuous_def push_forward_X 
-  by (simp add: X_Zp_def is_closed_fun_def padic_int_polynomial_axioms)
+  by (simp add: X_Zp_def is_closed_fun_def padic_int_poly_axioms)
 
 definition X_pow_Zp:: "nat \<Rightarrow> padic_int_fun" where 
 "X_pow_Zp n x = (if n=0 then \<one> else x[^]n)"
@@ -1449,7 +1449,7 @@ proof(induction n)
   case 0
   then show ?case 
     using X_pow_Zp_def Z\<^sub>p_def Zp_one_car is_closed_fun_def
-      padic_int_polynomial_axioms by auto
+      padic_int_poly_axioms by auto
 next
   case (Suc n)
   then show ?case 
@@ -1513,7 +1513,7 @@ lemma scalar_mult_rep:
 proof
   fix x
   show "scalar_mult c f x = fun_prod (to_const_fun c) f x" 
-    using fun_prod_def to_const_fun_def padic_int_polynomial_axioms scalar_mult_def by auto
+    using fun_prod_def to_const_fun_def padic_int_poly_axioms scalar_mult_def by auto
 qed
 
 lemma scalar_mult_is_continuous:

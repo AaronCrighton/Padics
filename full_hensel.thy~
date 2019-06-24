@@ -371,7 +371,7 @@ proof(induction n)
       unfolding hensel_factor_def 
       by (metis (no_types, hide_lams) add_diff_eq diff_diff_eq2 kz) 
     then have "(Some ((2 * (ord_Zp f'a)) + 2 ^ k * t)) = Some (ord_Zp fa)"
-      by (metis \<open>Some ((2 * ord_Zp f'a) + 2 ^ k * t) = Some (2 * ord_Zp f'a + t)\<close> add_diff_cancel_left') 
+      by (metis \<open>Some (2 * ord_Zp f'a + 2 ^ k * t) = Some (2 * ord_Zp f'a + t)\<close> add_diff_cancel_left') 
     then have "((val_Zp (f \<^emph> (ns k))) = (Some ((2 * (ord_Zp f'a)) + 2 ^ k * t)))"
       using kz val_ord_Zp fa_closed fa_nonzero newton_seq.simps(1) 
       by smt 

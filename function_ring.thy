@@ -1,0 +1,898 @@
+theory function_ring
+  imports domain_poly "HOL-Algebra.UnivPoly" "HOL-Library.FuncSet"
+begin
+
+definition function_mult:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> 'a)" where
+"function_mult S R f g = (\<lambda>x \<in> S. (f x) \<otimes>\<^bsub>R\<^esub> (g x))"
+
+abbreviation ring_function_mult:: "('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"ring_function_mult R f g \<equiv> function_mult (carrier R) R f g"
+
+definition function_add:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> 'a)" where
+"function_add S R f g = (\<lambda>x \<in> S. (f x) \<oplus>\<^bsub>R\<^esub> (g x))"
+
+abbreviation ring_function_add:: "('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"ring_function_add R f g \<equiv> function_add (carrier R) R f g"
+
+definition function_one:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a)" where
+"function_one S R = (\<lambda>x \<in> S. \<one>\<^bsub>R\<^esub>)"
+
+abbreviation ring_function_one :: "('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"ring_function_one R \<equiv> function_one (carrier R) R"
+
+definition function_zero:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a)" where
+"function_zero S R = (\<lambda>x \<in> S. \<zero>\<^bsub>R\<^esub>)"
+
+abbreviation ring_function_zero :: "('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"ring_function_zero R \<equiv> function_zero (carrier R) R"
+
+definition function_uminus:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a) \<Rightarrow> ('c \<Rightarrow> 'a)" where
+"function_uminus S R a = (\<lambda> x \<in> S. \<ominus>\<^bsub>R\<^esub> (a x))"
+
+definition ring_function_uminus:: " ('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"ring_function_uminus R a = function_uminus (carrier R) R a"
+
+definition function_ring:: "'c set \<Rightarrow> ('a, 'b) ring_scheme \<Rightarrow> ('c \<Rightarrow> 'a) ring" where
+"function_ring S R = \<lparr>
+   carrier = {f. f \<in> S \<rightarrow> (carrier R) \<and> (f = restrict f S)},
+   Group.monoid.mult = (function_mult S R),
+   one = (function_one S R),
+   zero = (function_zero S R),
+   add = (function_add S R)\<rparr> "
+
+abbreviation ring_function_ring:: "('a, 'b) ring_scheme \<Rightarrow> ('a \<Rightarrow> 'a) ring" ("Fun") where
+"ring_function_ring R \<equiv> function_ring (carrier R) R"
+
+lemma function_ring_car_simp[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> (carrier (function_ring S R))"
+  shows "f a \<in> carrier R"
+  using assms 
+  unfolding function_ring_def
+  by auto
+
+lemma function_ring_not_car_simp:
+  assumes "a \<notin> S"
+  assumes "f \<in> (carrier (function_ring S R))"
+  shows "f a = undefined"
+  using assms 
+  unfolding function_ring_def
+  by (metis (mono_tags, lifting) mem_Collect_eq partial_object.select_convs(1) restrict_def)
+  
+
+lemma function_ring_car_eqI:
+  assumes "f \<in> (carrier (function_ring S R))"
+  assumes "g \<in> (carrier (function_ring S R))"
+  assumes "\<And>a. a \<in> S \<Longrightarrow> f a = g a"
+  shows "f = g"
+proof
+  fix x
+  show "f x = g x"
+  proof(cases "x \<in> S")
+    case True
+    then show ?thesis 
+      by (simp add: assms(3))
+  next
+    case False
+    then have fx: "f x = undefined"
+      using False assms
+      unfolding function_ring_def 
+      by (metis (mono_tags, lifting) mem_Collect_eq partial_object.select_convs(1) restrict_def)
+    have gx: "g x = undefined"
+      using False assms 
+      unfolding function_ring_def 
+      by (metis (mono_tags, lifting) mem_Collect_eq partial_object.select_convs(1) restrict_def)
+    then show ?thesis using fx 
+      by auto
+qed
+qed
+
+lemma function_ring_car_memI:
+  assumes "\<And>a. a \<in> S \<Longrightarrow> f a \<in> carrier R"
+  assumes "\<And> a. a \<notin> S\<Longrightarrow> f a = undefined"
+  shows "f \<in> carrier (function_ring S R)"
+  using assms   
+  unfolding function_ring_def
+  by (simp add: extensional_def extensional_restrict)
+
+text\<open>Function multiplication lemmas\<close>
+
+lemma(in ring) function_mult_eval_simp[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<otimes>\<^bsub>(function_ring S R)\<^esub> g) a = (f a) \<otimes> (g a)"
+  using assms
+  unfolding function_ring_def function_mult_def
+  by simp
+
+lemma(in ring) function_mult_closed[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<otimes>\<^bsub>(function_ring S R)\<^esub> g) a \<in> carrier R"
+  using assms 
+  unfolding function_ring_def function_mult_def
+  by (simp add: Pi_iff)
+
+lemma(in ring) function_mult_closed'[simp]:
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<otimes>\<^bsub>(function_ring S R)\<^esub> g) \<in> carrier (function_ring S R)"
+  using assms function_mult_closed function_ring_car_memI[of "S" "(f \<otimes>\<^bsub>(function_ring S R)\<^esub> g)"]
+  by (metis (no_types, lifting) function_mult_def function_ring_def monoid.simps(1) restrict_def)
+
+lemma(in ring) function_multE:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  assumes "h =  f \<otimes>\<^bsub>(function_ring S R)\<^esub> g"
+  shows "h a = f a \<otimes> g a"
+  using assms unfolding function_ring_def function_mult_def 
+  by simp
+
+lemma(in ring) set_fun_mult_assoc:
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes "y \<in> carrier (function_ring S R)" 
+  assumes " z \<in> carrier (function_ring S R)"
+  assumes "a \<in> S"
+  shows "(x \<otimes>\<^bsub>(function_ring S R)\<^esub> y \<otimes>\<^bsub>(function_ring S R)\<^esub> z) a = (x \<otimes>\<^bsub>(function_ring S R)\<^esub> (y \<otimes>\<^bsub>(function_ring S R)\<^esub> z)) a"
+proof-
+  have 0: "(x \<otimes>\<^bsub>(function_ring S R)\<^esub> y \<otimes>\<^bsub>(function_ring S R)\<^esub> z) a = (x a) \<otimes> (y a) \<otimes> (z a) "
+    using assms function_multE[of a S] function_mult_closed'[of _ S ] 
+    by presburger
+  have 1: "(x \<otimes>\<^bsub>(function_ring S R)\<^esub> (y \<otimes>\<^bsub>(function_ring S R)\<^esub> z)) a = (x a) \<otimes> ((y a) \<otimes> (z a))"
+    using assms  function_multE[of a S] function_mult_closed' 
+    by metis
+  have 2:"(x \<otimes>\<^bsub>(function_ring S R)\<^esub> (y \<otimes>\<^bsub>(function_ring S R)\<^esub> z)) a = (x a) \<otimes> (y a) \<otimes> (z a)"
+    using 1 assms 
+    by (simp add: m_assoc)
+  show ?thesis 
+    using 0 2 by auto 
+qed
+
+lemma(in ring) set_fun_mult_assoc':
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes "y \<in> carrier (function_ring S R)" 
+  assumes " z \<in> carrier (function_ring S R)"
+  shows "(x \<otimes>\<^bsub>(function_ring S R)\<^esub> y \<otimes>\<^bsub>(function_ring S R)\<^esub> z) = (x \<otimes>\<^bsub>(function_ring S R)\<^esub> (y \<otimes>\<^bsub>(function_ring S R)\<^esub> z))"
+  using set_fun_mult_assoc[of x]
+  by (meson assms(1) assms(2) assms(3) function_ring_car_eqI 
+      local.ring_axioms ring.function_mult_closed')
+
+text\<open>Function addition lemmas\<close>
+
+lemma(in ring) function_add_eval_simp[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<oplus>\<^bsub>function_ring S R\<^esub> g) a = (f a) \<oplus> (g a)"
+  using assms
+  unfolding function_ring_def function_add_def
+  by simp
+
+lemma(in ring) function_add_closed[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<oplus>\<^bsub>(function_ring S R)\<^esub> g) a \<in> carrier R"
+  using assms 
+  unfolding function_ring_def function_add_def
+  by (simp add: Pi_iff)
+
+lemma(in ring) function_add_closed'[simp]:
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  shows "(f \<oplus>\<^bsub>(function_ring S R)\<^esub> g) \<in> carrier (function_ring S R)"
+  using assms function_add_closed function_ring_car_memI[of S "(f \<oplus>\<^bsub>(function_ring S R)\<^esub> g)"]
+  by (metis (no_types, lifting) function_add_def function_ring_def restrict_def ring.simps(2))
+  
+lemma(in ring) ring_function_addE[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  assumes "g \<in> carrier (function_ring S R)"
+  assumes "h =  f \<oplus>\<^bsub>(function_ring S R)\<^esub> g"
+  shows "h a = f a \<oplus> g a"
+  using assms unfolding function_ring_def function_add_def 
+  by simp
+
+lemma(in ring) fun_add_assoc:
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes "y \<in> carrier (function_ring S R)" 
+  assumes " z \<in> carrier (function_ring S R)"
+  assumes "a \<in> S"
+  shows "(x \<oplus>\<^bsub>(function_ring S R)\<^esub> y \<oplus>\<^bsub>function_ring S R\<^esub> z) a = (x \<oplus>\<^bsub>function_ring S R\<^esub> (y \<oplus>\<^bsub>function_ring S R\<^esub> z)) a"
+proof-
+  have 0: "(x \<oplus>\<^bsub>function_ring S R\<^esub> y \<oplus>\<^bsub>function_ring S R\<^esub> z) a = (x a) \<oplus> (y a) \<oplus> (z a) "
+    using assms ring_function_addE function_add_closed' 
+    by simp
+  have 1: "(x \<oplus>\<^bsub>function_ring S R\<^esub> (y \<oplus>\<^bsub>function_ring S R\<^esub> z)) a = (x a) \<oplus> ((y a) \<oplus> (z a))"
+    using assms  ring_function_addE function_add_closed' 
+    by simp
+  have 2:"(x \<oplus>\<^bsub>function_ring S R\<^esub> (y \<oplus>\<^bsub>function_ring S R\<^esub> z)) a = (x a) \<oplus> (y a) \<oplus> (z a)"
+    using 1 assms 
+    by (simp add: assms(1) assms(2) assms(3) add.m_assoc)
+  show ?thesis 
+    using 0 2 by auto 
+qed
+
+lemma(in ring) fun_add_comm:
+  assumes "a \<in> S"
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes "y \<in> carrier (function_ring S R)" 
+  shows "(x \<oplus>\<^bsub>function_ring S R\<^esub> y) a = (y \<oplus>\<^bsub>function_ring S R\<^esub> x) a"
+  using assms 
+  by (metis add.m_comm ring_function_addE function_ring_car_simp)
+  
+lemma(in ring) fun_add_comm':
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes "y \<in> carrier (function_ring S R)" 
+  shows "x \<oplus>\<^bsub>function_ring S R\<^esub> y = y \<oplus>\<^bsub>function_ring S R\<^esub> x"
+  using fun_add_comm assms 
+  by (metis (no_types, hide_lams) function_add_closed' function_ring_car_eqI)
+  
+  
+text\<open>Lemmas about ring_function_one\<close>
+
+lemma(in ring) function_one_closed[simp]:
+"\<one>\<^bsub>function_ring S R\<^esub> \<in>carrier (function_ring S R)"
+  unfolding function_ring_def function_one_def
+  by simp
+
+lemma(in ring) function_oneE[simp]:
+  assumes "a \<in> S"
+  shows "\<one>\<^bsub>function_ring S R\<^esub> a = \<one>"
+  using assms
+  unfolding function_ring_def function_one_def
+  by simp
+
+lemma(in ring) function_times_oneL[simp]:
+  assumes "a \<in> carrier (function_ring S R)"
+  shows "\<one>\<^bsub>function_ring S R\<^esub> \<otimes>\<^bsub>function_ring S R\<^esub> a = a"
+proof(rule function_ring_car_eqI)
+  show "\<one>\<^bsub>function_ring S R\<^esub> \<otimes>\<^bsub>function_ring S R\<^esub> a \<in> carrier (function_ring S R)"
+    using assms function_mult_closed' function_one_closed 
+    by blast
+  show " a \<in> carrier (function_ring S R)"
+    using assms by simp 
+  show "\<And>c. c \<in> S \<Longrightarrow> (\<one>\<^bsub>function_ring S R\<^esub> \<otimes>\<^bsub>function_ring S R\<^esub> a) c = a c "
+  by (metis assms function_multE function_oneE function_one_closed function_ring_car_simp is_monoid monoid.l_one)
+qed
+
+lemma(in ring) function_times_oneR[simp]:
+  assumes "a \<in> carrier (function_ring S R)"
+  shows "a\<otimes>\<^bsub>function_ring S R\<^esub> \<one>\<^bsub>function_ring S R\<^esub>  = a"
+proof(rule function_ring_car_eqI)
+  show "a\<otimes>\<^bsub>function_ring S R\<^esub> \<one>\<^bsub>function_ring S R\<^esub> \<in> carrier (function_ring S R)"
+    using assms function_mult_closed' function_one_closed 
+    by blast
+  show " a \<in> carrier (function_ring S R)"
+    using assms by simp 
+  show "\<And>c. c \<in> S \<Longrightarrow> (a\<otimes>\<^bsub>function_ring S R\<^esub> \<one>\<^bsub>function_ring S R\<^esub>) c = a c "
+    using assms 
+    by (metis function_multE function_oneE function_one_closed function_ring_car_simp r_one)
+qed
+
+text\<open>Lemmas about ring_function_zero\<close>
+
+lemma(in ring) function_zero_closed[simp]:
+"\<zero>\<^bsub>function_ring S R\<^esub> \<in>carrier (function_ring S R)"
+  unfolding function_ring_def function_zero_def
+  by simp
+
+lemma(in ring) ring_function_zeroE[simp]:
+  assumes "a \<in> S"
+  shows "\<zero>\<^bsub>function_ring S R\<^esub> a = \<zero>"
+  using assms
+  unfolding function_ring_def function_zero_def
+  by simp
+
+lemma(in ring) function_add_zeroL[simp]:
+  assumes "a \<in> carrier (function_ring S R)"
+  shows "\<zero>\<^bsub>function_ring S R\<^esub> \<oplus>\<^bsub>function_ring S R\<^esub> a = a"
+proof(rule function_ring_car_eqI)
+  show "\<zero>\<^bsub>function_ring S R\<^esub> \<oplus>\<^bsub>function_ring S R\<^esub> a \<in> carrier (function_ring S R)"
+    using assms function_add_closed' function_zero_closed 
+    by blast
+  show "a \<in> carrier (function_ring S R)"
+    using assms by simp 
+  show "\<And>c. c \<in> S \<Longrightarrow> (\<zero>\<^bsub>function_ring S R\<^esub> \<oplus>\<^bsub>function_ring S R\<^esub> a) c = a c "
+    using assms
+    by (metis ring_function_addE function_mult_closed function_one_closed function_times_oneL 
+        ring_function_zeroE function_zero_closed local.ring_axioms ring.ring_simprules(8))
+qed
+
+lemma(in ring) function_add_zeroR[simp]:
+  assumes "a \<in> carrier (function_ring S R)"
+  shows "a \<oplus>\<^bsub>function_ring S R\<^esub> \<zero>\<^bsub>function_ring S R\<^esub> = a"
+  using assms fun_add_comm' function_add_zeroL 
+  by fastforce
+  
+
+text\<open>Lemmas about ring_function_uminus\<close>
+
+lemma(in ring) function_uminus_eval[simp]:
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  shows "function_uminus S R f a = \<ominus> (f a)"
+  using assms unfolding function_uminus_def
+  by simp
+  
+
+lemma(in ring) function_uminus_closed[simp]:
+  assumes "f \<in> carrier (function_ring S R)"
+  shows "function_uminus S R f \<in> carrier (function_ring S R)"
+proof(rule function_ring_car_memI)
+  show "\<And>a. a \<in> S \<Longrightarrow> function_uminus S R f a \<in> carrier R"
+    by (simp add: assms)
+  show "\<And>a. a \<notin> S \<Longrightarrow> function_uminus S R f a = undefined"
+    by (simp add: function_uminus_def)
+qed
+
+lemma(in ring) function_uminus_addR[simp]:
+  assumes "f \<in> carrier (function_ring S R)"
+  shows "f \<oplus>\<^bsub>function_ring S R\<^esub> (function_uminus S R f)= \<zero>\<^bsub>function_ring S R\<^esub>"
+proof(rule function_ring_car_eqI)
+  show "f \<oplus>\<^bsub>function_ring S R\<^esub> function_uminus S R f \<in> carrier (function_ring S R)"
+    using assms 
+    by simp
+  show "\<zero>\<^bsub>function_ring S R\<^esub> \<in> carrier (function_ring S R)"
+    by simp
+  show "\<And>a. a \<in> S \<Longrightarrow> (f \<oplus>\<^bsub>function_ring S R\<^esub> (function_uminus S R f)) a = \<zero>\<^bsub>function_ring S R\<^esub> a"
+    using assms 
+    by (metis (full_types) ring_function_addE function_add_closed function_add_zeroL 
+        function_uminus_closed function_uminus_eval ring_function_zeroE function_zero_closed r_neg)
+qed
+
+lemma(in ring) function_uminus_addL[simp]:
+  assumes "f \<in> carrier (function_ring S R)"
+  shows "(function_uminus S R f) \<oplus>\<^bsub>function_ring S R\<^esub> f  = \<zero>\<^bsub>function_ring S R\<^esub>"
+  by (simp add: assms fun_add_comm')
+
+text\<open>Distributive Laws\<close>
+lemma(in ring) function_mult_distr: 
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes" y \<in> carrier (function_ring S R)"
+  assumes " z \<in> carrier (function_ring S R)"
+  shows " (x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z = x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z"
+proof(rule function_ring_car_eqI)
+  show "(x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z \<in> carrier (function_ring S R)"
+    by (simp add: assms ring.function_add_closed' ring.function_mult_closed')
+  show "x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z \<in> carrier (function_ring S R)"
+    by (simp add: assms ring.function_add_closed' ring.function_mult_closed')
+  show  "\<And>a. a \<in> S \<Longrightarrow> ((x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z) a = (x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z) a"
+  proof-
+    fix a
+    assume A: "a \<in> S"
+    show "((x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z) a = (x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z) a"
+      using A assms function_mult_eval_simp[of a S "(x \<oplus>\<^bsub>function_ring S R\<^esub> y)" z]  function_add_eval_simp[of a S x y]
+            function_mult_eval_simp[of a S x z]  function_mult_eval_simp[of a S y z] function_add_eval_simp
+      by (metis (full_types) function_add_closed function_add_closed' function_add_zeroR 
+          function_mult_closed' function_zero_closed l_distr)
+  qed
+qed    
+
+lemma(in ring) function_mult_distr':
+  assumes "x \<in> carrier (function_ring S R)"
+  assumes" y \<in> carrier (function_ring S R)"
+  assumes " z \<in> carrier (function_ring S R)"
+  shows "z \<otimes>\<^bsub>function_ring S R\<^esub> (x \<oplus>\<^bsub>function_ring S R\<^esub> y) = z \<otimes>\<^bsub>function_ring S R\<^esub> x \<oplus>\<^bsub>function_ring S R\<^esub> z \<otimes>\<^bsub>function_ring S R\<^esub> y"
+proof(rule function_ring_car_eqI)
+  show "z \<otimes>\<^bsub>function_ring S R\<^esub> (x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<in> carrier (function_ring S R)"
+    by (simp add: assms ring.function_add_closed' ring.function_mult_closed')
+  show "z \<otimes>\<^bsub>function_ring S R\<^esub> x \<oplus>\<^bsub>function_ring S R\<^esub> z \<otimes>\<^bsub>function_ring S R\<^esub> y \<in> carrier (function_ring S R)"
+    by (simp add: assms ring.function_add_closed' ring.function_mult_closed')
+  show  "\<And>a. a \<in> S \<Longrightarrow> (z \<otimes>\<^bsub>function_ring S R\<^esub> (x \<oplus>\<^bsub>function_ring S R\<^esub> y)) a = (z \<otimes>\<^bsub>function_ring S R\<^esub> x \<oplus>\<^bsub>function_ring S R\<^esub> z \<otimes>\<^bsub>function_ring S R\<^esub> y) a"
+  proof-
+    fix a
+    assume A: "a \<in> S"
+    show "(z \<otimes>\<^bsub>function_ring S R\<^esub> (x \<oplus>\<^bsub>function_ring S R\<^esub> y)) a = (z \<otimes>\<^bsub>function_ring S R\<^esub> x \<oplus>\<^bsub>function_ring S R\<^esub> z \<otimes>\<^bsub>function_ring S R\<^esub> y) a"
+      using A assms function_mult_eval_simp[of a S z "(x \<oplus>\<^bsub>function_ring S R\<^esub> y)"]  function_add_eval_simp[of a S x y]
+            function_mult_eval_simp[of a S z x]  function_mult_eval_simp[of a S z y] function_add_eval_simp
+      by (metis (full_types) function_add_closed function_add_closed' function_add_zeroR 
+          function_mult_closed' function_zero_closed r_distr)
+  qed
+qed    
+
+text\<open>Function rings are closed under composition\<close>
+
+abbreviation(in ring) restricted_comp :: "('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"restricted_comp f g \<equiv> restrict  (f \<circ> g) (carrier R) "
+
+lemma(in ring) ring_function_ring_comp[simp]:
+  assumes "f \<in> carrier (Fun R)"
+  assumes "g \<in> carrier (Fun R)"
+  shows "restricted_comp f g\<in> carrier (Fun R)"
+  apply(rule function_ring_car_memI)
+  using assms 
+  apply (metis comp_apply function_ring_car_simp restrict_def)
+  by simp
+    
+text\<open>Function rings over a ring form a ring\<close>
+
+lemma ring_imp_Fun_is_ring:
+  assumes "ring R"
+  shows "ring (function_ring S R)"
+proof(rule ringI)
+  show "abelian_group (function_ring S R)"
+  proof(rule abelian_groupI)
+    show "\<zero>\<^bsub>function_ring S R\<^esub> \<in> carrier (function_ring S R)"
+      using assms unfolding function_one_def function_ring_def
+      by (simp add: function_zero_def ring.ring_simprules(2))
+    show "\<And>x y. x \<in> carrier (function_ring S R) \<Longrightarrow> y \<in> carrier (function_ring S R) \<Longrightarrow> x \<oplus>\<^bsub>function_ring S R\<^esub> y \<in> carrier (function_ring S R)"
+      unfolding function_add_def function_ring_def
+      by (simp add: Pi_iff assms ring.ring_simprules(1))
+    show "\<And>x y z. x \<in> carrier (function_ring S R) \<Longrightarrow> y \<in> carrier (function_ring S R) \<Longrightarrow> z \<in> carrier (function_ring S R) \<Longrightarrow> x \<oplus>\<^bsub>function_ring S R\<^esub> y \<oplus>\<^bsub>function_ring S R\<^esub> z = x \<oplus>\<^bsub>function_ring S R\<^esub> (y \<oplus>\<^bsub>function_ring S R\<^esub> z)"
+      by (meson \<open>\<And>y x. \<lbrakk>x \<in> carrier (function_ring S R); y \<in> carrier (function_ring S R)\<rbrakk> \<Longrightarrow> x \<oplus>\<^bsub>function_ring S R\<^esub> y \<in> carrier (function_ring S R)\<close>
+        assms function_ring_car_eqI ring.fun_add_assoc)
+    show " \<And>x y. x \<in> carrier (function_ring S R) \<Longrightarrow> y \<in> carrier (function_ring S R) \<Longrightarrow> x \<oplus>\<^bsub>function_ring S R\<^esub> y = y \<oplus>\<^bsub>function_ring S R\<^esub> x"
+      by (simp add: assms ring.fun_add_comm')
+    show "\<And>x. x \<in> carrier (function_ring S R) \<Longrightarrow> \<zero>\<^bsub>function_ring S R\<^esub> \<oplus>\<^bsub>function_ring S R\<^esub> x = x"
+      by (simp add: assms ring.function_add_zeroL)
+    show "\<And>x. x \<in> carrier (function_ring S R) \<Longrightarrow> \<exists>y\<in>carrier (function_ring S R). y \<oplus>\<^bsub>function_ring S R\<^esub> x = \<zero>\<^bsub>function_ring S R\<^esub>"
+      using assms ring.function_uminus_addL ring.function_uminus_closed by blast
+  qed
+  show "Group.monoid (function_ring S R)"
+    apply(rule monoidI)
+      apply (simp add: assms ring.function_mult_closed')
+        apply (simp add: assms ring.function_one_closed)
+          apply  (simp add: assms ring.set_fun_mult_assoc')
+            apply (simp add: assms ring.function_times_oneL)
+              by (simp add: assms ring.function_times_oneR)
+
+  show "\<And>x y z.
+       x \<in> carrier (function_ring S R) \<Longrightarrow>
+       y \<in> carrier (function_ring S R) \<Longrightarrow> z \<in> carrier (function_ring S R) \<Longrightarrow> (x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z = x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z"
+    by (simp add: assms ring.function_mult_distr)
+  show "\<And>x y z.
+       x \<in> carrier (function_ring S R) \<Longrightarrow>
+       y \<in> carrier (function_ring S R) \<Longrightarrow> z \<in> carrier (function_ring S R) \<Longrightarrow> z \<otimes>\<^bsub>function_ring S R\<^esub> (x \<oplus>\<^bsub>function_ring S R\<^esub> y) = z \<otimes>\<^bsub>function_ring S R\<^esub> x \<oplus>\<^bsub>function_ring S R\<^esub> z \<otimes>\<^bsub>function_ring S R\<^esub> y"
+  by (simp add: assms ring.function_mult_distr')
+qed
+
+lemma cring_imp_Fun_is_cring:
+  assumes "cring R"
+  shows "cring (function_ring S R)"
+  apply(rule cringI)
+    apply (simp add: assms cring.axioms(1) ring.is_abelian_group ring_imp_Fun_is_ring)
+proof-
+  show "Group.comm_monoid (function_ring S R)"
+    apply(rule comm_monoidI)
+    apply (simp add: assms cring.axioms(1) ring.function_mult_closed')
+       apply (simp add: assms cring.axioms(1) ring.function_one_closed)
+        apply (simp add: assms cring.axioms(1) ring.set_fun_mult_assoc')
+     apply (simp add: assms cring.axioms(1) ring.function_times_oneL)
+  proof-
+    show "\<And>x y. x \<in> carrier (function_ring S R) \<Longrightarrow> y \<in> carrier (function_ring S R) \<Longrightarrow> x \<otimes>\<^bsub>function_ring S R\<^esub> y = y \<otimes>\<^bsub>function_ring S R\<^esub> x"
+    proof- fix x y
+      assume A:  "x \<in> carrier (function_ring S R)" "y \<in> carrier (function_ring S R)"
+      show "x \<otimes>\<^bsub>function_ring S R\<^esub> y = y \<otimes>\<^bsub>function_ring S R\<^esub> x"
+      proof(rule function_ring_car_eqI)
+        show "x \<otimes>\<^bsub>function_ring S R\<^esub> y \<in> carrier (function_ring S R)"
+          using A(1) A(2) assms cring_def ring.function_mult_closed' by blast
+        show "y \<otimes>\<^bsub>function_ring S R\<^esub> x \<in> carrier (function_ring S R)"
+          using A(1) A(2) assms cring_def ring.function_mult_closed' by blast
+        show "\<And>a. a \<in> S \<Longrightarrow> (x \<otimes>\<^bsub>function_ring S R\<^esub> y) a = (y \<otimes>\<^bsub>function_ring S R\<^esub> x) a"
+        proof-
+          fix a
+          assume "a \<in> S"
+          then show "(x \<otimes>\<^bsub>function_ring S R\<^esub> y) a = (y \<otimes>\<^bsub>function_ring S R\<^esub> x) a"
+            using assms A 
+            by (simp add: cring.axioms(1) cring.cring_simprules(14) ring.function_mult_eval_simp)
+        qed
+      qed
+    qed
+  qed
+  show "\<And>x y z.
+       x \<in> carrier (function_ring S R) \<Longrightarrow>
+       y \<in> carrier (function_ring S R) \<Longrightarrow> z \<in> carrier (function_ring S R) \<Longrightarrow> (x \<oplus>\<^bsub>function_ring S R\<^esub> y) \<otimes>\<^bsub>function_ring S R\<^esub> z = x \<otimes>\<^bsub>function_ring S R\<^esub> z \<oplus>\<^bsub>function_ring S R\<^esub> y \<otimes>\<^bsub>function_ring S R\<^esub> z"
+  by (simp add: assms cring.axioms(1) ring.function_mult_distr)
+qed
+
+lemma function_ring_uminus:
+  assumes "cring R"
+  assumes "a \<in> S"
+  assumes "f \<in> carrier (function_ring S R)"
+  shows "(\<ominus>\<^bsub>function_ring S R\<^esub> f) a = \<ominus>\<^bsub>R\<^esub> (f a)"
+proof-
+  have "((\<ominus>\<^bsub>function_ring S R\<^esub> f) \<oplus>\<^bsub>function_ring S R\<^esub> f) = \<zero>\<^bsub>function_ring S R\<^esub>"
+    using assms cring_imp_Fun_is_cring[of R S] 
+    by (simp add: cring.cring_simprules(9))
+  then have "((\<ominus>\<^bsub>function_ring S R\<^esub> f) \<oplus>\<^bsub>function_ring S R\<^esub> f) a = \<zero>\<^bsub>R\<^esub>"
+    by (simp add: assms(1) assms(2) cring.axioms(1) ring.ring_function_zeroE)
+  then show ?thesis 
+    by (metis assms(1) assms(2) assms(3) cring.axioms(1) cring.cring_simprules(3) 
+        cring_imp_Fun_is_cring ring.function_add_zeroR ring.function_uminus_addR 
+        ring.function_uminus_closed ring.function_uminus_eval ring.ring_simprules(18))
+qed
+  
+
+text\<open>constant ring_functions\<close>
+
+definition constant_function  where
+"constant_function S a = restrict (\<lambda>_. a) S"
+
+
+
+lemma constant_function[simp]:
+  assumes "a \<in> carrier R"
+  shows "constant_function S a \<in> carrier (function_ring S R)"
+  using assms constant_function_def 
+  by (simp add: constant_function_def function_ring_car_memI)
+    
+lemma constant_function_add: 
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  shows "(constant_function S a) \<oplus>\<^bsub>(function_ring S R)\<^esub> (constant_function S b) = 
+          (constant_function S (a \<oplus>\<^bsub>R\<^esub> b)) " 
+  unfolding constant_function_def 
+  by (smt function_add_def function_ring_def restrict_apply' restrict_ext ring.simps(2))
+
+
+lemma constant_function_mult: 
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  shows "(constant_function S a) \<otimes>\<^bsub>(function_ring S R)\<^esub> (constant_function S b) = 
+          (constant_function S (a \<otimes>\<^bsub>R\<^esub> b)) " 
+  unfolding constant_function_def 
+  by (smt function_mult_def function_ring_def monoid.simps(1) restrict_apply' restrict_ext)
+
+lemma constant_function_minus: 
+  assumes "cring R"
+  assumes "a \<in> carrier R"
+  shows "\<ominus>\<^bsub>function_ring S R\<^esub>(constant_function S a) = 
+          (constant_function S (\<ominus>\<^bsub>R\<^esub> a)) " 
+  unfolding constant_function_def
+  apply(rule ext)
+  using assms function_ring_uminus[of R] 
+  by (smt cring.cring_simprules(3) cring_imp_Fun_is_cring function_ring_car_memI
+      function_ring_not_car_simp restrict_apply)
+
+
+context cring
+begin
+
+
+text\<open>Restricted algebraic operations\<close>
+
+definition(in ring) ring_constant_function ("\<cc>\<index>") where
+"ring_constant_function a = constant_function (carrier R) a"
+
+lemma(in ring) ring_constant_function[simp]:
+  assumes "a \<in> carrier R"
+  shows "ring_constant_function a \<in> carrier (Fun R)"
+  using assms constant_function_def 
+  by (simp add: ring_constant_function_def)
+  
+
+definition a_translate :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" where
+"a_translate = (\<lambda> r \<in> carrier R. restrict ((add R) r) (carrier R))"
+
+definition m_translate :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" where
+"m_translate  = (\<lambda> r \<in> carrier R. restrict ((mult R) r) (carrier R))"
+
+definition nat_power :: "nat \<Rightarrow> 'a \<Rightarrow> 'a" where 
+"nat_power = (\<lambda>(n::nat). restrict (\<lambda>a.  a[^]\<^bsub>R\<^esub>n) (carrier R)) "
+
+text\<open>Restricted operations are in Fs\<close>
+
+lemma a_translate_functions[simp]:
+  assumes "c \<in> carrier R"
+  shows "a_translate c \<in> carrier (Fun R)"
+  apply(rule function_ring_car_memI)
+  using assms a_translate_def 
+   apply simp
+  using assms a_translate_def 
+  by simp
+  
+
+lemma m_translate_functions[simp]:
+  assumes "c \<in> carrier R"
+  shows "m_translate c \<in> carrier (Fun R)"
+  apply(rule function_ring_car_memI)
+  using assms m_translate_def 
+  apply simp
+    using assms m_translate_def 
+  by simp
+
+
+lemma nat_power_functions[simp]:
+  shows "nat_power n \<in> carrier (Fun R)"
+  apply(rule function_ring_car_memI)
+  using  nat_power_def 
+   apply simp
+  by (simp add: nat_power_def)
+
+text\<open>Restricted operations simps\<close>
+
+lemma a_translate_eq[simp]:
+  assumes "c \<in> carrier R"
+  assumes "a \<in> carrier R"
+  shows "a_translate c a = c \<oplus> a"
+  by (simp add: a_translate_def assms(1) assms(2))
+
+lemma a_translate_eq'[simp]:
+  assumes "c \<in> carrier R"
+  assumes "a \<notin> carrier R"
+  shows "a_translate c a = undefined "
+  by (meson a_translate_functions assms(1) assms(2) function_ring_not_car_simp)
+
+lemma a_translate_eq''[simp]:
+  assumes "c \<notin> carrier R"
+  shows "a_translate c = undefined"
+  by (simp add: a_translate_def assms)
+
+lemma m_translate_eq[simp]:
+  assumes "c \<in> carrier R"
+  assumes "a \<in> carrier R"
+  shows "m_translate c a = c \<otimes> a"
+  by (simp add: m_translate_def assms(1) assms(2))
+
+lemma m_translate_eq'[simp]:
+  assumes "c \<in> carrier R"
+  assumes "a \<notin> carrier R"
+  shows "m_translate c a = undefined "
+  by (meson m_translate_functions assms(1) assms(2) function_ring_not_car_simp)
+
+lemma m_translate_eq''[simp]:
+  assumes "c \<notin> carrier R"
+  shows "m_translate c = undefined"
+  by (simp add: m_translate_def assms)
+
+lemma nat_power_eq[simp]:
+  assumes "a \<in> carrier R"
+  shows "nat_power n a = a[^]\<^bsub>R\<^esub> n"
+  by (simp add: assms nat_power_def)
+
+lemma nat_power_eq'[simp]:
+  assumes "a \<notin> carrier R"
+  shows "nat_power n a = undefined"
+  by (simp add: assms nat_power_def)
+
+text\<open>Constant ring_function properties\<close>
+
+lemma constant_function_eq[simp]:
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  shows "\<cc>\<^bsub>a\<^esub> b = a"
+  by (simp add: assms(2) constant_function_def ring_constant_function_def)
+  
+
+lemma constant_function_eq'[simp]:
+  assumes "a \<in> carrier R"
+  assumes "b \<notin> carrier R"
+  shows "\<cc>\<^bsub>a\<^esub> b = undefined"
+  by (simp add: assms(2) constant_function_def ring_constant_function_def)
+  
+lemma constant_zero[simp]:
+"\<cc>\<^bsub>\<zero>\<^esub> = \<zero>\<^bsub>Fun R\<^esub>"
+proof(rule ext)
+  show "\<And>x. \<cc>\<^bsub>\<zero>\<^esub> x = \<zero>\<^bsub>Fun R\<^esub> x"
+  by (smt constant_function_eq constant_function_eq' function_ring_def function_zero_closed
+      mem_Collect_eq partial_object.select_convs(1) restrict_def ring_function_zeroE zero_closed)
+qed
+    
+
+lemma constant_one[simp]:
+"\<cc>\<^bsub>\<one>\<^esub> = \<one>\<^bsub>Fun R\<^esub>"
+  apply(rule ext)
+  by (smt constant_function_eq constant_function_eq' cring_def function_ring_def is_cring
+      mem_Collect_eq one_closed partial_object.select_convs(1) restrict_def 
+      ring.function_oneE ring.function_one_closed)
+ 
+
+lemma constant_add[simp]:
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  shows "\<cc>\<^bsub>a \<oplus> b\<^esub> = \<cc>\<^bsub>a\<^esub> \<oplus>\<^bsub>Fun R\<^esub> \<cc>\<^bsub>b\<^esub>"
+proof
+  fix x
+  show " \<cc>\<^bsub>a \<oplus> b\<^esub> x = (\<cc>\<^bsub>a\<^esub> \<oplus>\<^bsub>Fun R\<^esub> \<cc>\<^bsub>b\<^esub>) x"
+    apply(cases "x \<in> carrier R")
+     apply (metis (full_types) add.m_closed assms(1) assms(2) constant_function 
+      constant_function_eq ring_constant_function_def ring_function_addE)
+      by (metis (mono_tags, lifting) add.m_closed assms(1) assms(2) constant_function
+      function_add_closed' function_ring_not_car_simp ring_constant_function_def)
+qed
+
+lemma constant_mult[simp]:
+  assumes "a \<in> carrier R"
+  assumes "b \<in> carrier R"
+  shows "\<cc>\<^bsub>a \<otimes> b\<^esub> = \<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub> \<cc>\<^bsub>b\<^esub>"
+proof
+  fix x
+  show "\<cc>\<^bsub>a \<otimes> b\<^esub> x = (\<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub> \<cc>\<^bsub>b\<^esub>) x"
+    apply(cases "x \<in> carrier R")
+     apply (metis assms(1) assms(2) constant_function constant_function_eq
+      function_multE m_closed ring_constant_function_def)
+      by (metis (no_types, lifting) constant_function_def function_mult_def function_ring_def
+       monoid.simps(1) restrict_apply ring_constant_function_def)
+qed
+
+
+text\<open>Compound expressions from algebraic operations\<close>
+
+definition monomial where
+"monomial c n = restricted_comp (m_translate c)  (nat_power n)"
+
+lemma monomial_functions:
+  assumes "c \<in> carrier R"
+  shows "monomial c n \<in> carrier (Fun R)"
+  by (simp add: assms monomial_def)
+
+abbreviation ring_id ("X") where
+"ring_id \<equiv> restrict (\<lambda>x. x) (carrier R) "
+
+lemma ring_id_carrier[simp]:
+"ring_id \<in> carrier (Fun R)"
+  by (simp add: function_ring_car_memI)
+
+lemma ring_id_def[simp]:
+  assumes "a \<in> carrier R"
+  shows "X a = a"
+  by (simp add: assms)
+
+
+lemma constant_a_trans: 
+  assumes "a \<in>carrier R"
+  shows "m_translate a  = \<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub> X"
+proof(rule function_ring_car_eqI)
+   show "m_translate a \<in> carrier (Fun R)"
+     using assms
+     using m_translate_functions by blast
+   show "\<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub> X \<in> carrier (Fun R)"
+     using assms constant_function function_mult_closed' ring_id_carrier 
+     by simp
+  show "\<And>x. x \<in> carrier R \<Longrightarrow> m_translate a x = (\<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub> X) x"
+    using assms 
+    by simp
+qed
+
+fun polynomial :: "'a list \<Rightarrow> ('a \<Rightarrow> 'a)" where
+"polynomial []  = \<zero>\<^bsub>Fun R\<^esub> "|
+"polynomial (a#as) = restricted_comp (a_translate a) (X \<otimes>\<^bsub>Fun R\<^esub> (polynomial as))"
+
+
+
+lemma polynomial_function: 
+  shows "set as \<subseteq> carrier R \<Longrightarrow> polynomial as \<in> carrier (Fun R)"
+  apply(induct as)
+   apply simp
+proof-
+  show " \<And>a as. (set as \<subseteq> carrier R \<Longrightarrow> polynomial as \<in> carrier (Fun R)) 
+            \<Longrightarrow> set (a # as) \<subseteq> carrier R \<Longrightarrow> polynomial (a # as) \<in> carrier (Fun R)"
+    by simp
+qed
+
+lemma polynomial_constant[simp]:
+  assumes "a \<in> carrier R"
+  shows "polynomial [a] = \<cc>\<^bsub>a\<^esub>"
+proof(rule function_ring_car_eqI)
+  show "polynomial [a] \<in> carrier (Fun R)"
+using assms 
+  by simp
+  show " \<cc>\<^bsub>a\<^esub> \<in> carrier (Fun R)"
+    using assms 
+    by simp
+  show "\<And>aa. aa \<in> carrier R \<Longrightarrow> polynomial [a] aa = \<cc>\<^bsub>a\<^esub> aa"
+    using assms by simp 
+qed
+    
+lemma polynomial_monomial:
+  assumes "a \<in> carrier R"
+  shows "polynomial [\<zero>, a] =  \<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub>  X"
+  apply(rule function_ring_car_eqI[of "polynomial [\<zero>, a]" "(carrier R)" R]) 
+  using assms  
+    apply simp
+  using assms constant_function function_mult_closed' ring_id_carrier 
+  apply simp 
+proof-
+   fix x
+   assume A: "x \<in> carrier R"
+   have "polynomial [\<zero>, a] x = restricted_comp (a_translate \<zero>) (X \<otimes>\<^bsub>Fun R\<^esub> (polynomial [a])) x"
+     by simp
+  then have  "polynomial [\<zero>, a] x = ((a_translate \<zero>) \<circ> (X \<otimes>\<^bsub>Fun R\<^esub> (polynomial [a]))) x"
+    using assms A by auto
+  then have A0:  "polynomial [\<zero>, a] x = \<zero> \<oplus> (X \<otimes>\<^bsub>Fun R\<^esub> (polynomial [a])) x"
+    using assms A by simp  
+  then show "polynomial [\<zero>, a] x = ( \<cc>\<^bsub>a\<^esub> \<otimes>\<^bsub>Fun R\<^esub>  X) x" using A assms 
+    by (simp add: m_comm)
+qed  
+
+end
+
+text\<open>Maps between structures\<close>
+
+definition struct_maps :: "('a, 'c) partial_object_scheme \<Rightarrow> ('b, 'd) partial_object_scheme 
+                              \<Rightarrow> ('a \<Rightarrow> 'b) set" where
+"struct_maps T S = {f. (f \<in> (carrier T) \<rightarrow> (carrier S)) \<and> f = restrict f (carrier T) }"
+
+definition to_struct_map where
+"to_struct_map T f = restrict f (carrier T)"
+
+lemma to_struct_map_eq:
+  assumes "f \<in> (carrier T) \<rightarrow> (carrier S)"
+  shows "to_struct_map T f \<in> (struct_maps T S)"
+  by (smt PiE_restrict Pi_iff assms mem_Collect_eq restrict_PiE struct_maps_def to_struct_map_def)
+  
+lemma struct_mapsI:
+  assumes "\<And> x. x \<in> carrier T \<Longrightarrow> f x \<in> carrier S"
+  assumes "\<And>x. x \<notin> carrier T \<Longrightarrow> f x = undefined"
+  shows "f \<in> struct_maps T S"
+proof-
+  have 0: " (f \<in> (carrier T) \<rightarrow> (carrier S))" 
+    using assms 
+    by blast
+  have 1: "f  = restrict f (carrier T)"
+    using assms 
+    by (simp add: extensional_def extensional_restrict)
+  show ?thesis 
+    using 0 1 
+    unfolding struct_maps_def 
+    by blast   
+qed
+
+lemma struct_mapsE:
+  assumes "f \<in> struct_maps T S"
+  shows  "\<And> x. x \<in> carrier T \<Longrightarrow> f x \<in> carrier S"
+         "\<And>x. x \<notin> carrier T \<Longrightarrow> f x = undefined"
+  using assms unfolding struct_maps_def 
+  apply blast
+    using assms unfolding struct_maps_def 
+    by (metis (mono_tags, lifting) mem_Collect_eq restrict_apply)
+
+definition s_comp where
+"s_comp S f g = restrict (f \<circ> g) (carrier S)"
+
+lemma struct_map_comp[simp]:
+  assumes "g \<in> (struct_maps T S)"
+  assumes "f \<in> (struct_maps S U)"
+  shows "s_comp T f g \<in> (struct_maps T U)"
+proof(rule struct_mapsI)
+  show "\<And>x. x \<in> carrier T \<Longrightarrow> s_comp T f g x \<in> carrier U"
+    using assms struct_mapsE(1) 
+    by (metis comp_apply restrict_def s_comp_def)
+  show " \<And>x. x \<notin> carrier T \<Longrightarrow> s_comp T f g x = undefined"
+    by (simp add: s_comp_def)
+qed
+
+lemma s_comp_simp[simp]:
+  assumes "g \<in> (struct_maps T S)"
+  assumes "f \<in> (struct_maps S U)"
+  assumes "a \<in> (carrier T)"
+  shows "(s_comp T f g) a = (f \<circ> g) a"
+  by (simp add: assms(3) s_comp_def)
+
+lemma s_comp_simp'[simp]:
+  assumes "g \<in> (struct_maps T S)"
+  assumes "f \<in> (struct_maps S U)"
+  assumes "a \<notin> (carrier T)"
+  shows "(s_comp T f g) a = undefined"
+  by (simp add: assms(3) s_comp_def)
+
+definition pullback ::
+    "('a, 'd) partial_object_scheme \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'c) \<Rightarrow> ('a \<Rightarrow> 'c)" where
+"pullback T f g = s_comp T g f"
+
+lemma pullback_closed:
+  assumes "f \<in> (struct_maps T S)"
+  assumes "g \<in> (struct_maps S U)"
+  shows "pullback T f g \<in> (struct_maps T U)"
+  by (metis assms(1) assms(2) pullback_def struct_map_comp)
+
+definition pushforward :: 
+    "('a, 'd) partial_object_scheme \<Rightarrow> ('b \<Rightarrow> 'c) \<Rightarrow> ('a \<Rightarrow> 'b)  \<Rightarrow> ('a \<Rightarrow> 'c)" where
+"pushforward T f g \<equiv> s_comp T f g"
+
+lemma pushforward_closed:
+  assumes "g \<in> (struct_maps T S)"
+  assumes "f \<in> (struct_maps S U)"
+  shows "pushforward T f g \<in> (struct_maps T U)"
+  using assms(1) assms(2) struct_map_comp 
+  by (metis pushforward_def)
+  
+
+
+
+end
+

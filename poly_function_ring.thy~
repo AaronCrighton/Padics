@@ -1,0 +1,7 @@
+theory poly_function_ring
+imports ring_powers
+begin
+
+
+
+end

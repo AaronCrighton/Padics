@@ -46,18 +46,18 @@ proof-
     using Im_rng_to_rng_of_frac_unit assms(2) by blast 
 qed
 
-text\<open>choice function for numerator\<close>
+(*choice function for numerator*)
 
 definition(in eq_obj_rng_of_frac) denom where
 "denom a = (if (a = \<zero>\<^bsub>rec_rng_of_frac\<^esub>) then \<one> else ( snd (SOME x. x \<in> a)))"
       
-text\<open>choice function for numerator, which is compatible with denom\<close>
+(*choice function for numerator, which is compatible with denom*)
 
 definition(in eq_obj_rng_of_frac) numer where
 "numer a = (if (a = \<zero>\<^bsub>rec_rng_of_frac\<^esub>) then \<zero> else (fst (SOME x. x \<in> a \<and> (snd x = denom a))))"
 
 
-text\<open>Fundamental properties of numer and denom\<close>
+(*Fundamental properties of numer and denom*)
 lemma(in eq_obj_rng_of_frac) numer_denom_facts0:
   assumes "domain R"
   assumes "\<zero> \<notin> S"
@@ -202,11 +202,11 @@ proof-
 qed
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************When S does not contain 0, and R is a domain, the localization is a domain.*********\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(*************When S does not contain 0, and R is a domain, the localization is a domain.**********)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 
 lemma(in eq_obj_rng_of_frac) rec_rng_of_frac_is_domain:
@@ -318,11 +318,11 @@ lemma(in eq_obj_rng_of_frac) numer_denom_facts2:
   by (simp add: assms(1) assms(2) assms(3) numer_denom_facts(2) numer_denom_facts(3) rel_def) 
 
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>****************Fraction function which suppresses the "rel" argument***************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(*****************Fraction function which suppresses the "rel" argument****************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 definition(in eq_obj_rng_of_frac) fraction where
 "fraction x y = (x |\<^bsub>rel\<^esub> y)"
@@ -407,11 +407,11 @@ proof-
     by (simp add: rec_rng_of_frac_def) 
 qed
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>*************************Defining the Field of Fractions****************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(**************************Defining the Field of Fractions*****************************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 definition(in domain) Frac where
 "Frac  = eq_obj_rng_of_frac.rec_rng_of_frac R (nonzero R)"
@@ -430,11 +430,11 @@ definition(in domain) denom where
 definition(in domain) frac where
 "frac = eq_obj_rng_of_frac.fraction  R (nonzero R)"
 
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>***************************The inclusion of R into its fraction field***************************\<close>
-text\<open>************************************************************************************************\<close>
-text\<open>************************************************************************************************\<close>
+(**************************************************************************************************)
+(**************************************************************************************************)
+(****************************The inclusion of R into its fraction field****************************)
+(**************************************************************************************************)
+(**************************************************************************************************)
 
 definition(in domain) inc ("\<iota>") where
 "inc =  eq_obj_rng_of_frac.rng_to_rng_of_frac R (nonzero R)"
@@ -460,7 +460,7 @@ lemma(in domain) inc_is_hom1:
   using cring_def domain.axioms(1)
     fraction_field_is_domain by auto 
 
-text\<open>Inclusion map is injective\<close>
+(*Inclusion map is injective*)
 
 lemma(in domain) inc_inj0:
 "a_kernel R Frac inc = {\<zero>}"
@@ -503,13 +503,13 @@ proof-
         domain.inc_inj1 domain_axioms is_abelian_group minus_closed) 
 qed
 
-text\<open>Image of inclusion map is a subring\<close>
+(*Image of inclusion map is a subring*)
 
 lemma(in domain) inc_im_is_subring:
 "subring (\<iota> ` (carrier R)) Frac" 
   using carrier_is_subring inc_is_hom1 ring_hom_ring.img_is_subring by blast 
 
-text\<open>Fundamental properties of numer , denom, and frac\<close>
+(*Fundamental properties of numer , denom, and frac*)
 
 lemma(in domain) numer_denom_facts:
   assumes "a \<in> carrier Frac"
@@ -661,7 +661,7 @@ qed
 
 
 
-text\<open>The fraction field is a field!\<close>
+(*The fraction field is a field!*)
 
 lemma(in domain) fraction_field_is_field:
 "field Frac"
@@ -862,7 +862,7 @@ proof-
     using that by blast
 qed
 
-text\<open>inclusions of natural numbers into Frac\<close>
+(*inclusions of natural numbers into Frac*)
 
 lemma(in domain) nat_0:
 "[(0::nat)]\<cdot>\<one> = \<zero>"

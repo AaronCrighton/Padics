@@ -2,7 +2,7 @@ theory padic_int_polynomials
 imports padic_int_topology domain_poly
 begin 
 
-context padic_int_polynomial
+context padic_int_poly
 begin
 
 type_synonym padic_int_poly = "nat \<Rightarrow> padic_int"

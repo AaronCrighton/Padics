@@ -639,7 +639,7 @@ proof-
       unfolding ac_def 
       by (metis Qp_nonzero_def(2) Z\<^sub>p_def a_minus_def angular_component_closed assms(1) assms(2) 
           cring.cring_simprules(17) padic_add_def Zp_is_domain domain_def 
-          padic_integers_axioms ring.simps(2) zero_vals)
+          ring.simps(2) zero_vals)
     then show ?thesis 
       by (metis G_ord(1) G_ord(2) Z\<^sub>p_def angular_component_closed assms(1) assms(2) 
           cring.cring_simprules(4) domain.axioms(1) ord_Zp_def ord_Zp_geq 
@@ -1062,7 +1062,7 @@ proof-
   obtain l::nat where l_def: "l = (LEAST M.  P (N + int M))"
     by simp 
   have 0: " P (N + int l)"
-    by (metis (full_types) LeastI \<open>N < n\<close> add_left_cancel assms(1) l_def zless_iff_Suc_zadd)
+    by (metis (full_types) LeastI \<open>N < n\<close> assms(1) l_def zless_iff_Suc_zadd)
   have 1: "l > 0"
     using "0" assms(2) of_nat_0_less_iff by fastforce
   have 2: "\<And>M. M < l \<longrightarrow> \<not> P (N + M)"
